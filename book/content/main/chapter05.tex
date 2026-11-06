@@ -1,0 +1,3680 @@
+%%C050001 p
+
+本章包含以下案例：
+
+
+%%C050002 li
+
+\begin{itemize}
+\item 把vector用作默认容器
+
+
+%%C050003 li
+
+\item 用bitset表示定长比特序列
+
+
+%%C050004 li
+
+\item 用vector<bool> 表示变长比特序列
+
+
+%%C050005 li
+
+\item 在范围中查找元素
+
+
+%%C050006 li
+
+\item 对范围排序
+
+
+%%C050007 li
+
+\item 初始化范围
+
+
+%%C050008 li
+
+\item 在范围上做集合运算
+
+
+%%C050009 li
+
+\item 用迭代器向容器插入新元素
+
+
+%%C050010 li
+
+\item 编写自己的随机访问迭代器
+
+
+%%C050011 li
+
+\item 用非成员函数访问容器
+
+\end{itemize}
+
+
+%%C050012 h2
+
+\section{引言}
+
+
+%%C050013 p
+
+随着C++11、C++14和C++17的到来，C++标准库已经演进了许多。不过从根本上说，它的核心最初由三大支柱构成：容器、算法与迭代器。它们全都以通用类或函数模板的形式实现。本章将考察如何把它们配合起来使用，以达成各种目标。
+
+
+%%C050014 h2
+
+\section{把vector用作默认容器}
+
+
+%%C050015 p
+
+标准库提供了多种容器类型来存放对象集合；其中包括序列容器（如\texttt{vector}、\texttt{array}或\texttt{list}）、有序与无序关联容器（如\texttt{set}与\texttt{map}），以及本身不存储数据、只是向序列容器提供适配接口的容器适配器（如\texttt{stack}与\texttt{queue}）。它们全都以类模板实现，这意味着只要某个类型满足容器要求，就可以用它来实例化这些容器。虽然你始终应该选用最适合具体问题的容器（这不仅要求在插入、删除、元素访问的速度以及内存占用方面表现良好，还要求代码易读易维护），但默认选择应当是\texttt{vector}。本案例将说明为什么\texttt{vector}应当作为容器的首选，以及与\texttt{vector}打交道时最常用的操作有哪些。
+
+
+%%C050016 h3
+
+\subsection{准备工作}
+
+
+%%C050017 p
+
+读者应当对类C数组有所了解，无论它是静态分配的还是动态分配的。
+
+
+%%C050018 p
+
+类模板\texttt{vector}位于\texttt{<\allowbreak{}vector>}头文件中的\texttt{std}命名空间里。
+
+
+%%C050019 h3
+
+\subsection{具体做法}
+
+
+%%C050020 p
+
+要初始化一个\texttt{std::\allowbreak{}vector}类模板，可以使用下列任意一种方法，但不必局限于这些方法：
+
+
+%%C050021 li
+
+\begin{itemize}
+\item 从初始化列表初始化：
+
+
+%%C050022 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050023 li
+
+\item 从类C数组初始化：
+
+
+%%C050024 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{(}\PYG{n}{arr}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arr}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// \PYGZob{} 1, 2, 3, 4, 5 \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050025 li
+
+\item 从另一个容器初始化：
+
+
+%%C050026 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{list}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v3}\PYG{p}{(}\PYG{n}{l}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{//\PYGZob{} 1, 2, 3, 4, 5 \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050027 li
+
+\item 从元素个数与一个值初始化：
+
+
+%%C050028 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v4}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// \PYGZob{}1, 1, 1, 1, 1\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050029 p
+
+要修改\texttt{std::\allowbreak{}vector}的内容，可以使用下列任意一种方法，但不必局限于这些方法：
+
+
+%%C050030 li
+
+\begin{itemize}
+\item 用\texttt{push\_\allowbreak{}back()}在vector末尾添加元素：
+
+
+%%C050031 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{v1}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{l+m+mi}{6}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v1 = \PYGZob{} 1, 2, 3, 4, 5, 6 \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050032 li
+
+\item 用\texttt{pop\_\allowbreak{}back()}从vector末尾删除元素：
+
+
+%%C050033 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{v1}\PYG{p}{.}\PYG{n}{pop\PYGZus{}back}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050034 li
+
+\item 用\texttt{insert()}在vector的任意位置插入元素：
+
+
+%%C050035 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{;}
+\PYG{n}{v2}\PYG{p}{.}\PYG{n}{insert}\PYG{p}{(}\PYG{n}{v2}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arr}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v2 = \PYGZob{} 1, 2, 3, 4, 5 \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050036 li
+
+\item 用\texttt{emplace\_\allowbreak{}back()}在vector末尾就地构造并添加元素：
+
+
+%%C050037 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{a}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v3}\PYG{p}{;}
+\PYG{n}{v3}\PYG{p}{.}\PYG{n}{emplace\PYGZus{}back}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{one}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v3 = \PYGZob{} foo\PYGZob{}1, 1.0, \PYGZdq{}one\PYGZdq{}\PYGZcb{} \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050038 li
+
+\item 用\texttt{emplace()}在vector的任意位置就地构造并插入元素：
+
+
+%%C050039 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{v3}\PYG{p}{.}\PYG{n}{emplace}\PYG{p}{(}\PYG{n}{v3}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{2.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v3 = \PYGZob{} foo\PYGZob{}2, 2.0, \PYGZdq{}two\PYGZdq{}\PYGZcb{}, foo\PYGZob{}1, 1.0, \PYGZdq{}one\PYGZdq{}\PYGZcb{} \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050040 p
+
+要修改vector的全部内容，可以使用下列任意一种方法，但不必局限于这些方法：
+
+
+%%C050041 li
+
+\begin{itemize}
+\item 用\texttt{operator=}从另一个vector赋值；这会替换容器的内容：
+
+
+%%C050042 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{v2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v1 = \PYGZob{} 1, 2, 3, 4, 5 \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050043 li
+
+\item 用\texttt{assign()}方法从由起始与终止迭代器定义的另一个序列赋值；这会替换容器的内容：
+
+
+%%C050044 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v3}\PYG{p}{;}
+\PYG{n}{v3}\PYG{p}{.}\PYG{n}{assign}\PYG{p}{(}\PYG{n}{arr}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arr}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v3 = \PYGZob{} 1, 2, 3, 4, 5 \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050045 li
+
+\item 用\texttt{swap()}方法交换两个vector的内容：
+
+
+%%C050046 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v4}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v5}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{v4}\PYG{p}{.}\PYG{n}{swap}\PYG{p}{(}\PYG{n}{v5}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v4 = \PYGZob{} 10, 20, 30 \PYGZcb{}, v5 = \PYGZob{} 1, 2, 3, 4, 5 \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050047 li
+
+\item 用\texttt{clear()}方法删除全部元素：
+
+
+%%C050048 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v6}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{v6}\PYG{p}{.}\PYG{n}{clear}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v6 = \PYGZob{} \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050049 li
+
+\item 用\texttt{erase()}方法删除一个或多个元素（该方法需要一个迭代器，或者一对用于指定vector中待删除元素范围的迭代器）：
+
+
+%%C050050 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v7}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{v7}\PYG{p}{.}\PYG{n}{erase}\PYG{p}{(}\PYG{n}{v7}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v7}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v7 = \PYGZob{} 1, 2, 5 \PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050051 p
+
+要取得vector中第一个元素的地址（通常是为了把vector的内容传给类C API），可以使用下列任意一种方法：
+
+
+%%C050052 li
+
+\begin{itemize}
+\item 使用\texttt{data()}方法，它返回指向第一个元素的指针，从而可以直接访问存放vector元素的底层连续内存；该方法自C++11起才可用：
+
+
+%%C050053 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{process}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* 完成某些处理 */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{process}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050054 li
+
+\item 取得第一个元素的地址：
+
+
+%%C050055 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{process}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{v}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050056 li
+
+\item 取得\texttt{front()}方法所引用元素的地址：
+
+
+%%C050057 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{process}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{v}\PYG{p}{.}\PYG{n}{front}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050058 li
+
+\item 取得\texttt{begin()}返回的迭代器所指向元素的地址：
+
+
+%%C050059 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{process}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{o}{*}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050060 h3
+
+\subsection{工作原理}
+
+
+%%C050061 p
+
+\texttt{std::\allowbreak{}vector}在设计上是最接近类C数组、也最能与类C数组互操作的C++容器。vector是长度可变的元素序列，其元素保证连续存放在内存中，因此可以方便地把vector的内容传给这样的类C函数：它接受指向数组元素的指针，通常还接受一个长度。用vector代替类C数组有许多好处，这些好处包括：
+
+
+%%C050062 li
+
+\begin{itemize}
+\item 开发者不需要直接管理内存，容器会在内部完成内存的分配、重新分配与释放。
+
+\end{itemize}
+
+
+%%C050063 note
+
+\begin{myNote}[tip]
+要注意，vector是用来存放对象实例的。如果需要存放指针，不要存原始指针，而应存智能指针；否则你就得自己管理被指对象的生命周期。
+\end{myNote}
+
+
+%%C050064 li
+
+\begin{itemize}
+\item 可以修改vector的长度。
+
+
+%%C050065 li
+
+\item 可以简单地赋值或拼接两个vector。
+
+
+%%C050066 li
+
+\item 可以直接比较两个vector。
+
+\end{itemize}
+
+
+%%C050067 p
+
+\texttt{vector}是非常高效的容器，各种实现都做了大量优化，而多数开发者用类C数组是做不到这些优化的。对其元素的随机访问以及在vector末尾的插入与删除都是常数时间的\textit{O(1)}操作（前提是不需要重新分配内存），而在其他任何位置的插入与删除则是线性时间的\textit{O(n)}操作。
+
+
+%%C050068 p
+
+与其他标准容器相比，vector有诸多好处：
+
+
+%%C050069 li
+
+\begin{itemize}
+\item 它与类C数组和类C API兼容；其他容器的内容（\texttt{std::\allowbreak{}array}除外）必须先复制到vector中，才能传给期望数组的类C API。
+
+
+%%C050070 li
+
+\item 在所有容器中，它对元素的访问速度最快。
+
+
+%%C050071 li
+
+\item 它在存放元素时没有逐元素的额外内存开销，因为元素像C数组那样存放在连续空间中（这与\texttt{list}这类需要额外指针指向其他元素的容器不同，也与需要哈希值的关联容器不同）。
+
+\end{itemize}
+
+
+%%C050072 p
+
+\texttt{std::\allowbreak{}vector}在语义上与类C数组非常相似，但长度可变。vector的长度可以增加，也可以减少。有两个属性用来描述vector的长度：
+
+
+%%C050073 li
+
+\begin{itemize}
+\item \textit{容量}（capacity）是指vector在不进行额外内存分配的情况下所能容纳的元素个数，由\texttt{capacity()}方法给出。
+
+
+%%C050074 li
+
+\item \textit{长度}（size）是指vector中实际的元素个数，由\texttt{size()}方法给出。
+
+\end{itemize}
+
+
+%%C050075 p
+
+长度总是小于或等于容量。当长度等于容量而又需要添加新元素时，就必须修改容量，好让vector有空间容纳更多元素。此时vector会分配一块新内存，把原有内容搬到新位置，然后释放先前分配的内存。这听起来很费时（确实如此），但各种实现都按指数方式增加容量，即每次需要改变容量时都把它翻倍。因此平均而言，vector的每个元素只需要搬动一次（原因是在容量增长时vector的所有元素都要搬动，但此后可以再添加同样多的元素而不再搬动，只要插入都发生在vector末尾）。
+
+
+%%C050076 p
+
+如果事先知道要往vector中插入多少个元素，可以先调用\texttt{reserve()}方法把容量增加到至少指定的数量（如果指定的数量小于当前容量，该方法什么也不做），然后再插入元素。
+
+
+%%C050077 p
+
+另一方面，如果需要释放多余的预留内存，可以调用\texttt{shrink\_\allowbreak{}to\_\allowbreak{}fit()}方法提出这一请求，但是否真正释放内存由具体实现决定。自C++11起，还有一种替代这个非强制方法的做法：与一个临时的空vector交换：
+
+
+%%C050078 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{.}\PYG{n}{swap}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v.size = 0, v.capacity = 0}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050079 p
+
+调用\texttt{clear()}方法只会删除vector中的全部元素，并不会释放任何内存。
+
+
+%%C050080 p
+
+要注意，vector还实现了其他类型容器所特有的操作：
+
+
+%%C050081 li
+
+\begin{itemize}
+\item \texttt{stack}：用\texttt{push\_\allowbreak{}back()}与\texttt{emplace\_\allowbreak{}back()}在末尾添加，用\texttt{pop\_\allowbreak{}back()}从末尾删除。要记住，\texttt{pop\_\allowbreak{}back()}并不返回被删除的最后一个元素；如有必要，你得显式访问它，例如在删除元素之前先用\texttt{back()}方法取得它。
+
+
+%%C050082 li
+
+\item \texttt{list}：用\texttt{insert()}与\texttt{emplace()}在序列中间添加元素，用\texttt{erase()}从序列的任意位置删除元素。
+
+\end{itemize}
+
+
+%%C050083 h3
+
+\subsection{更多内容}
+
+
+%%C050084 note
+
+\begin{myNote}
+对C++容器而言，经验法则是：除非有充分理由改用其他容器，否则就把\texttt{std::\allowbreak{}vector}作为默认容器。
+\end{myNote}
+
+
+%%C050085 h3
+
+\subsection{延伸阅读}
+
+
+%%C050086 li
+
+\begin{itemize}
+\item \textit{用bitset表示定长比特序列}
+
+
+%%C050087 li
+
+\item \textit{用vector<bool> 表示变长比特序列}
+
+\end{itemize}
+
+
+%%C050088 h2
+
+\section{用bitset表示定长比特序列}
+
+
+%%C050089 p
+
+开发者操作位标志是常有的事；这可能是因为他们要使用通常用C编写的操作系统API，而这些API以位标志的形式接受各种类型的参数（如选项或样式），也可能是因为他们所用的库做了类似的事情，或者仅仅是因为有些类型的问题天然适合用位标志来解决。也可以设想一些替代做法来避开比特与位运算，例如为每个选项/标志定义一个只含一个元素的数组，或者定义一个带成员和函数的结构体来建模这些位标志，但这些做法往往更复杂，而且在需要把表示位标志的数值传给函数时，你仍然得把数组或结构体转换成比特序列。为此，C++标准提供了用于定长比特序列的容器\texttt{std::\allowbreak{}bitset}。
+
+
+%%C050090 h3
+
+\subsection{准备工作}
+
+
+%%C050091 p
+
+阅读本案例前，你必须熟悉按位运算（与、或、异或、非以及移位）。
+
+
+%%C050092 p
+
+\texttt{bitset}类位于\texttt{<\allowbreak{}bitset>}头文件中的\texttt{std}命名空间里。bitset表示定长的比特序列，长度在编译期确定。为方便起见，本案例的所有示例都使用8位的bitset。
+
+
+%%C050093 h3
+
+\subsection{具体做法}
+
+
+%%C050094 p
+
+要构造\texttt{std::\allowbreak{}bitset}对象，可使用下列任意一个构造函数：
+
+
+%%C050095 li
+
+\begin{itemize}
+\item 全部比特都置0的空bitset：
+
+
+%%C050096 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{8}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{b1}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [0,0,0,0,0,0,0,0]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050097 li
+
+\item 由数值构造的bitset：
+
+
+%%C050098 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{8}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{b2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [0,0,0,0,1,0,1,0]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050099 li
+
+\item 由只含\texttt{‘0’}与\texttt{‘1’}的字符串构造的bitset：
+
+
+%%C050100 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{8}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{b3}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1010}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [0,0,0,0,1,0,1,0]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050101 li
+
+\item 由含任意两个代表\texttt{‘0’}与\texttt{‘1’}的字符的字符串构造的bitset；此时必须指出哪个字符代表0、哪个字符代表1：
+
+
+%%C050102 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{8}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{b4}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ooooxoxo}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{:}\PYG{o}{:}\PYG{n}{npos}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{o}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{x}\PYG{l+s+sc}{\PYGZsq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{c+c1}{// [0,0,0,0,1,0,1,0]}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050103 p
+
+要检测集合中单个比特或整个集合是否为特定取值，可使用下列任意一个方法：
+
+
+%%C050104 li
+
+\begin{itemize}
+\item \texttt{count()}：取得置1的比特个数：
+
+
+%%C050105 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{8}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{bs}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{has }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{bs}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ 1s}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050106 li
+
+\item \texttt{any()}：检查是否至少有一个比特置1：
+
+
+%%C050107 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{bs}\PYG{p}{.}\PYG{n}{any}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{has some 1s}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050108 li
+
+\item \texttt{all()}：检查是否所有比特都置1：
+
+
+%%C050109 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{bs}\PYG{p}{.}\PYG{n}{all}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{has only 1s}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050110 li
+
+\item \texttt{none()}：检查是否所有比特都置0：
+
+
+%%C050111 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{bs}\PYG{p}{.}\PYG{n}{none}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{has no 1s}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050112 li
+
+\item \texttt{test()}：检查单个比特的取值：
+
+
+%%C050113 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{bs}\PYG{p}{.}\PYG{n}{test}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{even}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050114 li
+
+\item \texttt{operator[]}：访问并检测单个比特：
+
+
+%%C050115 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{if}\PYG{p}{(}\PYG{o}{!}\PYG{n}{bs}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{even}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050116 p
+
+要修改bitset的内容，可使用下列任意一种方法：
+
+
+%%C050117 li
+
+\begin{itemize}
+\item 成员运算符\texttt{|=}、\texttt{\&=}、\texttt{\textasciicircum{}= }与\texttt{\textasciitilde{}}分别执行按位或、与、异或、非操作，或者使用非成员运算符\texttt{|}、\texttt{\&}与\texttt{\textasciicircum{}}：
+
+
+%%C050118 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{8}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{b1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [0,0,1,0,1,0,1,0]}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{8}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{b2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{11}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [0,0,0,0,1,0,1,1]}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b1}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{n}{b2}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// [0,0,1,0,1,0,1,1]}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b4}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b1}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{b2}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// [0,0,0,0,1,0,1,0]}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b5}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b1}\PYG{+w}{ }\PYG{o}{\PYGZca{}}\PYG{+w}{ }\PYG{n}{b2}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// [1,1,0,1,1,1,1,0]}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b6}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZti{}}\PYG{n}{b1}\PYG{p}{;}\PYG{+w}{           }\PYG{c+c1}{// [1,1,0,1,0,1,0,1]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050119 li
+
+\item 成员运算符\texttt{<<\allowbreak{}=}、\texttt{<<}、\texttt{>>\allowbreak{}=}、\texttt{>>}用于执行移位操作：
+
+
+%%C050120 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b7}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b1}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// [1,0,1,0,1,0,0,0]}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b8}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b1}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// [0,0,0,0,1,0,1,0]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050121 li
+
+\item \texttt{flip()}：把整个集合或单个比特从0翻转为1，或从1翻转为0：
+
+
+%%C050122 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{b1}\PYG{p}{.}\PYG{n}{flip}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{               }\PYG{c+c1}{// [1,1,0,1,0,1,0,1]}
+\PYG{n}{b1}\PYG{p}{.}\PYG{n}{flip}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{              }\PYG{c+c1}{// [1,1,0,1,0,1,0,0]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050123 li
+
+\item \texttt{set()}：把整个集合或单个比特改为\texttt{true}或指定的取值：
+
+
+%%C050124 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{b1}\PYG{p}{.}\PYG{n}{set}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// [1,1,0,1,0,1,0,1]}
+\PYG{n}{b1}\PYG{p}{.}\PYG{n}{set}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// [1,1,0,1,0,1,0,0]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050125 li
+
+\item \texttt{reset()}：把整个集合或单个比特改为false：
+
+
+%%C050126 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{b1}\PYG{p}{.}\PYG{n}{reset}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{             }\PYG{c+c1}{// [1,1,0,1,0,0,0,0]}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050127 p
+
+要把bitset转换为数值或字符串，可使用下列方法：
+
+
+%%C050128 li
+
+\begin{itemize}
+\item \texttt{to\_\allowbreak{}ulong()}与\texttt{to\_\allowbreak{}ullong()}：分别转换为\texttt{unsigned} \texttt{long}或\texttt{unsigned} \texttt{long long}：
+
+
+%%C050129 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{8}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{bs}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{n1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{bs}\PYG{p}{.}\PYG{n}{to\PYGZus{}ulong}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// n1 = 42UL}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{n2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{bs}\PYG{p}{.}\PYG{n}{to\PYGZus{}ullong}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// n2 = 42ULL}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050130 li
+
+\item \texttt{to\_\allowbreak{}string()}：转换为\texttt{std::\allowbreak{}basic\_\allowbreak{}string}；默认结果是由\texttt{‘0’}与\texttt{‘1’}组成的字符串，不过你可以为这两个取值指定别的字符：
+
+
+%%C050131 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{bs}\PYG{p}{.}\PYG{n}{to\PYGZus{}string}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// s1 = \PYGZdq{}00101010\PYGZdq{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{bs}\PYG{p}{.}\PYG{n}{to\PYGZus{}string}\PYG{p}{(}\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{o}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{x}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// s2 = \PYGZdq{}ooxoxoxo\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050132 h3
+
+\subsection{工作原理}
+
+
+%%C050133 p
+
+如果你用过C或类C API，那么很可能写过、至少见过通过操作比特来定义样式、选项或其他取值的代码。这类代码通常会涉及如下操作：
+
+%%C050134 li
+
+\begin{itemize}
+\item 定义位标志；它们可以是枚举、类中的静态常量，或是用C风格\texttt{\#define}引入的宏。通常还会有一个表示“无值”的标志（style、option等）。由于这些本就是位标志，它们的取值是2的幂。
+
+
+%%C050135 li
+
+\item 向集合（即一个数值）中添加和移除标志。添加位标志用按位或运算符（\texttt{value |= FLAG}），移除位标志用按位与运算符配合取反后的标志（\texttt{value \&= \textasciitilde{}FLAG}）。
+
+
+%%C050136 li
+
+\item 判断某个标志是否已加入集合（\myttbr{value \& FLAG == FLAG}）。
+
+
+%%C050137 li
+
+\item 以标志为实参调用函数。
+
+\end{itemize}
+
+
+%%C050138 p
+
+下面是一个简单示例：用标志定义控件的边框样式，该控件可以在左边、右边、上边或下边带边框，也可以是这些位置的任意组合，甚至完全无边框：
+
+
+%%C050139 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BORDER\PYGZus{}NONE   0x00}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BORDER\PYGZus{}LEFT   0x01}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BORDER\PYGZus{}TOP    0x02}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BORDER\PYGZus{}RIGHT  0x04}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BORDER\PYGZus{}BOTTOM 0x08}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{apply\PYGZus{}style}\PYG{p}{(}\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{style}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{style}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{BORDER\PYGZus{}BOTTOM}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* 做点什么 */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{c+c1}{// 初始化为无标志}
+\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{style}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{BORDER\PYGZus{}NONE}\PYG{p}{;}
+\PYG{c+c1}{// 设置一个标志}
+\PYG{n}{style}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{BORDER\PYGZus{}BOTTOM}\PYG{p}{;}
+\PYG{c+c1}{// 添加更多标志}
+\PYG{n}{style}\PYG{+w}{ }\PYG{o}{|}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{BORDER\PYGZus{}LEFT}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{n}{BORDER\PYGZus{}RIGHT}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{n}{BORDER\PYGZus{}TOP}\PYG{p}{;}
+\PYG{c+c1}{// 移除部分标志}
+\PYG{n}{style}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZti{}}\PYG{n}{BORDER\PYGZus{}LEFT}\PYG{p}{;}
+\PYG{n}{style}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZti{}}\PYG{n}{BORDER\PYGZus{}RIGHT}\PYG{p}{;}
+\PYG{c+c1}{// 测试某个标志是否已设置}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{(}\PYG{n}{style}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{BORDER\PYGZus{}BOTTOM}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{BORDER\PYGZus{}BOTTOM}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{c+c1}{// 把标志作为实参传给函数}
+\PYG{n}{apply\PYGZus{}style}\PYG{p}{(}\PYG{n}{style}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050140 p
+
+标准\texttt{std::\allowbreak{}bitset}类意在作为这种C风格位集合操作方式的C++替代品。它把位操作抽象为成员函数，让我们能写出更健壮、更安全的代码，不过我们仍需自行确认集合中每一位代表什么：
+
+
+%%C050141 li
+
+\begin{itemize}
+\item 添加和移除标志通过\texttt{set()}和\texttt{reset()}方法完成，它们按位置把某一位的值置为1或0（即\texttt{true}或\texttt{false}）；也可以用下标运算符达到同样目的。
+
+
+%%C050142 li
+
+\item 判断某一位是否已设置，用\texttt{test()}方法。
+
+
+%%C050143 li
+
+\item 从整数或字符串转换通过构造函数完成，而转换回整数或字符串则用成员函数完成，这样位集合的值就能用在需要整数的地方（例如函数的实参）。
+
+\end{itemize}
+
+
+%%C050144 p
+
+除了上述操作，\texttt{bitset}类还提供了其他方法，用于对位执行按位运算、移位、测试等，这些已在上一节中演示过。
+
+
+%%C050145 p
+
+从概念上讲，\texttt{std::\allowbreak{}bitset}是一个数值的表示形式，让你可以访问并修改其中的单个位。但在内部，位集合持有一个整数数组，并在其上执行位运算。位集合的大小不受数值类型大小的限制；它可以是任意值，只要求是编译期常量。
+
+
+%%C050146 p
+
+上一节中控制边框样式的例子，可以用\texttt{std::\allowbreak{}bitset}改写成下面这样：
+
+
+%%C050147 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{border\PYGZus{}flags}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{left}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{top}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{right}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{bottom}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{c+c1}{// 初始化为无标志}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{4}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{style}\PYG{p}{;}
+\PYG{c+c1}{// 设置一个标志}
+\PYG{n}{style}\PYG{p}{.}\PYG{n}{set}\PYG{p}{(}\PYG{n}{border\PYGZus{}flags}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bottom}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 设置更多标志}
+\PYG{n}{style}
+\PYG{+w}{  }\PYG{p}{.}\PYG{n}{set}\PYG{p}{(}\PYG{n}{border\PYGZus{}flags}\PYG{o}{:}\PYG{o}{:}\PYG{n}{left}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{.}\PYG{n}{set}\PYG{p}{(}\PYG{n}{border\PYGZus{}flags}\PYG{o}{:}\PYG{o}{:}\PYG{n}{top}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{.}\PYG{n}{set}\PYG{p}{(}\PYG{n}{border\PYGZus{}flags}\PYG{o}{:}\PYG{o}{:}\PYG{n}{right}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 移除部分标志}
+\PYG{n}{style}\PYG{p}{[}\PYG{n}{border\PYGZus{}flags}\PYG{o}{:}\PYG{o}{:}\PYG{n}{left}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{n}{style}\PYG{p}{.}\PYG{n}{reset}\PYG{p}{(}\PYG{n}{border\PYGZus{}flags}\PYG{o}{:}\PYG{o}{:}\PYG{n}{right}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 测试某个标志是否已设置}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{style}\PYG{p}{.}\PYG{n}{test}\PYG{p}{(}\PYG{n}{border\PYGZus{}flags}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bottom}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{c+c1}{// 把标志作为实参传给函数}
+\PYG{n}{apply\PYGZus{}style}\PYG{p}{(}\PYG{n}{style}\PYG{p}{.}\PYG{n}{to\PYGZus{}ulong}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050148 h3
+
+\subsection{更多内容}
+
+
+%%C050149 p
+
+位集合可以由整数创建，也可以用\texttt{to\_\allowbreak{}ulong()}或\texttt{to\_\allowbreak{}ullong()}方法把它的值转换为整数。不过，如果位集合的大小超过这些数值类型的大小，并且超出所请求数值类型范围的位中有任何一位被置为\texttt{1}，那么这些方法就会抛出\myttbr{std::\allowbreak{}overflow\_\allowbreak{}error}异常，因为该值无法用\texttt{unsigned long}或\texttt{unsigned long long}表示。要提取全部位，我们需要执行下面的操作，如下一段代码所示：
+
+
+%%C050150 li
+
+\begin{itemize}
+\item 清除超出\texttt{unsigned long}或\texttt{unsigned long long}大小的位。
+
+
+%%C050151 li
+
+\item 把值转换为\texttt{unsigned long}或\texttt{unsigned long long}。
+
+
+%%C050152 li
+
+\item 按\texttt{unsigned long}或\texttt{unsigned long long}的位数对位集合进行移位。
+
+
+%%C050153 li
+
+\item 重复这一过程，直到取回所有位。
+
+
+%%C050154 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{N}\PYG{o}{\PYGZgt{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{bitset\PYGZus{}to\PYGZus{}vectorulong}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{n}{N}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{bs}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{result}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{k}{sizeof}\PYG{p}{(}\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{mask}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{n}{N}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{)}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{totalbits}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{totalbits}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{N}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{bs}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{mask}\PYG{p}{)}\PYG{p}{.}\PYG{n}{to\PYGZus{}ulong}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{result}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{bs}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{totalbits}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{result}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{128}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{bs}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{       }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{128}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mh}{0xFEDC}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{96}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{|}
+\PYG{+w}{       }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{128}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mh}{0xBA98}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{64}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{|}
+\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{128}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mh}{0x7654}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{32}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{|}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bitset}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{128}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mh}{0x3210}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{bs}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{result}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{bitset\PYGZus{}to\PYGZus{}vectorulong}\PYG{p}{(}\PYG{n}{bs}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{result}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{hex}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050155 p
+
+如果\texttt{bitset}的大小在编译期无法确定，替代方案就是\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}，我们将在下一个案例中讨论。
+
+
+%%C050156 h3
+
+\subsection{延伸阅读}
+
+
+%%C050157 li
+
+\begin{itemize}
+\item \textit{用vector<bool> 表示变长比特序列}
+
+\end{itemize}
+
+
+%%C050158 h2
+
+\section{用vector<bool> 表示变长比特序列}
+
+
+%%C050159 p
+
+上一个案例中，我们了解了用\texttt{std::\allowbreak{}bitset}处理定长比特序列。但有时\texttt{std::\allowbreak{}bitset}并不是好选择，因为你在编译期并不知道位的数量，而仅仅定义一个位数足够大的集合也不是好主意，因为总有可能遇到这个数目其实不够大的情况。标准库为此提供的替代方案是\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}容器，它是\texttt{std::\allowbreak{}vector}的一个特化，并针对空间和速度做了优化，因为各实现并不真正存储布尔值，而是为每个元素存储单独的一位。
+
+
+%%C050160 p
+
+但也正因如此，\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}不满足标准容器或序列容器的要求，\myttbr{std::\allowbreak{}vector<\allowbreak{}bool>::\allowbreak{}iterator}也不满足前向迭代器的要求。结果就是，这个特化无法用于期望\texttt{vector}的泛型代码中。另一方面，它毕竟是个\texttt{vector}，接口与\texttt{std::\allowbreak{}bitset}不同，也不能被视为数值的二进制表示。既没有直接的办法由数值或字符串构造\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}，也没有直接的办法转换回数值或字符串。
+
+
+%%C050161 h3
+
+\subsection{准备工作}
+
+
+%%C050162 p
+
+本案例假定你已熟悉\texttt{std::\allowbreak{}vector}和\texttt{std::\allowbreak{}bitset}。如果你还没读过前面两个案例，\textit{把vector用作默认容器}和\textit{用bitset表示定长比特序列}，建议先读过再继续。
+
+
+%%C050163 p
+
+\texttt{vector<\allowbreak{}bool>}类位于\texttt{std}命名空间中，定义在\texttt{<\allowbreak{}vector>}头文件里。
+
+
+%%C050164 h3
+
+\subsection{具体做法}
+
+
+%%C050165 p
+
+要操作\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}，使用与\texttt{std::\allowbreak{}vector<\allowbreak{}T>}相同的方法即可，如下例所示：
+
+
+%%C050166 li
+
+\begin{itemize}
+\item 创建一个空\texttt{vector}：
+
+
+%%C050167 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// []}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050168 li
+
+\item 向\texttt{vector}中添加位：
+
+
+%%C050169 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// [1]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// [1, 1]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n+nb}{false}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [1, 1, 0]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n+nb}{false}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [1, 1, 0, 0]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// [1, 1, 0, 0, 1]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050170 li
+
+\item 设置各个位的值：
+
+
+%%C050171 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{bv}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// [1, 1, 0, 1, 1]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050172 li
+
+\item 使用泛型算法：
+
+
+%%C050173 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{count\PYGZus{}of\PYGZus{}ones}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{count}\PYG{p}{(}\PYG{n}{bv}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050174 li
+
+\item 从\texttt{vector}中移除位：
+
+
+%%C050175 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{erase}\PYG{p}{(}\PYG{n}{bv}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [1, 1, 1, 1]}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050176 h3
+
+\subsection{工作原理}
+
+
+%%C050177 p
+
+\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}并不是标准意义上的\texttt{vector}，因为它为节省空间而设计：每个元素只存储一位，而不是一个布尔值。因此，它的元素并不存放在连续序列中，也不能替代布尔数组。由此带来以下后果：
+
+
+%%C050178 li
+
+\begin{itemize}
+\item 下标运算符无法返回指向某个具体元素的引用，因为元素并非单独存储：
+
+
+%%C050179 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{;}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{resize}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{bit}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// 错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050180 li
+
+\item 出于与前面相同的原因，对迭代器解引用也无法得到指向\texttt{bool}的引用：
+
+
+%%C050181 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{bit}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{bv}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050182 li
+
+\item 无法保证不同线程能同时独立地操作各个位。
+
+
+%%C050183 li
+
+\item 该\texttt{vector}不能用于要求前向迭代器的算法，例如\texttt{std::\allowbreak{}search()}。
+
+
+%%C050184 li
+
+\item 在某些期望\texttt{std::\allowbreak{}vector<\allowbreak{}T>}的泛型代码中，如果该代码需要本列表中提到的任一操作，这个\texttt{vector}就无法使用。
+
+\end{itemize}
+
+
+%%C050185 note
+
+\begin{myNote}[tip]
+\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}的替代方案是\texttt{std::\allowbreak{}dequeu<\allowbreak{}bool>}，它是一个标准容器（双端队列），满足全部容器与迭代器要求，可用于所有标准算法。但它不具备\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}所提供的空间优化。
+\end{myNote}
+
+
+%%C050186 h3
+
+\subsection{更多内容}
+
+
+%%C050187 p
+
+\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}的接口与\texttt{std::\allowbreak{}bitset}差别很大。如果你希望以类似的方式写代码，可以在\texttt{std::\allowbreak{}vector<\allowbreak{}bool>}之上做一个包装器，尽可能让它看起来像\texttt{std::\allowbreak{}bitset}。下面的实现提供了与\texttt{std::\allowbreak{}bitset}中类似的成员：
+
+
+%%C050188 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{bitvector}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{bitvector}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{(}\PYG{n}{bv}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{any}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{all}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{none}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{!}\PYG{n}{any}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{count}\PYG{p}{(}\PYG{n}{bv}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{bitvector}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{bitvector}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{remove}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Index out of range}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{erase}\PYG{p}{(}\PYG{n}{bv}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{bitvector}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{set}\PYG{p}{(}\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{i}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n}{bv}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{bitvector}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{set}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Index out of range}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{bv}\PYG{p}{[}\PYG{n}{index}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{bitvector}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{reset}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{bitvector}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{reset}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Index out of range}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{bv}\PYG{p}{[}\PYG{n}{index}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{bitvector}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{flip}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{flip}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050189 p
+
+这只是一个基础实现，如果你要使用这样的包装器，应当再补充一些方法，例如位逻辑运算、移位，或许还有与流之间的读写等。不过，仅凭前面的代码，我们就可以写出下面的例子：
+
+
+%%C050190 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{bitvector}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{;}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{add}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{.}\PYG{n}{add}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{.}\PYG{n}{add}\PYG{p}{(}\PYG{n+nb}{false}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [1, 1, 0]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{add}\PYG{p}{(}\PYG{n+nb}{false}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                     }\PYG{c+c1}{// [1, 1, 0, 0]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{add}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                      }\PYG{c+c1}{// [1, 1, 0, 0, 1]}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{bv}\PYG{p}{.}\PYG{n}{any}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{has some 1s}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{bv}\PYG{p}{.}\PYG{n}{all}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{has only 1s}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{bv}\PYG{p}{.}\PYG{n}{none}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{has no 1s}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{has }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{bv}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ 1s}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{set}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                   }\PYG{c+c1}{// [1, 1, 1, 0, 1]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{set}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                          }\PYG{c+c1}{// [1, 1, 1, 1, 1]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{reset}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                       }\PYG{c+c1}{// [0, 1, 1, 1, 1]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{reset}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                        }\PYG{c+c1}{// [0, 0, 0, 0, 0]}
+\PYG{n}{bv}\PYG{p}{.}\PYG{n}{flip}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                         }\PYG{c+c1}{// [1, 1, 1, 1, 1]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050191 h3
+
+\subsection{延伸阅读}
+
+
+%%C050192 li
+
+\begin{itemize}
+\item \textit{把vector用作默认容器}
+
+
+%%C050193 li
+
+\item \textit{用bitset表示定长比特序列}
+
+\end{itemize}
+
+
+%%C050194 h2
+
+\section{在范围中查找元素}
+
+
+%%C050195 p
+
+在任何应用中，我们最常做的事情之一就是在数据中查找。因此，标准库提供了许多泛型算法，用于在标准容器或任何能用起始迭代器与尾后迭代器表示的范围中查找，这并不令人意外。本案例将介绍这些标准算法都有哪些，以及如何使用它们。
+
+
+%%C050196 h3
+
+\subsection{准备工作}
+
+
+%%C050197 p
+
+本案例的所有示例都使用\texttt{std::\allowbreak{}vector}，但这些算法都可用于由起始与尾后迭代器定义的范围，迭代器是输入迭代器还是前向迭代器取决于具体算法（关于各种迭代器类型的更多信息，参见案例\textit{编写自己的随机访问迭代器}）。所有这些算法都位于\texttt{std}命名空间，定义在\texttt{<\allowbreak{}algorithm>}头文件中。
+
+
+%%C050198 h3
+
+\subsection{具体做法}
+
+
+%%C050199 p
+
+下面列出可用于在范围中查找元素的算法：
+
+
+%%C050200 li
+
+\begin{itemize}
+\item 用\texttt{std::\allowbreak{}find()}在范围中查找某个值；该算法返回指向第一个等于该值的元素的迭代器：
+
+
+%%C050201 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{find}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050202 li
+
+\item 用\texttt{std::\allowbreak{}find\_\allowbreak{}if()}在范围中查找满足一元谓词条件的值；该算法返回指向第一个使谓词返回\texttt{true}的元素的迭代器：
+
+
+%%C050203 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{find\PYGZus{}if}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                       }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050204 li
+
+\item 用\myttbr{std::\allowbreak{}find\_\allowbreak{}if\_\allowbreak{}not()}在范围中查找不满足一元谓词条件的值；该算法返回指向第一个使谓词返回\texttt{false}的元素的迭代器：
+
+
+%%C050205 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{find\PYGZus{}if\PYGZus{}not}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZpc{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050206 li
+
+\item 用\myttbr{std::\allowbreak{}find\_\allowbreak{}first\_\allowbreak{}of()}在一个范围中查找另一个范围里任一值的首次出现；该算法返回指向被找到的第一个元素的迭代器：
+
+
+%%C050207 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{7}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{11}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{find\PYGZus{}first\PYGZus{}of}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                             }\PYG{n}{p}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{found }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{it}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ at index }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050208 li
+
+\item 用\texttt{std::\allowbreak{}find\_\allowbreak{}end()}查找某个元素子序列在范围中最后一次出现的位置；该算法返回指向范围中最后一个子序列首元素的迭代器：
+
+
+%%C050209 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{find\PYGZus{}end}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                        }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{found at index }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050210 li
+
+\item 用\texttt{std::\allowbreak{}search()}查找子序列在范围中第一次出现的位置；该算法返回指向范围中该子序列首元素的迭代器：
+
+
+%%C050211 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{The quick brown fox jumps over the lazy dog}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{word}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{over}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{search}\PYG{p}{(}\PYG{n}{text}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                      }\PYG{n}{word}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{word}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{found }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{word}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ at index }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{text}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050212 li
+
+\item 用\texttt{std::\allowbreak{}search()}配合\textit{searcher}（搜索器），即实现了某种搜索算法并满足一组预定义条件的类。\texttt{std::\allowbreak{}search()}的这个重载由C++17引入，可用的标准搜索器实现了\textit{Boyer-Moore}和\textit{Boyer-Moore-Horspool}字符串搜索算法：
+
+
+%%C050213 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{The quick brown fox jumps over the lazy dog}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{word}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{over}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{search}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{text}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}boyer\PYGZus{}moore\PYGZus{}searcher}\PYG{p}{(}\PYG{n}{word}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{word}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{found }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{word}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ at index }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{text}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050214 li
+
+\item 用\texttt{std::\allowbreak{}search\_\allowbreak{}n()}在范围中查找同一个值连续出现\textit{N}次的位置；该算法返回指向范围内所找到序列首元素的迭代器：
+
+
+%%C050215 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{search\PYGZus{}n}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{found at index }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050216 li
+
+\item 用\myttbr{std::\allowbreak{}adjacent\_\allowbreak{}find()}在范围中查找两个相等或满足某个二元谓词的相邻元素；该算法返回指向所找到的第一个元素的迭代器：
+
+
+%%C050217 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{adjacent\PYGZus{}find}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{found at index }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{adjacent\PYGZus{}find}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{IsPrime}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{IsPrime}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{found at index }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+%%C050218 li
+
+\item 用\myttbr{std::\allowbreak{}binary\_\allowbreak{}search()}判断某个元素是否存在于有序范围中；该算法返回一个布尔值，表示是否找到了该值：
+
+
+%%C050219 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{success}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{binary\PYGZus{}search}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{success}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{found}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050220 li
+
+\item 用\myttbr{std::\allowbreak{}lower\_\allowbreak{}bound()}查找范围中第一个不小于指定值的元素；该算法返回指向该元素的迭代器：
+
+
+%%C050221 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{lower\PYGZus{}bound}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{lower bound at }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050222 li
+
+\item 用\myttbr{std::\allowbreak{}upper\_\allowbreak{}bound()}查找范围中第一个大于指定值的元素；该算法返回指向该元素的迭代器：
+
+
+%%C050223 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{upper\PYGZus{}bound}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{upper bound at }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050224 li
+
+\item 用\myttbr{std::\allowbreak{}equal\_\allowbreak{}range()}查找范围中值等于指定值的子范围。该算法返回一对迭代器，分别指向该子范围的首元素和尾后位置；这两个迭代器等价于\myttbr{std::\allowbreak{}lower\_\allowbreak{}bound()}和\myttbr{std::\allowbreak{}upper\_\allowbreak{}bound()}返回的迭代器：
+
+
+%%C050225 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{bounds}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{equal\PYGZus{}range}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{range between indexes }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{bounds}\PYG{p}{.}\PYG{n}{first}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ and }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{bounds}\PYG{p}{.}\PYG{n}{second}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050226 h3
+
+\subsection{工作原理}
+
+
+%%C050227 p
+
+这些算法的工作方式非常相似：它们都以定义可搜索范围的迭代器作为参数，此外还有一些因算法而异的附加参数。除了返回布尔值的\texttt{std::\allowbreak{}search()}和返回一对迭代器的\myttbr{std::\allowbreak{}equal\_\allowbreak{}range()}之外，其余算法都返回指向所查找元素或子范围的迭代器。必须把这些迭代器与范围的尾后迭代器（也就是最后一个元素之后的位置）相比较，才能判断查找是否成功。如果查找没有找到元素或子范围，那么返回值就是尾后迭代器。
+
+
+%%C050228 p
+
+这些算法都有多个重载，但在\textit{具体做法}一节中，我们只看了一个特定的重载，用以说明该算法的用法。关于全部重载的完整参考，请查阅其他资料。
+
+
+%%C050229 p
+
+在上述所有示例中，我们用的都是常量迭代器，但这些算法对可变迭代器和反向迭代器的行为完全相同。由于它们以迭代器作为输入参数，因此既可用于标准容器、类C数组，也可用于任何表示序列并且提供迭代器的对象。
+
+
+%%C050230 p
+
+关于\myttbr{std::\allowbreak{}binary\_\allowbreak{}search()}算法需要特别说明一点：定义待搜索范围的迭代器参数至少要满足前向迭代器的要求。无论提供的迭代器是什么类型，比较次数总是与范围大小呈对数关系。但迭代器的递增次数有所不同：如果迭代器是随机访问迭代器，递增次数也是对数级的；如果不是随机访问迭代器，递增次数则是线性的，与范围大小成正比。
+
+
+%%C050231 p
+
+除\myttbr{std::\allowbreak{}find\_\allowbreak{}if\_\allowbreak{}not()}之外，这些算法在C++11之前就已经可用。不过，其中一些重载是在更晚的标准中引入的。例如\texttt{std::\allowbreak{}search()}在C++17中引入了若干个重载。其中一个重载的形式如下：
+
+
+%%C050232 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{ForwardIterator}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Searcher}\PYG{o}{\PYGZgt{}}
+\PYG{n}{ForwardIterator}\PYG{+w}{ }\PYG{n}{search}\PYG{p}{(}\PYG{n}{ForwardIterator}\PYG{+w}{ }\PYG{n}{first}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ForwardIterator}\PYG{+w}{ }\PYG{n}{last}\PYG{p}{,}
+\PYG{+w}{                       }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Searcher}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{searcher}\PYG{+w}{ }\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050233 p
+
+该重载用于查找由searcher函数对象所定义的模式的出现位置，标准为该函数对象提供了若干实现：
+
+
+%%C050234 li
+
+\begin{itemize}
+\item \texttt{default\_\allowbreak{}searcher}基本上把查找工作委托给标准的\texttt{std::\allowbreak{}search()}算法。
+
+
+%%C050235 li
+
+\item \myttbr{boyer\_\allowbreak{}moore\_\allowbreak{}searcher}实现了用于字符串查找的Boyer-Moore算法。
+
+
+%%C050236 li
+
+\item \myttbr{boyer\_\allowbreak{}moore\_\allowbreak{}horspool\_\allowbreak{}algorithm}实现了用于字符串查找的Boyer-Moore-Horspool算法。
+
+\end{itemize}
+
+
+%%C050237 h3
+
+\subsection{更多内容}
+
+
+%%C050238 p
+
+许多标准容器都提供了成员函数\texttt{find()}，用于在容器中查找元素。当存在这样的成员函数并且它满足你的需求时，应优先使用它而不是通用算法，因为这些成员函数是针对各容器的特点做过优化的。
+
+
+%%C050239 h3
+
+\subsection{延伸阅读}
+
+
+%%C050240 li
+
+\begin{itemize}
+\item \textit{把vector用作默认容器}
+
+
+%%C050241 li
+
+\item \textit{初始化范围}
+
+
+%%C050242 li
+
+\item \textit{在范围上做集合运算}
+
+
+%%C050243 li
+
+\item \textit{对范围排序}
+
+\end{itemize}
+
+
+%%C050244 h2
+
+\section{对范围排序}
+
+
+%%C050245 p
+
+上一个案例中，我们看了用于在范围中查找元素的标准通用算法。另一个我们经常需要执行的常见操作是对范围排序，因为许多例程（包括一些查找算法）都要求范围有序。标准库提供了若干用于对范围排序的通用算法，本案例将介绍这些算法是什么，以及如何使用它们。
+
+
+%%C050246 h3
+
+\subsection{准备工作}
+
+
+%%C050247 p
+
+排序类通用算法作用于由起始和结束迭代器定义的范围，因此可以排序标准容器、类C数组，以及任何表示序列并且提供随机迭代器的对象。不过，本案例中的所有示例都使用\texttt{std::\allowbreak{}vector}。
+
+
+%%C050248 h3
+
+\subsection{具体做法}
+
+
+%%C050249 p
+
+下面是用于对范围排序的标准通用算法列表：
+
+
+%%C050250 li
+
+\begin{itemize}
+\item 用\texttt{std::\allowbreak{}sort()}对范围排序：
+
+
+%%C050251 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{sort}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}1, 1, 2, 3, 5, 8, 13\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{sort}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{greater}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}13, 8, 5, 3, 2, 1 ,1\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050252 li
+
+\item 用\myttbr{std::\allowbreak{}stable\_\allowbreak{}sort()}对范围排序，但保持相等元素的原有顺序：
+
+
+%%C050253 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Task}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{priority}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{n}{Task}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Task}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{.}\PYG{n}{priority}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{.}\PYG{n}{priority}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{Task}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Task}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{.}\PYG{n}{priority}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{.}\PYG{n}{priority}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Task}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 1}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{40}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 2}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{25}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 3}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 4}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{80}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 5}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 6}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{stable\PYGZus{}sort}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// \PYGZob{}\PYGZob{} 10, \PYGZdq{}Task 1\PYGZdq{} \PYGZcb{},\PYGZob{} 10, \PYGZdq{}Task 4\PYGZdq{} \PYGZcb{},\PYGZob{} 10, \PYGZdq{}Task 6\PYGZdq{} \PYGZcb{},}
+\PYG{c+c1}{//  \PYGZob{} 25, \PYGZdq{}Task 3\PYGZdq{} \PYGZcb{},\PYGZob{} 40, \PYGZdq{}Task 2\PYGZdq{} \PYGZcb{},\PYGZob{} 80, \PYGZdq{}Task 5\PYGZdq{} \PYGZcb{}\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{stable\PYGZus{}sort}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{greater}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// \PYGZob{}\PYGZob{} 80, \PYGZdq{}Task 5\PYGZdq{} \PYGZcb{},\PYGZob{} 40, \PYGZdq{}Task 2\PYGZdq{} \PYGZcb{},\PYGZob{} 25, \PYGZdq{}Task 3\PYGZdq{} \PYGZcb{},}
+\PYG{c+c1}{//  \PYGZob{} 10, \PYGZdq{}Task 1\PYGZdq{} \PYGZcb{},\PYGZob{} 10, \PYGZdq{}Task 4\PYGZdq{} \PYGZcb{},\PYGZob{} 10, \PYGZdq{}Task 6\PYGZdq{} \PYGZcb{}\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050254 li
+
+\item 用\myttbr{std::\allowbreak{}partial\_\allowbreak{}sort()}对范围的一部分排序（其余元素处于未指定的顺序）：
+
+
+%%C050255 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{partial\PYGZus{}sort}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}1, 1, 2, 3, ?, ?, ?\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{partial\PYGZus{}sort}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{greater}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}13, 8, 5, 3, ?, ?, ?\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050256 li
+
+\item 用\myttbr{std::\allowbreak{}partial\_\allowbreak{}sort\_\allowbreak{}copy()}对范围的一部分排序，做法是把排好序的元素复制到第二个范围，原范围保持不变：
+
+
+%%C050257 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{vc}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{partial\PYGZus{}sort\PYGZus{}copy}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                       }\PYG{n}{vc}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{vc}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}3, 13, 5, 8, 1, 2, 1\PYGZcb{}}
+\PYG{c+c1}{// vc = \PYGZob{}1, 1, 2, 3, 5, 8, 13\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{partial\PYGZus{}sort\PYGZus{}copy}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                       }\PYG{n}{vc}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{vc}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{greater}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// vc = \PYGZob{}13, 8, 5, 3, 2, 1, 1\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050258 li
+
+\item 用\myttbr{std::\allowbreak{}nth\_\allowbreak{}element()}对范围排序，使第\textit{N}个元素就是范围完全排序后位于该位置的元素，它之前的元素都比它小，之后的元素都比它大，但并不保证这些元素之间也有序：
+
+
+%%C050259 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{nth\PYGZus{}element}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}1, 1, 2, 3, 5, 8, 13\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{nth\PYGZus{}element}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                 }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{greater}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}13, 8, 5, 3, 2, 1, 1\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050260 li
+
+\item 用\texttt{std::\allowbreak{}is\_\allowbreak{}sorted()}检查范围是否已排序：
+
+
+%%C050261 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sorted}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}sorted}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{sorted}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}sorted}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                        }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{greater}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050262 li
+
+\item 用\myttbr{std::\allowbreak{}is\_\allowbreak{}sorted\_\allowbreak{}until()}从范围开头找出已排序的子范围：
+
+
+%%C050263 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}sorted\PYGZus{}until}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{distance}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050264 h3
+
+\subsection{工作原理}
+
+
+%%C050265 p
+
+上述所有通用算法都以随机迭代器作为参数来定义要排序的范围，其中一些还额外接受一个输出范围。它们都有两个重载：一个要求提供用于比较元素的比较函数，另一个不要求，而是用\texttt{operator<}比较元素。
+
+
+%%C050266 p
+
+这些算法的工作方式如下：
+
+
+%%C050267 li
+
+\begin{itemize}
+\item \texttt{std::\allowbreak{}sort()}会修改输入范围，使其中元素按默认或指定的比较函数排序；实际使用的排序算法属于实现细节。
+
+
+%%C050268 li
+
+\item \myttbr{std::\allowbreak{}stable\_\allowbreak{}sort()}与\texttt{std::\allowbreak{}sort()}类似，但它保证保持相等元素的原有顺序。
+
+
+%%C050269 li
+
+\item \myttbr{std::\allowbreak{}partial\_\allowbreak{}sort()}接受三个迭代器参数，分别指示范围中的首元素、中间元素和末元素，其中中间元素可以是任意元素，并不限于自然处于中间位置的那个。结果是部分有序的范围：原范围（即\texttt{[first, last)}）中最小的\texttt{middle - first}个元素出现在\texttt{[first, middle)}子范围中，其余元素则以未指定的顺序位于\texttt{[middle, last)}子范围中。
+
+
+%%C050270 li
+
+\item \myttbr{std::\allowbreak{}partial\_\allowbreak{}sort\_\allowbreak{}copy()}并不像名字可能暗示的那样是\myttbr{std::\allowbreak{}partial\_\allowbreak{}copy()}的变体，而是\texttt{std::\allowbreak{}sort()}的变体。它把元素复制到输出范围，从而在不改动原范围的情况下完成排序。该算法的参数是输入范围和输出范围的首、末迭代器。如果输出范围的大小\textit{M}大于或等于输入范围的大小\textit{N}，则输入范围被完整排序并复制到输出范围：输出范围的前\textit{N}个元素被覆盖，最后的\textit{M - N}个元素保持不变。如果输出范围小于输入范围，则只有输入范围中前\textit{M}个已排序的元素被复制到输出范围（此时输出范围被完全覆盖）。
+
+
+%%C050271 li
+
+\item \myttbr{std::\allowbreak{}nth\_\allowbreak{}element()}本质上是一个选择算法的实现，这种算法用于找出范围中第\textit{N}小的元素。该算法接受三个迭代器参数，分别表示首元素、第\textit{N}个元素和末元素，并对范围做部分排序，使得排序之后第\textit{N}个元素就是范围完全排序后位于该位置的元素。在修改后的范围中，第\textit{n}个元素之前的全部\textit{N-1}个元素都比它小，而第\textit{n}个元素之后的所有元素都比它大。不过，这些其他元素的顺序并无保证。
+
+
+%%C050272 li
+
+\item \texttt{std::\allowbreak{}is\_\allowbreak{}sorted()}检查指定范围是否按指定的或默认的比较函数有序，并返回一个布尔值来表示结果。
+
+
+%%C050273 li
+
+\item \myttbr{std::\allowbreak{}is\_\allowbreak{}sorted\_\allowbreak{}until()}从开头起在指定范围中找出一个已排序的子范围，使用所提供的比较函数或默认的\texttt{operator<}。返回值是一个迭代器，表示该有序子范围的上界，它同时也是指向最后一个已排序元素之后位置的迭代器。
+
+\end{itemize}
+
+
+%%C050274 h3
+
+\subsection{更多内容}
+
+
+%%C050275 p
+
+有些标准容器（\texttt{std::\allowbreak{}list}和\texttt{std::\allowbreak{}forward\_\allowbreak{}list}）提供了成员函数\texttt{sort()}，它是针对这些容器优化过的。应优先使用这些成员函数，而不是通用标准算法\texttt{std::\allowbreak{}sort()}。
+
+
+%%C050276 h3
+
+\subsection{延伸阅读}
+
+
+%%C050277 li
+
+\begin{itemize}
+\item \textit{把vector用作默认容器}
+
+
+%%C050278 li
+
+\item \textit{初始化范围}
+
+
+%%C050279 li
+
+\item \textit{在范围上做集合运算}
+
+
+%%C050280 li
+
+\item \textit{在范围中查找元素}
+
+\end{itemize}
+
+
+%%C050281 h2
+
+\section{初始化范围}
+
+
+%%C050282 p
+
+在前面的案例中，我们探讨了用于在范围中查找元素和对范围排序的标准通用算法。算法库还提供了许多其他通用算法，其中有一些专门用于用值填充范围。本案例将介绍这些算法是什么，以及应当如何使用它们。
+
+
+%%C050283 h3
+
+\subsection{准备工作}
+
+
+%%C050284 p
+
+本案例中的所有示例都使用\texttt{std::\allowbreak{}vector}。不过，与所有通用算法一样，本案例将要介绍的算法都以迭代器来定义范围的边界，因此可用于任何标准容器、类C数组，或者定义了前向迭代器的、表示序列的自定义类型。
+
+
+%%C050285 p
+
+除了位于\texttt{<\allowbreak{}numeric>}头文件中的\texttt{std::\allowbreak{}iota()}之外，其余所有算法都在\texttt{<\allowbreak{}algorithm>}头文件中。
+
+
+%%C050286 h3
+
+\subsection{具体做法}
+
+
+%%C050287 p
+
+要给范围赋值，可以使用以下任意一种标准算法：
+
+
+%%C050288 li
+
+\begin{itemize}
+\item \texttt{std::\allowbreak{}fill()}为范围的所有元素赋同一个值；该范围由首、末两个前向迭代器定义：
+
+
+%%C050289 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fill}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}42, 42, 42, 42, 42\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050290 li
+
+\item \texttt{std::\allowbreak{}fill\_\allowbreak{}n()}为范围中若干元素赋值；该范围由首个前向迭代器和一个计数器定义，计数器指出应把指定值赋给多少个元素：
+
+
+%%C050291 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fill\PYGZus{}n}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}42, 42, 42, 42, 42, 0, 0, 0, 0, 0\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050292 li
+
+\item \texttt{std::\allowbreak{}generate()}把函数返回的值赋给范围中的元素；该范围由首、末两个前向迭代器定义，函数对范围中的每个元素调用一次：
+
+
+%%C050293 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{random\PYGZus{}device}\PYG{+w}{ }\PYG{n}{rd}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mt19937}\PYG{+w}{ }\PYG{n}{mt}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{rd}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{uniform\PYGZus{}int\PYGZus{}distribution}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{ud}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{generate}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{              }\PYG{p}{[}\PYG{o}{\PYGZam{}}\PYG{n}{ud}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{mt}\PYG{p}{]}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{ud}\PYG{p}{(}\PYG{n}{mt}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050294 li
+
+\item \texttt{std::\allowbreak{}generate\_\allowbreak{}n()}把函数返回的值赋给范围中若干元素；该范围由首个前向迭代器和一个计数器定义，计数器指出应把函数返回的值赋给多少个元素，而函数对每个元素调用一次：
+
+
+%%C050295 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{generate\PYGZus{}n}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{[}\PYG{o}{\PYGZam{}}\PYG{n}{i}\PYG{p}{]}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{i}\PYG{o}{*}\PYG{n}{i}\PYG{o}{+}\PYG{o}{+}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}1, 4, 9, 16, 25\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050296 li
+
+\item \texttt{std::\allowbreak{}iota()}为范围的元素依次赋递增的值；该范围由首、末两个前向迭代器定义，值从指定的初始值开始，通过前缀\texttt{operator++}递增：
+
+
+%%C050297 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{iota}\PYG{p}{(}\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v = \PYGZob{}1, 2, 3, 4, 5\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050298 h3
+
+\subsection{工作原理}
+
+
+%%C050299 p
+
+\texttt{std::\allowbreak{}fill()}和\texttt{std::\allowbreak{}fill\_\allowbreak{}n()}的工作方式类似，区别只在于范围的指定方式：前者用首、末迭代器，后者用首个迭代器和一个计数。第二个算法返回一个迭代器：如果计数大于零，它指向最后一个被赋值元素之后的位置；否则它指向范围的首元素。
+
+
+%%C050300 p
+
+\texttt{std::\allowbreak{}generate()}和\texttt{std::\allowbreak{}generate\_\allowbreak{}n()}也很相似，区别仅在于范围的指定方式。前者接受两个迭代器，定义范围的下界和上界；后者接受一个指向首元素的迭代器和一个计数。与\texttt{std::\allowbreak{}fill\_\allowbreak{}n()}一样，\texttt{std::\allowbreak{}generate\_\allowbreak{}n()}也返回一个迭代器：如果计数大于零，它指向最后一个被赋值元素之后的位置；否则它指向范围的首元素。这些算法对范围中的每个元素调用指定的函数，并把返回值赋给该元素。生成函数不接受任何参数，因此无法把元素的值传给它，因为这个函数是用来初始化范围元素的。如果你需要利用元素的值来生成新值，应当改用\texttt{std::\allowbreak{}transform()}。
+
+
+%%C050301 p
+
+\texttt{std::\allowbreak{}iota()}的名称来自APL编程语言中的ι（iota）函数；虽然它曾是初版STL的一部分，但直到C++11才被纳入标准库。该函数接受指向范围的首、末迭代器以及一个初始值，初始值被赋给范围的首元素，随后用于通过前缀\texttt{operator++}为范围中其余元素依次生成递增的值。
+
+
+%%C050302 h3
+
+\subsection{延伸阅读}
+
+
+%%C050303 li
+
+\begin{itemize}
+\item \textit{把vector用作默认容器}
+
+
+%%C050304 li
+
+\item \textit{对范围排序}
+
+
+%%C050305 li
+
+\item \textit{在范围上做集合运算}
+
+
+%%C050306 li
+
+\item \textit{在范围中查找元素}
+
+
+%%C050307 li
+
+\item \textit{生成伪随机数}案例，见\texttt{Chapter 2}\textit{数字与}\textit{字符串}
+
+
+%%C050308 li
+
+\item \textit{初始化伪随机数生成器内部状态的全部比特}案例，见\texttt{Chapter 2}\textit{数字与字符串}
+
+\end{itemize}
+
+
+%%C050309 h2
+
+\section{在范围上做集合运算}
+
+%%C050310 p
+
+标准库提供了若干用于集合运算的算法，它们可以对已排序的范围求并集、交集或差集。本案例将介绍这些算法分别是什么，以及它们如何工作。
+
+
+%%C050311 h3
+
+\subsection{准备工作}
+
+
+%%C050312 p
+
+集合运算的算法基于迭代器工作，这意味着它们可以用于标准容器、C风格的数组，或任何表示序列且提供输入迭代器的自定义类型。本案例中的所有示例都使用\texttt{std::\allowbreak{}vector}。
+
+
+%%C050313 p
+
+下一节中的所有示例都会使用以下范围：
+
+
+%%C050314 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v3}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050315 h3
+
+\subsection{具体做法}
+
+
+%%C050316 p
+
+使用以下用于集合运算的通用算法：
+
+
+%%C050317 li
+
+\begin{itemize}
+\item \texttt{std::\allowbreak{}set\_\allowbreak{}union()}用于计算两个范围的并集，并写入第三个范围：
+
+
+%%C050318 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{set\PYGZus{}union}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{               }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{               }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v3}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v3 = \PYGZob{}1, 2, 3, 3, 4, 4, 5, 6, 8\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050319 li
+
+\item \texttt{std::\allowbreak{}merge()}用于把两个范围的内容合并到第三个范围；它与\texttt{std::\allowbreak{}set\_\allowbreak{}union()}类似，区别在于它把输入范围的全部内容都复制到输出范围，而不只是复制它们的并集：
+
+
+%%C050320 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{merge}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{           }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{           }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v3}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v3 = \PYGZob{}1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 6, 8\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050321 li
+
+\item \myttbr{std::\allowbreak{}set\_\allowbreak{}intersection()}用于计算两个范围的交集，并写入第三个范围：
+
+
+%%C050322 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{set\PYGZus{}intersection}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                      }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v3}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v3 = \PYGZob{}2, 3, 4\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050323 li
+
+\item \myttbr{std::\allowbreak{}set\_\allowbreak{}difference()}用于计算两个范围的差集，并写入第三个范围；输出范围将包含第一个范围中那些未出现在第二个范围中的元素：
+
+
+%%C050324 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{set\PYGZus{}difference}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v3}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v3 = \PYGZob{}1, 4, 5\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050325 li
+
+\item \myttbr{std::\allowbreak{}set\_\allowbreak{}symmetric\_\allowbreak{}difference()}用于计算两个范围的双向差集，并写入第三个范围；输出范围将包含那些出现在任一输入范围中、但只出现在其中一个范围中的元素：
+
+
+%%C050326 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{set\PYGZus{}symmetric\PYGZus{}difference}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                              }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                              }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v3}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v3 = \PYGZob{}1, 3, 4, 5, 6, 8\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050327 li
+
+\item \texttt{std::\allowbreak{}includes()}用于检查一个范围是否为另一个范围的子集（即它的全部元素也都出现在另一个范围中）：
+
+
+%%C050328 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v3}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v4}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{includes}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                        }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// i1 = false}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{includes}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                        }\PYG{n}{v3}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v3}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// i2 = true}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{includes}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                        }\PYG{n}{v4}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v4}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// i3 = true}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050329 h3
+
+\subsection{工作原理}
+
+
+%%C050330 p
+
+所有由两个输入范围产生一个新范围的集合运算，实际上都具有相同的接口，工作方式也类似：
+
+
+%%C050331 li
+
+\begin{itemize}
+\item 它们接受两个输入范围，每个范围由一个首输入迭代器和一个尾输入迭代器界定。
+
+
+%%C050332 li
+
+\item 它们接受一个指向输出范围的输出迭代器，元素将被插入到该范围中。
+
+
+%%C050333 li
+
+\item 它们有一个重载版本，额外接受一个表示比较二元函数对象的参数；当第一个参数小于第二个参数时，该对象必须返回\texttt{true}。如果没有指定比较函数对象，则使用\texttt{operator<}。
+
+
+%%C050334 li
+
+\item 它们返回一个迭代器，指向所构造的输出范围的末尾之后的位置。
+
+
+%%C050335 li
+
+\item 输入范围必须已经排序，排序依据是\texttt{operator<}还是所提供的比较函数，取决于所使用的重载版本。
+
+
+%%C050336 li
+
+\item 输出范围不得与两个输入范围中的任何一个重叠。
+
+\end{itemize}
+
+
+%%C050337 p
+
+下面用\texttt{Task}这个POD类型的vector再举几个例子，来演示它们的工作方式；该类型在前面某个案例中也用过：
+
+
+%%C050338 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Task}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{priority}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{n}{Task}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Task}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{.}\PYG{n}{priority}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{.}\PYG{n}{priority}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{Task}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Task}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{.}\PYG{n}{priority}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{.}\PYG{n}{priority}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Task}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 1.1}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 1.2}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 1.3}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 1.4}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 1.5}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{50}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 1.6}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Task}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 2.1}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 2.2}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 2.3}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 2.4}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{40}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 2.5}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{50}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Task 2.6}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050339 p
+
+每种算法产生输出范围的具体方式如下：
+
+
+%%C050340 li
+
+\begin{itemize}
+\item \texttt{std::\allowbreak{}set\_\allowbreak{}union()}把一个或两个输入范围中出现的所有元素都复制到输出范围，产生一个新的已排序范围。如果某个元素在第一个范围中出现\textit{M}次、在第二个范围中出现\textit{N}次，那么第一个范围中的全部\textit{M}个元素将按它们原有的顺序被复制到输出范围；随后，若\textit{N > M}，则把第二个范围中的\textit{N-M}个元素复制到输出范围，否则复制0个元素：
+
+
+%%C050341 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Task}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v3}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{set\PYGZus{}union}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{               }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{               }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v3}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v3 = \PYGZob{}\PYGZob{}10, \PYGZdq{}Task 1.1\PYGZdq{}\PYGZcb{},\PYGZob{}20, \PYGZdq{}Task 1.2\PYGZdq{}\PYGZcb{},\PYGZob{}20, \PYGZdq{}Task 1.3\PYGZdq{}\PYGZcb{},}
+\PYG{c+c1}{//       \PYGZob{}20, \PYGZdq{}Task 1.4\PYGZdq{}\PYGZcb{},\PYGZob{}30, \PYGZdq{}Task 1.5\PYGZdq{}\PYGZcb{},\PYGZob{}30, \PYGZdq{}Task 2.3\PYGZdq{}\PYGZcb{},}
+\PYG{c+c1}{//       \PYGZob{}30, \PYGZdq{}Task 2.4\PYGZdq{}\PYGZcb{},\PYGZob{}40, \PYGZdq{}Task 2.5\PYGZdq{}\PYGZcb{},\PYGZob{}50, \PYGZdq{}Task 1.6\PYGZdq{}\PYGZcb{}\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050342 li
+
+\item \texttt{std::\allowbreak{}merge()}把两个输入范围中的全部元素都复制到输出范围，产生一个按比较函数排序的新范围：
+
+
+%%C050343 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Task}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v4}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{merge}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{           }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{           }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v4}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v4 = \PYGZob{}\PYGZob{}10, \PYGZdq{}Task 1.1\PYGZdq{}\PYGZcb{},\PYGZob{}20, \PYGZdq{}Task 1.2\PYGZdq{}\PYGZcb{},\PYGZob{}20, \PYGZdq{}Task 1.3\PYGZdq{}\PYGZcb{},}
+\PYG{c+c1}{//       \PYGZob{}20, \PYGZdq{}Task 1.4\PYGZdq{}\PYGZcb{},\PYGZob{}20, \PYGZdq{}Task 2.1\PYGZdq{}\PYGZcb{},\PYGZob{}30, \PYGZdq{}Task 1.5\PYGZdq{}\PYGZcb{},}
+\PYG{c+c1}{//       \PYGZob{}30, \PYGZdq{}Task 2.2\PYGZdq{}\PYGZcb{},\PYGZob{}30, \PYGZdq{}Task 2.3\PYGZdq{}\PYGZcb{},\PYGZob{}30, \PYGZdq{}Task 2.4\PYGZdq{}\PYGZcb{},}
+\PYG{c+c1}{//       \PYGZob{}40, \PYGZdq{}Task 2.5\PYGZdq{}\PYGZcb{},\PYGZob{}50, \PYGZdq{}Task 1.6\PYGZdq{}\PYGZcb{},\PYGZob{}50, \PYGZdq{}Task 2.6\PYGZdq{}\PYGZcb{}\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050344 li
+
+\item \myttbr{std::\allowbreak{}set\_\allowbreak{}intersection()}把所有同时出现在两个输入范围中的元素复制到输出范围，产生一个按比较函数排序的新范围：
+
+
+%%C050345 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Task}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v5}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{set\PYGZus{}intersection}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                      }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v5}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v5 = \PYGZob{}\PYGZob{}20, \PYGZdq{}Task 1.2\PYGZdq{}\PYGZcb{},\PYGZob{}30, \PYGZdq{}Task 1.5\PYGZdq{}\PYGZcb{},\PYGZob{}50, \PYGZdq{}Task 1.6\PYGZdq{}\PYGZcb{}\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050346 li
+
+\item \myttbr{std::\allowbreak{}set\_\allowbreak{}difference()}把第一个输入范围中所有未出现在第二个输入范围中的元素复制到输出范围。对于在两个范围中都出现的等价元素，适用以下规则：如果某个元素在第一个范围中出现\textit{M}次、在第二个范围中出现\textit{N}次，且\textit{M > N}，则它会被复制\textit{M-N}次；否则不会被复制：
+
+
+%%C050347 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Task}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v6}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{set\PYGZus{}difference}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v6}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v6 = \PYGZob{}\PYGZob{}10, \PYGZdq{}Task 1.1\PYGZdq{}\PYGZcb{},\PYGZob{}20, \PYGZdq{}Task 1.3\PYGZdq{}\PYGZcb{},\PYGZob{}20, \PYGZdq{}Task 1.4\PYGZdq{}\PYGZcb{}\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050348 li
+
+\item \myttbr{std::\allowbreak{}set\_\allowbreak{}symmetric\_\allowbreak{}difference()}把出现在两个输入范围之一、但不同时出现在两者中的全部元素复制到输出范围。如果某个元素在第一个范围中出现\textit{M}次、在第二个范围中出现\textit{N}次，那么当\textit{M > N,}时，第一个范围中该元素的最后\textit{M-N}个会被复制到输出范围；否则，第二个范围中该元素的最后\textit{N-M}个会被复制到输出范围：
+
+
+%%C050349 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Task}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v7}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{set\PYGZus{}symmetric\PYGZus{}difference}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                              }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                              }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v7}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v7 = \PYGZob{}\PYGZob{}10, \PYGZdq{}Task 1.1\PYGZdq{}\PYGZcb{},\PYGZob{}20, \PYGZdq{}Task 1.3\PYGZdq{}\PYGZcb{},\PYGZob{}20, \PYGZdq{}Task 1.4\PYGZdq{}\PYGZcb{}}
+\PYG{c+c1}{//       \PYGZob{}30, \PYGZdq{}Task 2.3\PYGZdq{}\PYGZcb{},\PYGZob{}30, \PYGZdq{}Task 2.4\PYGZdq{}\PYGZcb{},\PYGZob{}40, \PYGZdq{}Task 2.5\PYGZdq{}\PYGZcb{}\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050350 p
+
+另一方面，\texttt{std::\allowbreak{}includes()}不产生输出范围，它只检查第二个范围是否被包含在第一个范围中。如果第二个范围为空，或其全部元素都包含在第一个范围中，它返回\texttt{true}，否则返回\texttt{false}。它同样有两个重载版本，其中一个用于指定比较二元函数对象。
+
+
+%%C050351 h3
+
+\subsection{延伸阅读}
+
+
+%%C050352 li
+
+\begin{itemize}
+\item \textit{把vector用作默认容器}
+
+
+%%C050353 li
+
+\item \textit{对范围排序}
+
+
+%%C050354 li
+
+\item \textit{初始化范围}
+
+
+%%C050355 li
+
+\item \textit{用迭代器向容器插入新元素}
+
+
+%%C050356 li
+
+\item \textit{在范围中查找元素}
+
+\end{itemize}
+
+
+%%C050357 h2
+
+\section{用迭代器向容器插入新元素}
+
+
+%%C050358 p
+
+使用容器时，经常需要在开头、末尾或中间的某个位置插入新元素。有些算法（例如上一个案例\textit{在范围上做集合运算}中看到的那些）需要一个指向目标范围的迭代器来插入元素，但如果只是传入一个像\texttt{begin()}返回的那样的迭代器，它不会执行插入，而是覆盖容器中已有的元素。此外，也无法用\texttt{end()}返回的迭代器在末尾插入。为了完成这类操作，标准库提供了一组迭代器和迭代器适配器来实现这些场景。
+
+
+%%C050359 h3
+
+\subsection{准备工作}
+
+
+%%C050360 p
+
+本案例讨论的迭代器和适配器位于\texttt{<\allowbreak{}iterator>}头文件的\texttt{std}命名空间中。如果包含了\texttt{<\allowbreak{}algorithm>}这类头文件，就不必再显式包含\texttt{<\allowbreak{}iterator>}。
+
+
+%%C050361 h3
+
+\subsection{具体做法}
+
+
+%%C050362 p
+
+使用以下迭代器适配器向容器插入新元素：
+
+
+%%C050363 li
+
+\begin{itemize}
+\item \myttbr{std::\allowbreak{}back\_\allowbreak{}inserter()}用于在末尾插入元素，适用于具有\texttt{push\_\allowbreak{}back()}方法的容器：
+
+
+%%C050364 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fill\PYGZus{}n}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v=\PYGZob{}1,2,3,4,5,0,0,0\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050365 li
+
+\item \myttbr{std::\allowbreak{}front\_\allowbreak{}inserter()}用于在开头插入元素，适用于具有\texttt{push\_\allowbreak{}front()}方法的容器：
+
+
+%%C050366 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{list}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fill\PYGZus{}n}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{front\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{l}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// l=\PYGZob{}0,0,0,1,2,3,4,5\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050367 li
+
+\item \texttt{std::\allowbreak{}inserter()}用于在容器中的任意位置插入元素，适用于具有\texttt{insert()}方法的容器：
+
+
+%%C050368 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fill\PYGZus{}n}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{inserter}\PYG{p}{(}\PYG{n}{v}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v=\PYGZob{}0,0,0,1,2,3,4,5\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{list}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{advance}\PYG{p}{(}\PYG{n}{it}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fill\PYGZus{}n}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{inserter}\PYG{p}{(}\PYG{n}{l}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// l=\PYGZob{}1,2,3,0,0,0,4,5\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050369 h3
+
+\subsection{工作原理}
+
+
+%%C050370 p
+
+\myttbr{std::\allowbreak{}back\_\allowbreak{}inserter()}、\myttbr{std::\allowbreak{}front\_\allowbreak{}inserter()}和\texttt{std::\allowbreak{}inserter()}都是辅助函数，分别创建\myttbr{std::\allowbreak{}back\_\allowbreak{}insert\_\allowbreak{}iterator}、\myttbr{std::\allowbreak{}front\_\allowbreak{}insert\_\allowbreak{}iterator}和\myttbr{std::\allowbreak{}insert\_\allowbreak{}iterator}类型的迭代器适配器。它们都是输出迭代器，会向构造它们时所指定的容器追加、前插或插入元素。对这些迭代器做自增和解引用不会产生任何效果。不过，在赋值时，这些迭代器会调用容器中的以下方法：
+
+
+%%C050371 li
+
+\begin{itemize}
+\item \myttbr{std::\allowbreak{}back\_\allowbreak{}insterter\_\allowbreak{}iterator}调用\texttt{push\_\allowbreak{}back()}
+
+
+%%C050372 li
+
+\item \myttbr{std::\allowbreak{}front\_\allowbreak{}inserter\_\allowbreak{}iterator}调用\texttt{push\_\allowbreak{}front()}
+
+
+%%C050373 li
+
+\item \myttbr{std::\allowbreak{}insert\_\allowbreak{}iterator}调用\texttt{insert()}
+
+\end{itemize}
+
+
+%%C050374 p
+
+下面是\myttbr{std::\allowbreak{}back\_\allowbreak{}inserter\_\allowbreak{}iterator}的过度简化实现：
+
+
+%%C050375 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{back\PYGZus{}insert\PYGZus{}iterator}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{back\PYGZus{}insert\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{C}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{T}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value\PYGZus{}type}\PYG{+w}{ }\PYG{n}{V}\PYG{p}{;}
+\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{back\PYGZus{}insert\PYGZus{}iterator}\PYG{p}{(}\PYG{+w}{ }\PYG{n}{C}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{n}{container}\PYG{p}{(}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{c}\PYG{+w}{ }\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{V}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{val}\PYG{+w}{ }\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{container}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{+w}{ }\PYG{n}{val}\PYG{+w}{ }\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{*}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{+}\PYG{o}{+}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{+}\PYG{o}{+}\PYG{p}{(}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{C}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{container}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050376 p
+
+由于赋值运算符的工作方式，这些迭代器只能用于部分标准容器：
+
+
+%%C050377 li
+
+\begin{itemize}
+\item \myttbr{std::\allowbreak{}back\_\allowbreak{}insert\_\allowbreak{}iterator}可用于\texttt{std::\allowbreak{}vector}、\texttt{std::\allowbreak{}list}、\texttt{std::\allowbreak{}deque}和\texttt{std::\allowbreak{}basic\_\allowbreak{}string}。
+
+
+%%C050378 li
+
+\item \myttbr{std::\allowbreak{}front\_\allowbreak{}insert\_\allowbreak{}iterator}可用于\texttt{std::\allowbreak{}list}、\texttt{std::\allowbreak{}forward\_\allowbreak{}list}和\texttt{std:\allowbreak{}deque}。
+
+
+%%C050379 li
+
+\item \myttbr{std::\allowbreak{}insert\_\allowbreak{}iterator}可用于所有标准容器。
+
+\end{itemize}
+
+
+%%C050380 p
+
+下面的例子在一个\texttt{std::\allowbreak{}vector}的开头插入三个值为0的元素：
+
+
+%%C050381 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fill\PYGZus{}n}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{inserter}\PYG{p}{(}\PYG{n}{v}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// v=\PYGZob{}0,0,0,1,2,3,4,5\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050382 p
+
+\texttt{std::\allowbreak{}inserter()}适配器接受两个参数：容器，以及元素应当被插入的那个位置的迭代器。对容器调用\texttt{insert()}之后，\myttbr{std::\allowbreak{}insert\_\allowbreak{}iterator}会自增该迭代器，这样在再次赋值时就能把新元素插入到下一个位置。这个迭代器适配器的赋值运算符实现如下：
+
+
+%%C050383 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{V}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{iter}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{container}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{insert}\PYG{p}{(}\PYG{n}{iter}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{o}{+}\PYG{o}{+}\PYG{n}{iter}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{*}\PYG{k}{this}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050384 h3
+
+\subsection{更多内容}
+
+
+%%C050385 p
+
+这些迭代器适配器的用途是与那些向范围中插入多个元素的算法或函数配合使用。当然，它们也可以用来插入单个元素，但这属于反模式，因为在这种情况下直接调用\texttt{push\_\allowbreak{}back()}、\texttt{push\_\allowbreak{}front()}或\texttt{insert()}要简单直观得多。下面的写法应当避免：
+
+
+%%C050386 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{o}{*}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v = \PYGZob{}1,2,3,4,5,6\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}insert\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}
+\PYG{o}{*}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{7}\PYG{p}{;}\PYG{+w}{                    }\PYG{c+c1}{// v = \PYGZob{}1,2,3,4,5,6,7\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050387 h3
+
+\subsection{延伸阅读}
+
+
+%%C050388 li
+
+\begin{itemize}
+\item \textit{在范围上做集合运算}
+
+\end{itemize}
+
+
+%%C050389 h2
+
+\section{编写自己的随机访问迭代器}
+
+
+%%C050390 p
+
+在第一章中，我们看到了如何通过实现迭代器，以及返回指向自定义范围首元素和尾后元素的\texttt{begin()}与\texttt{end}自由函数，让自定义类型支持基于范围的for循环。你可能已经注意到，那个案例中给出的最小迭代器实现并不满足标准迭代器的要求，因为它既不能复制构造和赋值，也不能自增。本案例将在那个例子的基础上，展示如何创建一个满足全部要求的随机访问迭代器。
+
+
+%%C050391 h3
+
+\subsection{准备工作}
+
+
+%%C050392 p
+
+阅读本案例之前，你应当了解标准所定义的迭代器类型，以及它们之间的区别。关于这些要求的良好概述见http://\allowbreak{}www.\allowbreak{}cplusplus.\allowbreak{}com/\allowbreak{}reference/\allowbreak{}iterator/\allowbreak{}。
+
+
+%%C050393 p
+
+为了演示如何编写随机访问迭代器，我们考虑\texttt{dummy\_\allowbreak{}array}类的一个变体，该类曾用于\texttt{Chapter 1}、\textit{现代C++语言核心特性}中的\textit{让自定义类型支持基于范围的for循环}案例。这是一个非常简单的数组概念，除了作为演示迭代器的代码基础之外没有实际用途：
+
+
+%%C050394 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Type}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{SIZE}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{dummy\PYGZus{}array}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{Type}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{[}\PYG{n}{SIZE}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{Type}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{SIZE}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{[}\PYG{n}{index}\PYG{p}{]}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{index out of range}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{n}{Type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{SIZE}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{[}\PYG{n}{index}\PYG{p}{]}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{index out of range}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{SIZE}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050395 p
+
+下一节中出现的全部代码——迭代器类、\texttt{typedef}，以及\texttt{begin()}和\texttt{end()}函数——都将成为这个类的一部分。
+
+
+%%C050396 h3
+
+\subsection{具体做法}
+
+
+%%C050397 p
+
+要为上一节所示的\texttt{dummy\_\allowbreak{}array}类提供可变的和常量的随机访问迭代器，请在类中加入以下成员：
+
+
+%%C050398 li
+
+\begin{itemize}
+\item 一个迭代器类模板，以元素类型和数组大小作为参数。该类必须具有以下用于定义标准同义词的公有\texttt{typedef}：
+
+
+%%C050399 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{dummy\PYGZus{}array\PYGZus{}iterator}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{+w}{            }\PYG{n}{self\PYGZus{}type}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{                               }\PYG{n}{value\PYGZus{}type}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{                              }\PYG{n}{reference}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{                              }\PYG{n}{pointer}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{random\PYGZus{}access\PYGZus{}iterator\PYGZus{}tag}\PYG{+w}{ }\PYG{n}{iterator\PYGZus{}category}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{k+kt}{ptrdiff\PYGZus{}t}\PYG{+w}{                       }\PYG{n}{difference\PYGZus{}type}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050400 li
+
+\item 迭代器类的私有成员：一个指向数组数据的指针，以及一个表示数组当前索引的值：
+
+
+%%C050401 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{   }\PYG{n}{pointer}\PYG{+w}{ }\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\PYG{+w}{   }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{index}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050402 li
+
+\item 迭代器类的私有方法，用于检查两个迭代器实例是否指向同一份数组数据：
+
+
+%%C050403 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{compatible}\PYG{p}{(}\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050404 li
+
+\item 迭代器类的显式构造函数：
+
+
+%%C050405 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{   }\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{p}{(}\PYG{n}{pointer}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{,}
+\PYG{+w}{                                 }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}
+\PYG{+w}{     }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{(}\PYG{n}{ptr}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{(}\PYG{n}{index}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050406 li
+
+\item 满足所有迭代器通用要求的迭代器类成员：可复制构造、可复制赋值、可析构、可前置自增、可后置自增。在本实现中，后置自增运算符基于前置自增运算符实现，以避免代码重复：
+
+%%C050407 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{p}{(}\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{o}\PYG{p}{)}
+\PYG{+w}{   }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{o}\PYG{p}{)}
+\PYG{+w}{   }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{o}{\PYGZti{}}\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{+}\PYG{o}{+}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{   }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Size}\PYG{p}{)}
+\PYG{+w}{     }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Iterator cannot be incremented past}
+\PYG{+w}{                              }\PYG{n}{the}\PYG{+w}{ }\PYG{n}{end}\PYG{+w}{ }\PYG{n}{of}\PYG{+w}{ }\PYG{n}{range}\PYG{p}{.}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{);}
+\PYG{+w}{  }\PYG{o}{+}\PYG{o}{+}\PYG{n}{index}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{+}\PYG{o}{+}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{n}{tmp}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{+w}{  }\PYG{o}{+}\PYG{o}{+}\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{tmp}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050408 li
+
+\item 满足输入迭代器要求的迭代器类成员：相等与不相等测试，以及可按右值解引用：
+
+
+%%C050409 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{assert}\PYG{p}{(}\PYG{n}{compatible}\PYG{p}{(}\PYG{n}{other}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{index}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{index}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{!}\PYG{p}{(}\PYG{o}{*}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{reference}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{*}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bad\PYGZus{}function\PYGZus{}call}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{p}{(}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{reference}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bad\PYGZus{}function\PYGZus{}call}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{p}{(}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050410 li
+
+\item 满足前向迭代器要求的迭代器类成员：可默认构造：
+
+
+%%C050411 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050412 li
+
+\item 满足双向迭代器要求的迭代器类成员：可自减：
+
+
+%%C050413 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Iterator cannot be decremented}
+\PYG{+w}{                             }\PYG{n}{past}\PYG{+w}{ }\PYG{n}{the}\PYG{+w}{ }\PYG{n}{end}\PYG{+w}{ }\PYG{n}{of}\PYG{+w}{ }\PYG{n}{range}\PYG{p}{.}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{);}
+\PYG{+w}{  }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{index}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{(}\PYG{k+kt}{int}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{n}{tmp}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{+w}{  }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{tmp}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050414 li
+
+\item 满足随机访问迭代器要求的迭代器类成员：算术加与减、可与其他迭代器做不相等比较、复合赋值，以及可按偏移解引用：
+
+
+%%C050415 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{+}\PYG{p}{(}\PYG{n}{difference\PYGZus{}type}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{n}{tmp}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{tmp}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZhy{}}\PYG{p}{(}\PYG{n}{difference\PYGZus{}type}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{n}{tmp}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{tmp}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{difference\PYGZus{}type}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZhy{}}\PYG{p}{(}\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{assert}\PYG{p}{(}\PYG{n}{compatible}\PYG{p}{(}\PYG{n}{other}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{index}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{assert}\PYG{p}{(}\PYG{n}{compatible}\PYG{p}{(}\PYG{n}{other}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{index}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{other}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{p}{(}\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{!}\PYG{p}{(}\PYG{n}{other}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZgt{}}\PYG{o}{=}\PYG{p}{(}\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{!}\PYG{p}{(}\PYG{o}{*}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{+}\PYG{o}{=}\PYG{p}{(}\PYG{n}{difference\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{offset}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{o}{|}\PYG{o}{|}\PYG{+w}{ }\PYG{n}{index}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{offset}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{Size}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Iterator cannot be incremented}
+\PYG{+w}{                             }\PYG{n}{past}\PYG{+w}{ }\PYG{n}{the}\PYG{+w}{ }\PYG{n}{end}\PYG{+w}{ }\PYG{n}{of}\PYG{+w}{ }\PYG{n}{range}\PYG{p}{.}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{);}
+\PYG{+w}{  }\PYG{n}{index}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{self\PYGZus{}type}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZhy{}}\PYG{o}{=}\PYG{p}{(}\PYG{n}{difference\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{offset}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{value\PYGZus{}type}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{difference\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{*}\PYG{p}{(}\PYG{o}{*}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{value\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{difference\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{*}\PYG{p}{(}\PYG{o}{*}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050416 li
+
+\item 为\texttt{dummy\_\allowbreak{}array}类添加\texttt{typedef}，作为可变迭代器与常量迭代器的同义词：
+
+
+%%C050417 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{   }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{Type}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{SIZE}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{           }\PYG{n}{iterator}\PYG{p}{;}
+\PYG{+w}{   }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{Type}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{SIZE}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{           }\PYG{n}{constant\PYGZus{}iterator}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050418 li
+
+\item 为\texttt{dummy\_\allowbreak{}array}类添加公有的\texttt{begin()}与\texttt{end()}函数，返回指向数组中首元素与末尾后一位置的迭代器：
+
+
+%%C050419 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{iterator}\PYG{+w}{ }\PYG{n+nf}{begin}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{iterator}\PYG{p}{(}\PYG{n}{data}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{iterator}\PYG{+w}{ }\PYG{n+nf}{end}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{iterator}\PYG{p}{(}\PYG{n}{data}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{SIZE}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{constant\PYGZus{}iterator}\PYG{+w}{ }\PYG{n+nf}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{constant\PYGZus{}iterator}\PYG{p}{(}\PYG{n}{data}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{constant\PYGZus{}iterator}\PYG{+w}{ }\PYG{n+nf}{end}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{constant\PYGZus{}iterator}\PYG{p}{(}\PYG{n}{data}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{SIZE}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050420 h3
+
+\subsection{工作原理}
+
+
+%%C050421 p
+
+标准库定义了五类迭代器：
+
+
+%%C050422 li
+
+\begin{itemize}
+\item \textit{输入迭代器}：这是最简单的一类，只保证对单遍顺序算法有效。递增之后，先前的副本可能失效。
+
+
+%%C050423 li
+
+\item \textit{输出迭代器}：基本上就是可用于向所指元素写入的输入迭代器。
+
+
+%%C050424 li
+
+\item \textit{前向迭代器}：可以读写所指元素的数据。它们满足输入迭代器的要求，此外还必须可默认构造，并且支持多遍场景而不会使先前的副本失效。
+
+
+%%C050425 li
+
+\item \textit{双向迭代器}：是在前向迭代器的基础上还支持自减的迭代器，因此可以双向移动。
+
+
+%%C050426 li
+
+\item \textit{随机访问迭代器}：支持以常量时间访问容器中的任意元素。它们实现了双向迭代器的全部要求，此外还支持算术运算\texttt{+}与\texttt{-}、复合赋值\texttt{+=}与\texttt{-\allowbreak{}=}、用\texttt{<}、\texttt{<\allowbreak{}=}、\texttt{>}、\texttt{>\allowbreak{}=}与其他迭代器比较，以及偏移解引用运算符。
+
+\end{itemize}
+
+
+%%C050427 p
+
+同时实现了输出迭代器要求的前向迭代器、双向迭代器与随机访问迭代器，称为\textit{可变迭代器}。
+
+
+%%C050428 p
+
+上一节介绍了如何实现随机访问迭代器，并逐步过了一遍每一类迭代器的要求（因为每一类迭代器都包含前一类的全部要求，并在此基础上增加新要求）。这个迭代器类模板同时用于常量迭代器与可变迭代器，我们还为它定义了两个同义词，分别叫\texttt{iterator}与\texttt{constant\_\allowbreak{}iterator}。
+
+
+%%C050429 p
+
+实现内部的迭代器类模板之后，我们还定义了\texttt{begin()}与\texttt{end()}成员函数，分别返回指向数组中首元素与末尾后一位置的迭代器。这些方法有多个重载，根据\texttt{dummy\_\allowbreak{}array}类实例是可变还是常量，返回可变迭代器或常量迭代器。
+
+
+%%C050430 p
+
+有了\texttt{dummy\_\allowbreak{}array}类及其迭代器的这套实现，就可以编写下面这些示例。更多示例请参阅本书附带的源代码：
+
+
+%%C050431 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{n}{a}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{;}
+\PYG{n}{a}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{;}
+\PYG{n}{a}\PYG{p}{[}\PYG{l+m+mi}{2}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{transform}\PYG{p}{(}\PYG{n}{a}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{               }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{lp}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{ca}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{ca}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{lp}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Tag}\PYG{o}{\PYGZgt{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{ta}\PYG{p}{;}
+\PYG{n}{ta}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{Tag}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Tag 1}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ta}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{Tag}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Tag 2}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ta}\PYG{p}{[}\PYG{l+m+mi}{2}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{Tag}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Tag 3}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ta}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ta}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{it}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{id}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{name}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050432 h3
+
+\subsection{更多内容}
+
+
+%%C050433 p
+
+除了\texttt{begin()}与\texttt{end()}，容器还可以有诸如\texttt{cbegin()}/\texttt{cend()}（用于常量迭代器）、\texttt{rbegin()}/\texttt{rend()}（用于可变逆向迭代器）以及\texttt{crbegin()}/ \texttt{crend()}（用于常量逆向迭代器）这样的附加方法。这部分实现留给你作为练习。
+
+
+%%C050434 p
+
+另一方面，在现代C++中，这些返回首、尾迭代器的函数不必是成员函数，也可以作为非成员函数提供。事实上，这正是下一个案例\textit{用非成员函数访问容器}的主题。
+
+
+%%C050435 h3
+
+\subsection{延伸阅读}
+
+
+%%C050436 li
+
+\begin{itemize}
+\item \textit{让自定义类型支持基于范围的for循环}案例，见\texttt{Chapter 1}\textit{现代C++} \textit{语言核心特性}
+
+
+%%C050437 li
+
+\item \textit{创建类型别名与别名模板}案例，见\texttt{Chapter 1}\textit{现代C++} \textit{语言核心特性}
+
+\end{itemize}
+
+
+%%C050438 h2
+
+\section{用非成员函数访问容器}
+
+
+%%C050439 p
+
+标准容器提供\texttt{begin()}与\texttt{end()}成员函数，用于获取指向容器首元素与末尾后一位置的迭代器。这类函数实际上共有四组。除了\texttt{begin()}/\texttt{end()}，容器还提供\texttt{cbegin()}/\texttt{cend()}以返回常量迭代器、\texttt{rbegin()}/\texttt{rend()}以返回可变逆向迭代器，以及\texttt{crbegin()}/\texttt{crend()}以返回常量逆向迭代器。在C++11/C++14中，这些函数都有对应的非成员版本，可用于标准容器、类C数组，以及任何对它们做了特化的自定义类型。C++17又新增了更多非成员函数：\texttt{std::\allowbreak{}data()}——返回指向容纳容器元素的内存块的指针；\texttt{std::\allowbreak{}size()}——返回容器或数组的大小；\texttt{std::\allowbreak{}empty()}——返回给定容器是否为空。这些非成员函数是为泛型代码准备的，但也可以用在代码中的任何位置。
+
+
+%%C050440 h3
+
+\subsection{准备工作}
+
+
+%%C050441 p
+
+本案例将以我们在上一个案例\textit{编写自己的随机访问迭代器}中实现的\texttt{dummy\_\allowbreak{}array}类及其迭代器为例。继续往下读之前，你应该先读那个案例。
+
+
+%%C050442 p
+
+非成员的\texttt{begin()}/\texttt{end()}函数及其他变体，还有非成员的\texttt{data()}、\texttt{size()}与\texttt{empty()}，都位于\texttt{std}命名空间的\texttt{<\allowbreak{}iterator>}头文件中，而下列任一显著文件都会隐式包含该头文件：\texttt{<\allowbreak{}array>}、\texttt{<\allowbreak{}deque>}、\texttt{<\allowbreak{}forward\_\allowbreak{}list>}、\texttt{<\allowbreak{}list>}、\texttt{<\allowbreak{}map>}、\texttt{<\allowbreak{}regex>}、\texttt{<\allowbreak{}set>}、\texttt{<\allowbreak{}string>}、\texttt{<\allowbreak{}unordered\_\allowbreak{}map>}、\texttt{<\allowbreak{}unordered\_\allowbreak{}set>}与\texttt{<\allowbreak{}vector>}。
+
+
+%%C050443 p
+
+本案例将讨论\texttt{std::\allowbreak{}begin()}/\texttt{std::\allowbreak{}end()}函数，但所讲的内容同样适用于其他函数：\texttt{std::\allowbreak{}cbegin()}/\texttt{std::\allowbreak{}cend()}、\texttt{std::\allowbreak{}rbegin()}/\texttt{std::\allowbreak{}rend()}，以及\texttt{std::\allowbreak{}crbegin()}/\texttt{std::\allowbreak{}crend()}。
+
+
+%%C050444 h3
+
+\subsection{具体做法}
+
+
+%%C050445 p
+
+可以把非成员的\texttt{std::\allowbreak{}begin()}/\texttt{std::\allowbreak{}end()}函数及其他变体，以及\texttt{std::\allowbreak{}data()}、\texttt{std::\allowbreak{}size()}与\texttt{std::\allowbreak{}empty()}用于以下对象：
+
+
+%%C050446 li
+
+\begin{itemize}
+\item 标准容器：
+
+
+%%C050447 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sv1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{size}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// sv1 = 5}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{ev1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{empty}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// ev1 = false}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{dv1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{data}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// dv1 = v1.data()}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{i}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{copy}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cbegin}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cend}\PYG{p}{(}\PYG{n}{v1}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{          }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{v2}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050448 li
+
+\item （类C）数组：
+
+
+%%C050449 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{[}\PYG{l+m+mi}{5}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{pos}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{find\PYGZus{}if}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{crbegin}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{crend}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                        }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZpc{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sa}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{size}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// sa = 5}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{ea}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{empty}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// ea = false}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{da}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{data}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// da = a}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050450 li
+
+\item 提供了对应成员函数\texttt{begin()}/\texttt{end()}、\texttt{data()}、\texttt{empty()}或\texttt{size()}的自定义类型：
+
+
+%%C050451 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{sa}\PYG{p}{;}
+\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{sb}\PYG{p}{;}
+\PYG{n}{sa}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{n}{sa}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{2}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{n}{sa}\PYG{p}{[}\PYG{l+m+mi}{2}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{3}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{n}{sa}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{4}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{n}{sa}\PYG{p}{[}\PYG{l+m+mi}{4}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{5}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{transform}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{sa}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{sa}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{sb}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{stoi}\PYG{p}{(}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// sb = [1, 2, 3, 4, 5]}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sa\PYGZus{}size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{size}\PYG{p}{(}\PYG{n}{sa}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// sa\PYGZus{}size = 5}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050452 li
+
+\item 容器类型未知的泛型代码：
+
+
+%%C050453 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{process}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{C}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{for\PYGZus{}each}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{l}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{process}\PYG{p}{(}\PYG{n}{l}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// std::vector\PYGZlt{}int\PYGZgt{}}
+\PYG{n}{process}\PYG{p}{(}\PYG{n}{l}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// int[5]}
+\PYG{n}{process}\PYG{p}{(}\PYG{n}{l}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{sa}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// dummy\PYGZus{}array\PYGZlt{}std::string, 5\PYGZgt{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050454 h3
+
+\subsection{工作原理}
+
+
+%%C050455 p
+
+这些非成员函数是在标准的不同版本中引入的，但在C++17中全都被改为返回\texttt{constexpr auto}：
+
+
+%%C050456 li
+
+\begin{itemize}
+\item C++11中的\texttt{std::\allowbreak{}begin()}与\texttt{std::\allowbreak{}end()}
+
+
+%%C050457 li
+
+\item C++14中的\texttt{std::\allowbreak{}cbegin()}/\texttt{std::\allowbreak{}cend()}、\texttt{std::\allowbreak{}rbegin()}/\texttt{std::\allowbreak{}rend()}，以及\texttt{std::\allowbreak{}crbegin()}/\texttt{std::\allowbreak{}crend()}
+
+
+%%C050458 li
+
+\item C++17中的\texttt{std::\allowbreak{}data()}、\texttt{std::\allowbreak{}size()}与\texttt{std::\allowbreak{}empty()}
+
+\end{itemize}
+
+
+%%C050459 p
+
+\texttt{begin()}/\texttt{end()}这一族函数对容器类和数组都有重载，它们所做的全部工作如下：
+
+
+%%C050460 li
+
+\begin{itemize}
+\item 对容器，返回调用容器对应成员函数的结果。
+
+
+%%C050461 li
+
+\item 对数组，返回指向数组首元素或末尾后一位置的指针。
+
+\end{itemize}
+
+
+%%C050462 p
+
+\texttt{std::\allowbreak{}begin()}/\texttt{std::\allowbreak{}end()}实际的典型实现如下：
+
+
+%%C050463 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{begin}\PYG{p}{(}\PYG{n}{C}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{decltype}\PYG{p}{(}\PYG{n}{c}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{end}\PYG{p}{(}\PYG{n}{C}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{decltype}\PYG{p}{(}\PYG{n}{c}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{N}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{begin}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{array}\PYG{p}{)}\PYG{p}{[}\PYG{n}{N}\PYG{p}{]}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{array}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{N}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{begin}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{array}\PYG{p}{)}\PYG{p}{[}\PYG{n}{N}\PYG{p}{]}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{array}\PYG{o}{+}\PYG{n}{N}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050464 p
+
+对于那些没有对应\texttt{begin()}/\texttt{end()}成员但依然可以迭代的容器，可以提供自定义特化。标准库实际上就为\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list}与\texttt{std::\allowbreak{}valarray}提供了这样的特化。
+
+
+%%C050465 note
+
+\begin{myNote}[tip]
+特化必须定义在原始类模板或函数模板所在的同一命名空间中。因此，若要特化\texttt{std::\allowbreak{}begin()}/\texttt{std::\allowbreak{}end()}这一对函数中的任意一个，就必须在\texttt{std}命名空间中进行。
+\end{myNote}
+
+
+%%C050466 p
+
+C++17引入的其他用于容器访问的非成员函数也有若干个重载：
+
+
+%%C050467 li
+
+\begin{itemize}
+\item \texttt{std::\allowbreak{}data()}有多个重载：对类\texttt{C}返回\texttt{c.\allowbreak{}data()}，对数组返回\texttt{array}，对\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list<\allowbreak{}T>}返回\texttt{il.\allowbreak{}begin()}。
+
+
+%%C050468 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{(}\PYG{n}{C}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{decltype}\PYG{p}{(}\PYG{n}{c}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{C}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{decltype}\PYG{p}{(}\PYG{n}{c}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{N}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{array}\PYG{p}{)}\PYG{p}{[}\PYG{n}{N}\PYG{p}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{array}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{E}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{E}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{initializer\PYGZus{}list}\PYG{o}{\PYGZlt{}}\PYG{n}{E}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{il}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{il}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050469 li
+
+\item \texttt{std::\allowbreak{}size()}有两个重载：对类\texttt{C}返回\texttt{c.\allowbreak{}size()}，对数组返回大小\texttt{N}。
+
+
+%%C050470 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{C}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{decltype}\PYG{p}{(}\PYG{n}{c}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{N}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{array}\PYG{p}{)}\PYG{p}{[}\PYG{n}{N}\PYG{p}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{N}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C050471 li
+
+\item \texttt{std::\allowbreak{}empty()}有多个重载：对类\texttt{C}返回\texttt{c.\allowbreak{}empty()}，对数组返回\texttt{false}，对\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list<\allowbreak{}T>}返回\texttt{il.\allowbreak{}size() == 0}。
+
+
+%%C050472 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{empty}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{C}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{decltype}\PYG{p}{(}\PYG{n}{c}\PYG{p}{.}\PYG{n}{empty}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{.}\PYG{n}{empty}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{N}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{empty}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{array}\PYG{p}{)}\PYG{p}{[}\PYG{n}{N}\PYG{p}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{E}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{empty}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{initializer\PYGZus{}list}\PYG{o}{\PYGZlt{}}\PYG{n}{E}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{il}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{il}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C050473 h3
+
+\subsection{更多内容}
+
+
+%%C050474 p
+
+这些非成员函数主要面向容器类型未知的模板代码，此处的容器可以是标准容器、类C数组或自定义类型。使用这些函数的非成员版本，可以写出更简单、代码量更少且适用于所有这些容器类型的实现。
+
+
+%%C050475 p
+
+不过，这些函数的用途并不、也不应局限于泛型代码。虽然这更多是个人偏好问题，但保持一致的用法、在代码中处处使用它们，可以成为一个好习惯。这些方法的实现都很轻量，编译器多半会把它们内联，这意味着与使用对应的成员函数相比，根本不会有任何额外开销。
+
+
+%%C050476 h3
+
+\subsection{延伸阅读}
+
+
+%%C050477 li
+
+\begin{itemize}
+\item \textit{编写自己的随机访问迭代器}
+
+\end{itemize}

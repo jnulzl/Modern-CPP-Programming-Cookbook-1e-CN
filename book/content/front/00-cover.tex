@@ -1,0 +1,9 @@
+% book/content/front/00-cover.tex —— 封面（原书封面，整页出血）
+% 图片由 work/tools/cover_orig.py 从 images/cover-src.png 补齐到页面比例：
+% 原图 0.813，页面 0.762，上下各延展一点平坦底色，不做任何裁切，也不缩放变形。
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+  \node[anchor=center, inner sep=0pt] at (current page.center)
+    {\includegraphics[width=\paperwidth, height=\paperheight]{images/cover-orig.png}};
+\end{tikzpicture}%
+\clearpage

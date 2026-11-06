@@ -1,0 +1,2749 @@
+%%C090001 p
+
+本章包含以下案例：
+
+
+%%C090002 li
+
+\begin{itemize}
+\item 用异常处理错误
+
+
+%%C090003 li
+
+\item 对不抛异常的函数使用noexcept
+
+
+%%C090004 li
+
+\item 确保程序的常量正确性
+
+
+%%C090005 li
+
+\item 创建编译期常量表达式
+
+
+%%C090006 li
+
+\item 进行正确的类型转换
+
+
+%%C090007 li
+
+\item 用unique\_ptr独占内存资源
+
+
+%%C090008 li
+
+\item 用shared\_ptr共享内存资源
+
+
+%%C090009 li
+
+\item 实现移动语义
+
+\end{itemize}
+
+
+%%C090010 h2
+
+\section{引言}
+
+
+%%C090011 p
+
+在选择以性能和灵活性为核心目标的面向对象编程语言时，C++往往是首选。现代C++提供了右值引用、移动语义、智能指针等语言与库特性。再配合异常处理、常量正确性、类型安全转换、资源分配与释放方面的良好实践，开发者就能写出更好、更健壮、性能更高的代码。本章的案例涵盖了上述全部主题。
+
+
+%%C090012 h2
+
+\section{用异常处理错误}
+
+
+%%C090013 p
+
+异常是对程序运行过程中可能出现的异常情况做出的响应。它能把控制流转移到程序的另一部分。异常是一种让错误处理更简单、更健壮的机制，相比之下，返回错误码会让代码变得十分复杂和凌乱。本案例将讨论与抛出和处理异常相关的一些关键问题。
+
+
+%%C090014 h3
+
+\subsection{准备工作}
+
+
+%%C090015 p
+
+本案例假定你已经了解抛出与捕获异常机制的基本知识。
+
+
+%%C090016 h3
+
+\subsection{具体做法}
+
+
+%%C090017 p
+
+处理异常时请遵循以下做法：
+
+
+%%C090018 li
+
+\begin{itemize}
+\item 按值抛出异常：
+
+
+%%C090019 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{throwing\PYGZus{}func}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{system\PYGZus{}error}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}error\PYGZus{}code}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{errc}\PYG{o}{:}\PYG{o}{:}\PYG{n}{timed\PYGZus{}out}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090020 li
+
+\item 按引用捕获异常，多数情况下按常量引用捕获：
+
+
+%%C090021 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{try}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{throwing\PYGZus{}func}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exception}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{.}\PYG{n}{what}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090022 li
+
+\item 从类层次中捕获多个异常时，catch语句要按从最派生类到基类的顺序排列：
+
+
+%%C090023 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{exprint}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exception}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{.}\PYG{n}{what}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{try}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{throwing\PYGZus{}func}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{system\PYGZus{}error}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{exprint}\PYG{p}{(}\PYG{n}{e}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{exprint}\PYG{p}{(}\PYG{n}{e}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exception}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{exprint}\PYG{p}{(}\PYG{n}{e}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090024 li
+
+\item 用\texttt{catch(...)}捕获所有异常，无论其类型为何：
+
+
+%%C090025 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{try}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{throwing\PYGZus{}func}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exception}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{.}\PYG{n}{what}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{unknown exception}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090026 li
+
+\item 用\texttt{throw;}重新抛出当前异常。这样可以针对多个异常只写一个异常处理函数。如果想隐藏异常的原始抛出位置，就抛出异常对象（例如\texttt{throw e;}）：
+
+
+%%C090027 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{handle\PYGZus{}exception}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{try}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 抛出当前异常}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{logic\PYGZus{}error}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* ... */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* ... */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exception}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* ... */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{try}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{throwing\PYGZus{}func}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{handle\PYGZus{}exception}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C090028 h3
+
+\subsection{工作原理}
+
+
+%%C090029 p
+
+大多数函数都必须表明其执行是成功还是失败。这可以用不同的方式实现。一种可能的做法是：返回错误码（成功时用特殊值），以指明失败的具体原因。这种做法的变体是返回布尔值，只表明成功或失败。另一种选择是返回无效对象或空指针。无论采用哪种方式，都必须检查函数的返回值。这会让现实中的代码变得复杂、凌乱、难以阅读和维护。而且，检查函数返回值的过程总是要执行，不管函数是成功还是失败。相比之下，异常只在函数失败时才抛出和处理，而失败应当比成功执行少见得多。实际上，这可能使代码比返回并检查错误码的代码更快。
+
+
+%%C090030 note
+
+\begin{myNote}[tip]
+异常与错误码并非互斥。异常只应当用于在异常情况下转移控制流，而不应当用于控制程序的数据流。
+\end{myNote}
+
+
+%%C090031 p
+
+类的构造函数是不返回任何值的特殊函数。它们的职责是构造对象，但一旦失败，就无法通过返回值表明这一点。构造函数应当用异常来表示失败。再配合\textit{资源获取即初始化（RAII）}惯用法，就能确保在任何情况下都安全地获取和释放资源。另一方面，异常不允许离开析构函数。一旦发生这种情况，程序会通过调用\texttt{std::\allowbreak{}terminate()}而异常终止。因为另一个异常的发生而在栈展开过程中被调用的析构函数就属于这种情况。异常发生时，栈会从抛出异常的位置一直展开到处理异常的代码块，这一过程会析构所有这些栈帧中的所有局部对象。
+
+
+%%C090032 p
+
+如果在此过程中被析构的某个对象的析构函数抛出异常，就应当开始另一次栈展开，而这会与已经进行中的栈展开冲突。因此程序会异常终止。
+
+
+%%C090033 note
+
+\begin{myNote}[tip]
+在构造函数与析构函数中处理异常的经验法则如下：
+
+\par\noindent 用异常表示构造函数中发生的错误。
+
+\par\noindent 不要抛出异常，也不要让异常离开析构函数。
+\end{myNote}
+
+
+%%C090034 p
+
+可以抛出任何类型的异常。不过多数情况下应当抛出临时对象，并按常量引用捕获异常。以下是抛出异常的一些准则：
+
+
+%%C090035 li
+
+\begin{itemize}
+\item 优先抛出标准异常，或者从\texttt{std::\allowbreak{}exception}或其他标准异常派生的自定义异常。
+
+
+%%C090036 li
+
+\item 避免抛出内置类型的异常，例如整数。
+
+
+%%C090037 li
+
+\item 使用自带异常层次的库或框架时，优先抛出该层次中的异常，或者从中派生的自定义异常；至少在与该库紧密相关的那部分代码中应当如此，以保持代码一致。
+
+\end{itemize}
+
+
+%%C090038 h3
+
+\subsection{更多内容}
+
+
+%%C090039 p
+
+如上一节所述，需要创建自己的异常类型时，应让它们从现有的某个标准异常派生，除非你使用的库或框架自带异常层次。为此，C++标准定义了几类需要考虑的异常：
+
+
+%%C090040 li
+
+\begin{itemize}
+\item \texttt{std::\allowbreak{}logic\_\allowbreak{}error}表示程序逻辑错误的异常，例如无效实参、索引超出范围等。它有多个标准派生类，如\myttbr{std::\allowbreak{}invalid\_\allowbreak{}argument}、\myttbr{std::\allowbreak{}out\_\allowbreak{}of\_\allowbreak{}range}和\texttt{std::\allowbreak{}length\_\allowbreak{}error}。
+
+
+%%C090041 li
+
+\item \myttbr{std::\allowbreak{}runtime\_\allowbreak{}error}表示超出程序范围、或因包括外部因素在内的各种原因而无法预料的错误的异常，例如上溢与下溢，或操作系统错误。C++标准还为\myttbr{std::\allowbreak{}runtime\_\allowbreak{}error}提供了若干派生类，包括\myttbr{std::\allowbreak{}overflow\_\allowbreak{}error}、\myttbr{std::\allowbreak{}underflow\_\allowbreak{}error}和\texttt{std::\allowbreak{}system\_\allowbreak{}error}。
+
+
+%%C090042 li
+
+\item 以\texttt{bad\_}为前缀的异常，如\texttt{std::\allowbreak{}bad\_\allowbreak{}alloc}、\texttt{std::\allowbreak{}bad\_\allowbreak{}cast}和\myttbr{std::\allowbreak{}bad\_\allowbreak{}function\_\allowbreak{}call}，表示程序中的各种错误，例如内存分配失败、动态转换失败或函数调用失败等。
+
+\end{itemize}
+
+
+%%C090043 p
+
+所有这些异常的基类都是\texttt{std::\allowbreak{}exception}。它有一个名为\texttt{what()}的不抛异常的虚函数，返回指向字符数组的指针，表示错误的描述。需要从标准异常派生自定义异常时，应选用合适的类别，例如逻辑错误或运行时错误。如果这些类别都不合适，可以直接从\texttt{std::\allowbreak{}exception}派生。下面列出从标准异常派生时可以采用的各种做法：
+
+
+%%C090044 li
+
+\begin{itemize}
+\item 如果需要从\texttt{std::\allowbreak{}exception}派生，就重写虚函数\texttt{what()}以提供错误的描述：
+
+
+%%C090045 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{simple\PYGZus{}error}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exception}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{what}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{simple exception}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090046 li
+
+\item 如果从\texttt{std::\allowbreak{}logic\_\allowbreak{}error}或\myttbr{std::\allowbreak{}runtime\_\allowbreak{}error}派生，并且只需要提供不依赖运行期数据的静态描述，就把描述文本传给基类构造函数：
+
+
+%%C090047 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{another\PYGZus{}logic\PYGZus{}error}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{logic\PYGZus{}error}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{another\PYGZus{}logic\PYGZus{}error}\PYG{p}{(}\PYG{p}{)}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{logic\PYGZus{}error}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{simple logic exception}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090048 li
+
+\item 如果从\texttt{std::\allowbreak{}logic\_\allowbreak{}error}或\myttbr{std::\allowbreak{}runtime\_\allowbreak{}error}派生，但描述消息依赖运行期数据，就提供带参数的构造函数，并用这些参数构造描述消息。既可以把描述消息传给基类构造函数，也可以从重写的\texttt{what()}函数中返回它：
+
+
+%%C090049 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{advanced\PYGZus{}error}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{error\PYGZus{}code}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n+nf}{make\PYGZus{}message}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{stringstream}\PYG{+w}{ }\PYG{n}{ss}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{ss}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{error with code }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{ss}\PYG{p}{.}\PYG{n}{str}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{advanced\PYGZus{}error}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{(}\PYG{n}{make\PYGZus{}message}\PYG{p}{(}\PYG{n}{e}\PYG{p}{)}\PYG{p}{.}\PYG{n}{c\PYGZus{}str}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{,}\PYG{n}{error\PYGZus{}code}\PYG{p}{(}\PYG{n}{e}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{error}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{error\PYGZus{}code}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C090050 h3
+
+\subsection{延伸阅读}
+
+
+%%C090051 li
+
+\begin{itemize}
+\item \textit{处理线程函数抛出的异常}案例，见\texttt{Chapter 8}\textit{线程与}\textit{并发}
+
+
+%%C090052 li
+
+\item \textit{对不抛异常的函数使用noexcept}
+
+\end{itemize}
+
+
+%%C090053 h2
+
+\section{对不抛异常的函数使用noexcept}
+
+
+%%C090054 p
+
+异常规格（exception specification）是一种能够带来性能提升的语言特性，但另一方面，用错了会让程序异常终止。C++03中允许指明函数可以抛出哪些类型异常的异常规格已被弃用，取而代之的是C++11新的\texttt{noexcept}规格。这种规格只允许表明函数是否可能抛出异常。本案例介绍C++中现代异常规格的相关信息，以及何时使用它的准则。
+
+
+%%C090055 h3
+
+\subsection{具体做法}
+
+
+%%C090056 p
+
+用以下写法指定或查询异常规格：
+
+
+%%C090057 li
+
+\begin{itemize}
+\item 在函数声明中使用\texttt{nothrow}表示该函数不抛出任何异常：
+
+
+%%C090058 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func\PYGZus{}no\PYGZus{}throw}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090059 li
+
+\item 在函数声明（例如模板元编程）中使用\texttt{nothrow(\allowbreak{}expr)}，根据一个求值为\texttt{bool}的条件表示该函数是否可能抛出异常：
+
+
+%%C090060 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{generic\PYGZus{}func\PYGZus{}1}\PYG{p}{(}\PYG{p}{)}
+\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}nothrow\PYGZus{}constructible}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{T}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090061 li
+
+\item 在编译期用\texttt{noexcept}运算符检查某个表达式是否被声明为不抛出任何异常：
+
+
+%%C090062 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{generic\PYGZus{}func\PYGZus{}2}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{T}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{T}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{A}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{func}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{A}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{o}{!}\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{f}\PYG{p}{(}\PYG{n}{arg}\PYG{p}{)}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{F is throwing!}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{(}\PYG{n}{arg}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{func\PYGZus{}no\PYGZus{}throw}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C090063 h3
+
+\subsection{工作原理}
+
+
+%%C090064 p
+
+从C++17起，异常规格是函数类型的一部分，但不是函数签名的一部分；它可以出现在任何函数声明符中。由于异常规格不是函数签名的一部分，两个函数签名不能只在异常规格上不同。在C++17之前，异常规格不是函数类型的一部分，只能出现在lambda声明符或顶层函数声明符中；它甚至不能出现在\texttt{typedef}或类型别名声明中。下文对异常规格的讨论仅针对C++17标准。
+
+
+%%C090065 p
+
+指定抛出异常的方式有以下几种：
+
+
+%%C090066 li
+
+\begin{itemize}
+\item 如果没有异常规格，函数就可能抛出异常。
+
+
+%%C090067 li
+
+\item \texttt{noexcept(\allowbreak{}false)}等同于没有异常规格。
+
+
+%%C090068 li
+
+\item \texttt{noexcept(\allowbreak{}true)}与\texttt{noexcept}表示函数不抛出任何异常。
+
+
+%%C090069 li
+
+\item \texttt{throw()}等同于\texttt{noexcept(\allowbreak{}true)}，但已被弃用。
+
+\end{itemize}
+
+
+%%C090070 note
+
+\begin{myNote}
+使用异常规格必须小心，因为如果有异常（无论是直接抛出的，还是来自被调用的其他函数）离开了标记为不抛异常的函数，程序就会立刻通过调用\texttt{std::\allowbreak{}terminate()}而异常终止。
+\end{myNote}
+
+
+%%C090071 p
+
+指向不抛异常函数的指针可以隐式转换为指向可能抛异常函数的指针，反之则不行。另一方面，如果虚函数带有不抛异常的异常规格，就表示所有重写函数的声明都必须保留这一规格，除非某个被重写的函数被声明为删除。
+
+
+%%C090072 p
+
+在编译期，可以用\texttt{operator noexcept}检查函数是否被声明为不抛异常。该运算符接受一个表达式，如果该表达式被声明为不抛异常就返回\texttt{true}，否则返回\texttt{false}。它不会对检查的表达式求值。\texttt{noexcept}运算符与\texttt{noexcept}说明符一起，在模板元编程中特别有用，可以表明函数对某些类型是否可能抛出异常。它还常与\texttt{static\_\allowbreak{}assert}声明配合，用来检查某个表达式是否破坏了函数的不抛异常保证，如\textit{具体做法}一节中的示例所示。
+
+
+%%C090073 p
+
+以下代码给出了\texttt{noexcept}运算符工作方式的更多示例：
+
+
+%%C090074 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{double\PYGZus{}it}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{half\PYGZus{}it}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{not implemented!}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{boolalpha}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{func\PYGZus{}no\PYGZus{}throw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{+w}{               }\PYG{c+c1}{// true}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{generic\PYGZus{}func\PYGZus{}1}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{+w}{         }\PYG{c+c1}{// true}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{generic\PYGZus{}func\PYGZus{}1}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{+w}{ }\PYG{c+c1}{// true}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{generic\PYGZus{}func\PYGZus{}2}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{+w}{         }\PYG{c+c1}{// true}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{generic\PYGZus{}func\PYGZus{}2}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{+w}{ }\PYG{c+c1}{// true}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{generic\PYGZus{}func\PYGZus{}2}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{+w}{         }\PYG{c+c1}{// false}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{double\PYGZus{}it}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{+w}{                 }\PYG{c+c1}{// true}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{half\PYGZus{}it}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{+w}{                   }\PYG{c+c1}{// false}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{func}\PYG{p}{(}\PYG{n}{double\PYGZus{}it}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{+w}{           }\PYG{c+c1}{// true}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n}{func}\PYG{p}{(}\PYG{n}{half\PYGZus{}it}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{            }\PYG{c+c1}{// true}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090075 h3
+
+\subsection{更多内容}
+
+
+%%C090076 p
+
+如前所述，用\texttt{noexcept}说明符声明的函数如果因异常而退出，会导致程序异常终止。因此使用\texttt{noexcept}说明符要谨慎。它的存在可以启用代码优化，从而在保持强异常保证的同时提升性能。标准库容器就是一个例子。
+
+
+%%C090077 note
+
+\begin{myNote}
+强异常保证规定：操作要么成功完成，要么虽然以异常结束，但程序仍处于操作开始前的状态。这保证了提交或回滚语义。
+\end{myNote}
+
+
+%%C090078 p
+
+许多标准容器都为部分操作提供了强异常保证。vector的\texttt{push\_\allowbreak{}back()}方法就是一个例子。该方法可以通过使用元素类型的移动构造函数或移动赋值运算符、而不是复制构造函数或复制赋值运算符来优化。不过为了保持强异常保证，只有在移动构造函数或移动赋值运算符不抛异常时才能这样做。如果它们会抛异常，就必须使用复制构造函数或复制赋值运算符。如果其类型实参的移动构造函数标记为\texttt{noexcept}，\myttbr{std::\allowbreak{}move\_\allowbreak{}if\_\allowbreak{}noexcept()}工具函数就会这样做。能够表明移动构造函数或移动赋值运算符不抛异常，大概是\texttt{noexcept}最重要的使用场景。
+
+
+%%C090079 p
+
+关于异常规格，请遵循以下规则：
+
+
+%%C090080 li
+
+\begin{itemize}
+\item 如果函数可能抛出异常，就不要使用任何异常说明符。
+
+
+%%C090081 li
+
+\item 只用\texttt{noexcept}标记那些保证不会抛出异常的函数。
+
+
+%%C090082 li
+
+\item 只用\myttbr{noexcept(\allowbreak{}expression)}标记那些是否可能抛出异常取决于某个条件的函数。
+
+
+%%C090083 li
+
+\item 除非能带来直接的实际收益，否则不要用\texttt{noexcept}或\myttbr{noexcept(\allowbreak{}expression)}标记函数。
+
+\end{itemize}
+
+
+%%C090084 h3
+
+\subsection{延伸阅读}
+
+
+%%C090085 li
+
+\begin{itemize}
+\item \textit{用异常处理错误}
+
+\end{itemize}
+
+
+%%C090086 h2
+
+\section{确保程序的常量正确性}
+
+
+%%C090087 p
+
+虽然常量正确性没有正式定义，但它的含义是：本不应被修改（即不可变）的对象确实保持不变。作为开发者，你可以通过用\texttt{const}关键字声明参数、变量和成员函数来保证这一点。本案例将探讨常量正确性的好处以及如何实现它。
+
+
+%%C090088 h3
+
+\subsection{具体做法}
+
+
+%%C090089 p
+
+为确保程序的常量正确性，应当始终把下列内容声明为常量：
+
+
+%%C090090 li
+
+\begin{itemize}
+\item 在函数内部不应被修改的函数参数：
+
+%%C090091 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{session}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{session}\PYG{+w}{ }\PYG{n+nf}{connect}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{uri}\PYG{p}{,}
+\PYG{+w}{                }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{timeout}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2000}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{   }\PYG{c+cm}{/* 执行操作 */}
+\PYG{+w}{   }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{session}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* ... */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090092 li
+
+\item 不会改变的类数据成员：
+
+
+%%C090093 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{user\PYGZus{}settings}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{min\PYGZus{}update\PYGZus{}interval}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{15}\PYG{p}{;}
+\PYG{+w}{  }\PYG{c+cm}{/* 其他成员 */}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090094 li
+
+\item 从外部看不会修改对象状态的类成员函数：
+
+
+%%C090095 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{user\PYGZus{}settings}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{show\PYGZus{}online}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{can\PYGZus{}show\PYGZus{}online}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{show\PYGZus{}online}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cm}{/* 其他成员 */}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090096 li
+
+\item 在生命周期内值不会改变的函数局部变量：
+
+
+%%C090097 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{user\PYGZus{}settings}\PYG{+w}{ }\PYG{n+nf}{get\PYGZus{}user\PYGZus{}settings}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{user\PYGZus{}settings}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{update}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{user\PYGZus{}settings}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{us}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{get\PYGZus{}user\PYGZus{}settings}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{p}{(}\PYG{n}{us}\PYG{p}{.}\PYG{n}{can\PYGZus{}show\PYGZus{}online}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* 执行操作 */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cm}{/* 更多操作 */}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C090098 h3
+
+\subsection{工作原理}
+
+
+%%C090099 p
+
+把对象和成员函数声明为常量有几项重要好处：
+
+
+%%C090100 li
+
+\begin{itemize}
+\item 可以防止对对象的有意和无意修改，某些情况下这类修改会导致程序行为不正确。
+
+
+%%C090101 li
+
+\item 可以让编译器做更好的优化。
+
+
+%%C090102 li
+
+\item 可以为其他使用者记录代码的语义。
+
+\end{itemize}
+
+
+%%C090103 note
+
+\begin{myNote}
+常量正确性不是个人风格问题，而是应当指导C++开发的核心原则。
+\end{myNote}
+
+
+%%C090104 p
+
+遗憾的是，长期以来，无论在书籍、C++社区还是工作环境中，常量正确性的重要性都没有得到足够强调，现在依然如此。但经验法则是：凡是不应改变的东西都应当声明为常量。这件事要一直做，而不是等到开发的后期才去清理和重构代码。
+
+
+%%C090105 p
+
+把参数或变量声明为常量时，你可以把\texttt{const}关键字放在类型之前（\texttt{const T c}），也可以放在类型之后（\texttt{T const c}）。这两种写法等价，但无论采用哪种风格，读声明时都必须从右侧开始。\texttt{const T c}读作\textit{c是一个T，且该T是常量}，\texttt{T} \texttt{const c}读作\textit{c是一个常量T}。涉及指针时情况会稍复杂一些。下表列出了各种指针声明及其含义：
+
+
+%%C090106 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.282\hsize\raggedright\arraybackslash}X>{\hsize=0.718\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{说明}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{说明}} \\
+\endhead
+\myttbr{T* p} & P是指向非常量T的非常量指针\\
+\myttbr{const T* p} & P是指向常量T的非常量指针\\
+\myttbr{T const * p} & P是指向常量T的非常量指针（与上一行相同）\\
+\myttbr{const T * const p} & P是指向常量T的常量指针\\
+\myttbr{T const * const p} & P是指向常量T的常量指针（与上一行相同）\\
+\myttbr{T** p} & P是指向“指向非常量T的非常量指针”的非常量指针\\
+\end{xltabular}
+\myTableEnd
+
+
+%%C090107 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.282\hsize\raggedright\arraybackslash}X>{\hsize=0.718\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\myttbr{const T** p}} & \textcolor{white}{P是指向“指向常量T的非常量指针”的非常量指针} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\myttbr{const T** p}} & \textcolor{white}{P是指向“指向常量T的非常量指针”的非常量指针} \\
+\endhead
+\myttbr{T const ** p} & 与\myttbr{T const ** p}相同\\
+\myttbr{const T* const * p} & P是指向常量指针的非常量指针，而该常量指针指向常量T \\
+\myttbr{T const * const * p} & 与\myttbr{T const * const * p}相同\\
+\end{xltabular}
+\myTableEnd
+
+
+%%C090108 note
+
+\begin{myNote}
+把\texttt{const}关键字放在类型之后更自然，因为这与从右向左的阅读方向一致。因此，本书所有示例都采用这种风格。
+\end{myNote}
+
+
+%%C090109 p
+
+引用的情形与此类似：\texttt{const T \& c}与\texttt{T const \& c}等价，都表示\textit{c是指向常量T的引用}。但\texttt{T const \& const c}的含义是\textit{c是指向常量T的常量引用}，这种写法没有意义，因为引用——变量的别名——隐含就是常量，也就是说不能把它改成另一个变量的别名。
+
+
+%%C090110 p
+
+指向非常量对象的非常量指针，即\texttt{T*}，可以隐式转换为指向常量对象的非常量指针\texttt{T const *}。但\texttt{T**}不能隐式转换为\texttt{T const **}（后者与\texttt{const T**}相同）。原因在于，这会使得常量对象可以通过指向非常量对象的指针被修改，如下例所示：
+
+
+%%C090111 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{x}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 这里确实会报错}
+\PYG{o}{*}\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{c}\PYG{p}{;}
+\PYG{o}{*}\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{              }\PYG{c+c1}{// 这里修改了c}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090112 p
+
+如果对象是常量，就只能调用其所属类的常量函数。不过，把成员函数声明为常量并不意味着该函数只能在常量对象上调用；它也可能只表示该函数不会修改从外部看到的对象状态。这一点很关键，却常被误解。类有一份内部状态，可以通过公有接口把它暴露给使用者。
+
+
+%%C090113 p
+
+不过，并非所有内部状态都会暴露，公有接口中可见的内容也未必在内部状态中有直接对应。（如果你要建模订单行，内部表示中有商品数量和商品售价字段，那么你可能有一个公有方法，把数量乘以价格来暴露订单行金额。）因此，从公有接口看到的对象状态是一种逻辑状态。把方法定义为常量，就是声明该函数不改变逻辑状态。但编译器会阻止你用这类方法修改数据成员。为避免这个问题，需要在常量方法中修改的数据成员应声明为\texttt{mutable}。
+
+
+%%C090114 p
+
+在下面的例子中，\texttt{computation}是一个带有\texttt{compute()}方法的类，该方法执行耗时的计算操作。由于它不影响对象的逻辑状态，因此被声明为常量函数。不过，为了避免对相同输入重复计算，计算结果会存入缓存。为了能在常量函数中修改该缓存，缓存被声明为\texttt{mutable}：
+
+
+%%C090115 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{computation}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n+nf}{compute\PYGZus{}value}\PYG{p}{(}\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{input}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+cm}{/* 耗时操作 */}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{input}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{mutable}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{cache}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{compute}\PYG{p}{(}\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{input}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{cache}\PYG{p}{.}\PYG{n}{find}\PYG{p}{(}\PYG{n}{input}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{if}\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{cache}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{result}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{compute\PYGZus{}value}\PYG{p}{(}\PYG{n}{input}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{cache}\PYG{p}{[}\PYG{n}{input}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{result}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{result}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090116 p
+
+下面的类实现了线程安全容器，它代表了类似的情况。对共享内部数据的访问用\texttt{mutex}保护。该类提供添加和删除值之类的方法，也提供\texttt{contains()}这类判断容器中是否存在某项的方法。由于这个成员函数不打算修改对象的逻辑状态，因此被声明为常量。但对共享内部状态的访问必须用互斥量保护。为了加锁和解锁互斥量这两项修改性操作，互斥量必须声明为\texttt{mutable}：
+
+
+%%C090117 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{container}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{mutable}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mutex}\PYG{+w}{ }\PYG{n}{mutex}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{lock\PYGZus{}guard}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mutex}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{lock}\PYG{p}{(}\PYG{n}{mutex}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{data}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{contains}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{lock\PYGZus{}guard}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mutex}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{lock}\PYG{p}{(}\PYG{n}{mutex}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{find}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{data}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{data}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{+w}{           }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{data}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090118 p
+
+有时会为重载的方法或运算符同时提供常量版本和非常量版本。下标运算符，以及提供内部状态直接访问的方法，常常如此。原因在于该方法要能同时用于常量对象和非常量对象。不过两者的行为应当不同：对非常量对象，方法应允许使用者修改它提供的访问目标；对常量对象则不应如此。因此，非常量下标运算符返回非常量对象的引用，常量下标运算符返回常量对象的引用：
+
+
+%%C090119 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{contact}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{addressbook}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{contact}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{contacts}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{contact}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{contact}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090120 note
+
+\begin{myNote}
+要注意，即使成员函数是常量函数、对象是常量对象，该成员函数返回的数据也未必是常量。
+\end{myNote}
+
+
+%%C090121 h3
+
+\subsection{更多内容}
+
+
+%%C090122 p
+
+对象的\texttt{const}限定符可以用\texttt{const\_\allowbreak{}cast}转换去掉，但只有在你确定该对象并非声明为常量时才能这样做。更多内容参见\textit{进行正确的类型转换}案例。
+
+
+%%C090123 h3
+
+\subsection{延伸阅读}
+
+
+%%C090124 li
+
+\begin{itemize}
+\item \textit{创建编译期常量表达式}
+
+
+%%C090125 li
+
+\item \textit{进行正确的类型转换}
+
+\end{itemize}
+
+
+%%C090126 h2
+
+\section{创建编译期常量表达式}
+
+
+%%C090127 p
+
+在编译期对表达式求值可以改善运行期执行效率，因为需要运行的代码更少，编译器还能做额外的优化。编译期常量不一定是字面量（例如数字或字符串），也可以是函数执行的结果。如果一个函数的所有输入值（无论是实参、局部变量还是全局变量）在编译期都已知，编译器就能执行该函数，并在编译期拿到结果。这正是C++11引入、C++14放宽的广义常量表达式。关键字\texttt{constexpr}（\textit{constant expression}的缩写）可用于声明编译期常量对象和函数。前几章已经见过若干示例，现在来弄清楚它实际是如何工作的。
+
+
+%%C090128 h3
+
+\subsection{准备工作}
+
+
+%%C090129 p
+
+广义常量表达式的工作方式在C++14中有所放宽，但这也给C++11带来了一些破坏性变更。例如，在C++11中\texttt{constexpr}函数隐含是\texttt{const}，而C++14中不再如此。本案例讨论C++14定义的广义常量表达式。
+
+
+%%C090130 h3
+
+\subsection{具体做法}
+
+
+%%C090131 p
+
+在以下情形使用\texttt{constexpr}关键字：
+
+
+%%C090132 li
+
+\begin{itemize}
+\item 定义可在编译期求值的非成员函数：
+
+
+%%C090133 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{factorial}\PYG{p}{(}\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{?}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{factorial}\PYG{p}{(}\PYG{n}{n}\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090134 li
+
+\item 定义可在编译期执行的构造函数，用于初始化\texttt{constexpr}对象，并定义在此期间可调用的成员函数：
+
+
+%%C090135 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{point3d}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{y\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{z\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{(}\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{y}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{z}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}
+\PYG{+w}{    }\PYG{o}{:}\PYG{n}{x\PYGZus{}}\PYG{p}{\PYGZob{}}\PYG{n}{x}\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{y\PYGZus{}}\PYG{p}{\PYGZob{}}\PYG{n}{y}\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{z\PYGZus{}}\PYG{p}{\PYGZob{}}\PYG{n}{z}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{get\PYGZus{}x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{get\PYGZus{}y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{y\PYGZus{}}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{get\PYGZus{}z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{z\PYGZus{}}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090136 li
+
+\item 定义可在编译期求值的变量：
+
+
+%%C090137 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{factorial}\PYG{p}{(}\PYG{l+m+mi}{6}\PYG{p}{)}\PYG{p}{;}
+\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{buffer}\PYG{p}{[}\PYG{n}{size}\PYG{p}{]}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{point3d}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{.}\PYG{n}{get\PYGZus{}x}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C090138 h3
+
+\subsection{工作原理}
+
+
+%%C090139 p
+
+\texttt{const}关键字用于把变量声明为运行期常量，也就是说一旦初始化就不能再改变。但常量表达式的求值仍可能涉及运行期计算。\texttt{constexpr}关键字用于声明编译期常量变量，或声明可在编译期执行的函数。\texttt{constexpr}函数和对象可以替代宏和硬编码字面量，而且没有任何性能损失。
+
+
+%%C090140 note
+
+\begin{myNote}
+把函数声明为\texttt{constexpr}并不意味着它总在编译期求值，而只是允许该函数出现在编译期求值的表达式中。只有当函数的所有输入值都能在编译期求值时才会如此；该函数同样可以在运行期调用。下面的代码展示了同一函数的两次调用，第一次在编译期，第二次在运行期：
+\end{myNote}
+
+
+%%C090141 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{factorial}\PYG{p}{(}\PYG{l+m+mi}{6}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 编译期求值}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cin}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{result}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{factorial}\PYG{p}{(}\PYG{n}{n}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                 }\PYG{c+c1}{// 运行期求值}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090142 p
+
+关于\texttt{constexpr}的使用场合，存在一些限制：
+
+
+%%C090143 li
+
+\begin{itemize}
+\item 对变量而言，仅在以下情况使用：
+
+
+%%C090144 li
+
+\begin{itemize}
+\item 其类型是字面量类型
+
+
+%%C090145 li
+
+\item 在声明时即初始化
+
+
+%%C090146 li
+
+\item 用于初始化该变量的表达式是常量表达式
+
+
+%%C090147 li
+
+\item 对函数而言，仅在以下情况使用：
+
+
+%%C090148 li
+
+\item 它不是虚函数
+
+
+%%C090149 li
+
+\item 返回类型和参数类型都是字面量类型
+
+
+%%C090150 li
+
+\item 至少存在一组实参，使得调用该函数能产生常量表达式
+
+
+%%C090151 li
+
+\item 函数体必须是删除的或默认的；其中不得包含\texttt{asm}声明、\texttt{goto}语句、标签、\texttt{try...\allowbreak{}catch}块，也不得有未初始化、非字面量类型或具有静态存储期或线程存储期的局部变量
+
+
+%%C090152 li
+
+\item 如果该函数是默认的拷贝赋值运算符或移动赋值运算符，那么类中不得含有任何\texttt{mutable}变体成员
+
+
+%%C090153 li
+
+\item 对构造函数而言，仅在以下情况使用：
+
+
+%%C090154 li
+
+\item 所有参数都是字面量类型。
+
+
+%%C090155 li
+
+\item 该类没有虚基类。
+
+
+%%C090156 li
+
+\item 它不包含函数try块。
+
+
+%%C090157 li
+
+\item 函数体必须是删除的、默认的，或满足若干附加条件。复合语句必须满足前面针对普通函数提到的全部条件。用于初始化非静态数据成员（包括基类）的所有构造函数也必须是\texttt{constexpr}。并且所有非静态数据成员都必须由该构造函数初始化（对于联合体类型，只需初始化其中一个变体）。
+
+
+%%C090158 li
+
+\item 如果它是默认的拷贝构造函数或移动构造函数，那么类中不得含有任何\texttt{mutable}变体成员。
+
+\end{itemize}
+
+\end{itemize}
+
+
+%%C090159 p
+
+\texttt{constexpr}函数并不隐含是\texttt{const}（自C++14起），因此如果函数不改变对象的逻辑状态，你需要显式使用\texttt{const}说明符。不过，\texttt{constexpr}函数隐含是\texttt{inline}。另一方面，声明为\texttt{constexpr}的对象隐含是\texttt{const}。下面两个声明等价：
+
+
+%%C090160 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{factorial}\PYG{p}{(}\PYG{l+m+mi}{6}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{factorial}\PYG{p}{(}\PYG{l+m+mi}{6}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090161 p
+
+有时你需要在同一个声明中同时使用\texttt{constexpr}和\texttt{const}，因为它们指的是声明的不同部分。在下面的例子中，\texttt{p}是指向常量整数的\texttt{constexpr}指针：
+
+
+%%C090162 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{static}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{c}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090163 p
+
+引用变量也可以是\texttt{constexpr}，但前提是它别名一个具有静态存储期的对象或一个函数：
+
+
+%%C090164 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{static}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{r}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090165 h3
+
+\subsection{延伸阅读}
+
+
+%%C090166 li
+
+\begin{itemize}
+\item \textit{确保程序的常量正确性}
+
+\end{itemize}
+
+
+%%C090167 h2
+
+\section{进行正确的类型转换}
+
+
+%%C090168 p
+
+数据常常需要从一种类型转换为另一种类型。有些转换在编译期完成（例如\texttt{double}转\texttt{int}），有些则在运行期完成（例如类层次结构中指针的向上转换和向下转换）。语言支持与C风格转换兼容的两种写法：\texttt{(\allowbreak{}type)\allowbreak{}expression}和\texttt{type(\allowbreak{}expression)}。但这类转换破坏了C++的类型安全性。因此，语言还提供了几种转换：\texttt{static\_\allowbreak{}cast}、\texttt{dynamic\_\allowbreak{}cast}、\texttt{const\_\allowbreak{}cast}和\texttt{reinterpret\_\allowbreak{}cast}。它们能更好地表达意图，让你写出更安全的代码。本案例介绍这些转换的用法。
+
+
+%%C090169 h3
+
+\subsection{具体做法}
+
+
+%%C090170 p
+
+使用以下转换完成类型转换：
+
+
+%%C090171 li
+
+\begin{itemize}
+\item 用\texttt{static\_\allowbreak{}cast}对非多态类型做类型转换，包括把整数转换为枚举、把浮点值转换为整数值，或把一种指针类型转换为另一种指针类型，例如从基类到派生类（向下转换）或从派生类到基类（向上转换），但不做任何运行期检查：
+
+
+%%C090172 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{n+nc}{options}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{one}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{two}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{three}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{n}{options}\PYG{+w}{ }\PYG{n}{op}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{options}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{y}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{;}
+\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{d}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090173 li
+
+\item 用\texttt{dynamic\_\allowbreak{}cast}对多态类型的指针或引用做类型转换，可在基类与派生类之间双向转换。这类检查在运行期进行，并要求启用\textit{运行时类型信息（RTTI）}：
+
+%%C090174 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{base}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{run}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{o}{\PYGZti{}}\PYG{n}{base}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{derived}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{base}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{derived}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{;}
+\PYG{n}{base}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{n}{base}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pb}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{dynamic\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{base}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{d}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// 正确}
+\PYG{n}{derived}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pd}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{dynamic\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{derived}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// 失败}
+\PYG{k}{try}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{base}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rb}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{dynamic\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{base}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{d}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// 正确}
+\PYG{+w}{  }\PYG{n}{derived}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rd}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{dynamic\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{derived}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 失败}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bad\PYGZus{}cast}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{.}\PYG{n}{what}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090175 li
+
+\item 使用\texttt{const\_\allowbreak{}cast}在带有不同\texttt{const}与\texttt{volatile}说明符的类型之间进行转换，例如从一个并未声明为\texttt{const}的对象上去掉\texttt{const}：
+
+
+%%C090176 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{old\PYGZus{}api}\PYG{p}{(}\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{str}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+c1}{// 做一些不修改字符串的操作}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{str}\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sample}\PYG{l+s}{\PYGZdq{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{old\PYGZus{}api}\PYG{p}{(}\PYG{k}{const\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{char}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{str}\PYG{p}{.}\PYG{n}{c\PYGZus{}str}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{        }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{str}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090177 li
+
+\item 使用\texttt{reinterpret\_\allowbreak{}cast}进行比特层面的重新解释，例如在整数与指针类型之间、从指针类型到整数、从一个指针类型到任何其他指针类型之间转换，且不涉及任何运行期检查：
+
+
+%%C090178 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{widget}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{data\PYGZus{}type}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{set\PYGZus{}data}\PYG{p}{(}\PYG{n}{data\PYGZus{}type}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{data}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{data\PYGZus{}type}\PYG{+w}{ }\PYG{n+nf}{get\PYGZus{}data}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{data\PYGZus{}type}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{widget}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{;}
+\PYG{n}{user\PYGZus{}data}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ud}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{user\PYGZus{}data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 写入}
+\PYG{n}{w}\PYG{p}{.}\PYG{n}{set\PYGZus{}data}\PYG{p}{(}\PYG{k}{reinterpret\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{widget}\PYG{o}{:}\PYG{o}{:}\PYG{n}{data\PYGZus{}type}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{ud}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 读取}
+\PYG{n}{user\PYGZus{}data}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ud2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{reinterpret\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{user\PYGZus{}data}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{w}\PYG{p}{.}\PYG{n}{get\PYGZus{}data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C090179 h3
+
+\subsection{工作原理}
+
+
+%%C090180 p
+
+显式类型转换有时也被称为C风格转换或静态转换，它是C++为兼容C语言而遗留的特性，可以让你执行多种转换：
+
+
+%%C090181 li
+
+\begin{itemize}
+\item 在算术类型之间
+
+
+%%C090182 li
+
+\item 在指针类型之间
+
+
+%%C090183 li
+
+\item 在整型与指针类型之间
+
+
+%%C090184 li
+
+\item 在带\texttt{const}或\texttt{volatile}限定与不带限定的类型之间
+
+
+%%C090185 li
+
+\item 上述任意一种与前几种转换的任意组合
+
+\end{itemize}
+
+
+%%C090186 p
+
+这种转换方式在多态类型和模板中都不太好用。因此，C++提供了我们前面示例中看到的四种转换。使用这些转换会带来几个重要的好处：
+
+
+%%C090187 li
+
+\begin{itemize}
+\item 它们能更好地表达用户的意图，无论对编译器还是对阅读代码的其他人都是如此。
+
+
+%%C090188 li
+
+\item 它们能在各种类型之间实现更安全的转换（\texttt{reinterpret\_\allowbreak{}cast}除外）。
+
+
+%%C090189 li
+
+\item 它们很容易在源代码中被搜索到。
+
+\end{itemize}
+
+
+%%C090190 p
+
+\texttt{static\_\allowbreak{}cast}并不是C风格转换的直接等价物，尽管名字可能让人这样以为。这种转换在编译期执行，可用于执行隐式转换、隐式转换的反向转换，以及从指针到类层次中某个类型的转换。不过，它不能用来触发无关指针类型之间的转换。在下面的示例中，用\texttt{static\_\allowbreak{}cast}从\texttt{int*}转换到\texttt{double*}是编译错误。然而，从\texttt{base*}转换到\texttt{derived*}（这里的\texttt{base}与\texttt{derived}就是\textit{具体做法}一节中给出的类）不会产生编译错误，但当试图使用新得到的指针时会出现运行期错误。另一方面，\texttt{static\_\allowbreak{}cast}不能用来移除\texttt{const}与\texttt{volatile}限定符：
+
+
+%%C090191 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{double}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pd}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{pi}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// 编译错误}
+\PYG{n}{base}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{n}{derived}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pd}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{derived}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 编译通过，运行期错误}
+\PYG{n}{base}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pb1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{base}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{d}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// 正确}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pc}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{c}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// 编译错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090192 p
+
+沿着继承层次向上、向下或横向对表达式进行安全的类型转换，可以用\texttt{dynamic\_\allowbreak{}cast}完成。这种转换在运行期执行，并要求启用RTTI。因此，它会带来运行期开销。动态转换只能用于指针和引用。当用\texttt{dynamic\_\allowbreak{}cast}把表达式转换为指针类型而操作失败时，结果是空指针；当用它把表达式转换为引用类型而操作失败时，会抛出\texttt{std::\allowbreak{}bad\_\allowbreak{}cast}异常。因此，务必将转换为引用类型的\texttt{dynamic\_\allowbreak{}cast}放在\texttt{try...\allowbreak{}catch}块中。
+
+
+%%C090193 note
+
+\begin{myNote}
+RTTI是一种在运行期暴露对象数据类型信息的机制。它只对多态类型可用（即至少有一个虚函数——包括虚析构函数，所有基类都应该有——的类型）。RTTI通常是可选的编译器特性（也可能根本不被支持），这意味着使用该功能可能需要打开编译器开关。
+\end{myNote}
+
+
+%%C090194 p
+
+尽管动态转换在运行期执行，但如果你试图在非多态类型之间进行转换，就会得到编译错误：
+
+
+%%C090195 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{struct1}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{struct2}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{struct1}\PYG{+w}{ }\PYG{n}{s1}\PYG{p}{;}
+\PYG{n}{struct2}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ps2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{dynamic\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{struct2}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{s1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 编译错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090196 p
+
+\texttt{reinterpret\_\allowbreak{}cast}更像是一条编译器指令。它不会被翻译成任何CPU指令，只是指示编译器把某个表达式的二进制表示当作另一种指定类型来解释。这是一种类型不安全的转换，应当谨慎使用。它可用于在整型与指针类型、指针类型、函数指针类型之间转换表达式。由于不做任何检查，\texttt{reinterpret\_\allowbreak{}cast}可以成功地用于在无关类型之间转换表达式，例如从\texttt{int*}转换到\texttt{double*}，而这会产生未定义行为：
+
+
+%%C090197 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{double}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pd}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{reinterpret\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{pi}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090198 p
+
+\texttt{reinterpret\_\allowbreak{}cast}的典型用法是在使用操作系统或厂商特定API的代码中，在类型之间转换表达式。许多API以指针或整型的形式保存用户数据。因此，如果你需要把某个用户定义类型的地址传给这类API，就得在无关的指针类型之间转换值，或者把指针类型的值转换为整型的值。前一节已经给出一个类似的例子：\texttt{widget}是一个把用户定义数据存放在数据成员中、并提供\texttt{set\_\allowbreak{}data()}与\texttt{get\_\allowbreak{}data()}方法访问该数据的类。如果你需要把一个对象指针存放在\texttt{widget}中，就使用\texttt{reinterpret\_\allowbreak{}cast}，如本例所示。
+
+
+%%C090199 p
+
+\texttt{const\_\allowbreak{}cast}与\texttt{reinterpret\_\allowbreak{}cast}类似，它也是一条编译器指令，不会被翻译成CPU指令。它用来去掉\texttt{const}或\texttt{volatile}限定符，而这是这里讨论的另外三种转换都做不到的。
+
+
+%%C090200 note
+
+\begin{myNote}[tip]
+只有当对象并未声明为\texttt{const}或\texttt{volatile}时，才应该用\texttt{const\_\allowbreak{}cast}去掉它的\texttt{const}或\texttt{volatile}限定符。其他任何情况都会导致未定义行为，如下例所示：
+\end{myNote}
+
+
+%%C090201 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{a}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{q}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{const\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{p}\PYG{p}{)}\PYG{p}{;}
+\PYG{o}{*}\PYG{n}{q}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 未定义行为}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090202 h3
+
+\subsection{更多内容}
+
+
+%%C090203 p
+
+当以\texttt{(\allowbreak{}type)\allowbreak{}expression}的形式使用显式类型转换时，要注意它会在下面的列表中选取第一个满足特定转换要求的选择：
+
+
+%%C090204 p
+
+\myttbr{const\_\allowbreak{}cast<\allowbreak{}type>(\allowbreak{}expression)}
+
+
+%%C090205 p
+
+\myttbr{static\_\allowbreak{}cast<\allowbreak{}type>(\allowbreak{}expression)}
+
+
+%%C090206 p
+
+\myttbr{static\_\allowbreak{}cast<\allowbreak{}type>(\allowbreak{}expression)} + \myttbr{const\_\allowbreak{}cast<\allowbreak{}type>(\allowbreak{}expression)}
+
+
+%%C090207 p
+
+\myttbr{reinterpret\_\allowbreak{}cast<\allowbreak{}type>(\allowbreak{}expression)}
+
+
+%%C090208 p
+
+\myttbr{reinterpret\_\allowbreak{}cast<\allowbreak{}type>(\allowbreak{}expression)} +
+
+
+%%C090209 p
+
+\myttbr{const\_\allowbreak{}cast<\allowbreak{}type>(\allowbreak{}expression)}
+
+
+%%C090210 p
+
+此外，与具体的C++转换不同，C风格转换可以用来在不完整类类型之间转换。如果\texttt{type}与\texttt{expression}都是指向不完整类型的指针，那么并未规定选中的是\texttt{static\_\allowbreak{}cast}还是\texttt{reinterpret\_\allowbreak{}cast}。
+
+
+%%C090211 h3
+
+\subsection{延伸阅读}
+
+
+%%C090212 li
+
+\begin{itemize}
+\item \textit{确保程序的常量正确性}
+
+\end{itemize}
+
+
+%%C090213 h2
+
+\section{用unique\_ptr独占内存资源}
+
+
+%%C090214 p
+
+手工管理堆内存的分配与释放是C++最具争议的特性之一。所有分配都必须在正确的范围内与相应的delete操作配对。例如，如果内存分配的作用域是一个函数，而内存需要在函数返回前释放，那么就必须在所有返回路径上都这样做，包括函数因异常而返回的异常情况。C++11的特性——例如右值与移动语义——促成了智能指针的发展；这些指针可以管理一个内存资源，并在智能指针析构时自动释放它。本案例将考察\texttt{std::\allowbreak{}unique\_\allowbreak{}ptr}：这是一个智能指针，它拥有并管理堆上分配的另一个对象或对象数组，并在智能指针离开作用域时执行释放操作。
+
+
+%%C090215 h3
+
+\subsection{准备工作}
+
+
+%%C090216 p
+
+本案例要求你熟悉移动语义和\texttt{std::\allowbreak{}move()}转换函数。\texttt{unique\_\allowbreak{}ptr}类位于\texttt{<\allowbreak{}memory>}头文件的\texttt{std}命名空间中。
+
+
+%%C090217 note
+
+\begin{myNote}
+为了简单和易读，本案例中我们将不使用完全限定名\texttt{std::\allowbreak{}unique\_\allowbreak{}ptr}与\texttt{std::\allowbreak{}shared\_\allowbreak{}ptr}，而使用\texttt{unique\_\allowbreak{}ptr}与\texttt{shared\_\allowbreak{}ptr}。
+\end{myNote}
+
+
+%%C090218 p
+
+下面的示例将使用这样一个类：
+
+
+%%C090219 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{o}{:}\PYG{n}{a}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{print}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{(}\PYG{l+s+sc}{\PYGZsq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{,}\PYG{l+s+sc}{\PYGZsq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{,}\PYG{l+s+sc}{\PYGZsq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{quoted}\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{)}\PYG{l+s+sc}{\PYGZsq{}}
+\PYG{+w}{              }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090220 h3
+
+\subsection{具体做法}
+
+
+%%C090221 p
+
+下面是使用\texttt{unique\_\allowbreak{}ptr}时需要了解的典型操作列表：
+
+
+%%C090222 li
+
+\begin{itemize}
+\item 使用现有的重载构造函数创建\texttt{unique\_\allowbreak{}ptr}，通过指针管理一个对象或一个对象数组。默认构造函数创建的指针不管理任何对象：
+
+
+%%C090223 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{   }\PYG{n}{pnull}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{   }\PYG{n}{pi}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pa}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{   }\PYG{n}{pf}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090224 li
+
+\item 另一种做法是使用C++14提供的\myttbr{std::\allowbreak{}make\_\allowbreak{}unique()}函数模板来创建\texttt{unique\_\allowbreak{}ptr}对象：
+
+
+%%C090225 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{   }\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pa}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{   }\PYG{n}{pf}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090226 li
+
+\item 如果默认的delete运算符不适合销毁所管理的对象或数组，就使用接受自定义删除器的重载构造函数：
+
+
+%%C090227 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo\PYGZus{}deleter}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{p}{(}\PYG{n}{foo}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pf}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{deleting foo...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{pf}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{foo\PYGZus{}deleter}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pf}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                                     }\PYG{n}{foo\PYGZus{}deleter}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090228 li
+
+\item 使用\texttt{std::\allowbreak{}move()}把一个对象的所有权从一个\texttt{unique\_\allowbreak{}ptr}转移给另一个：
+
+
+%%C090229 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{qi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{pi}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{assert}\PYG{p}{(}\PYG{n}{pi}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{assert}\PYG{p}{(}\PYG{n}{qi}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090230 li
+
+\item 要获取指向所管理对象的裸指针，如果你想保留对象的所有权就用\texttt{get()}，如果你想连所有权一并放弃就用\texttt{release()}：
+
+
+%%C090231 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{else}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{null}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pi}\PYG{p}{;}
+\PYG{n}{func}\PYG{p}{(}\PYG{n}{pi}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 输出 null}
+\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{func}\PYG{p}{(}\PYG{n}{pi}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 输出 42}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090232 li
+
+\item 使用\texttt{operator*}与\texttt{operator->}解引用指向所管理对象的指针：
+
+
+%%C090233 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{o}{*}\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{21}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{pf}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{pf}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{print}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090234 li
+
+\item 如果\texttt{unique\_\allowbreak{}ptr}管理的是对象数组，可以用\texttt{operator[]}访问数组中的各个元素：
+
+
+%%C090235 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pa}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{i}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{pa}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090236 li
+
+\item 要检查\texttt{unique\_\allowbreak{}ptr}是否能管理对象，可使用显式的\texttt{operator bool}，或检查\texttt{get() != nullptr}（\texttt{operator bool}所做的正是这件事）：
+
+
+%%C090237 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pi}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{pi}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{not null}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090238 li
+
+\item \texttt{unique\_\allowbreak{}ptr}对象可以存放在容器中。由\texttt{make\_\allowbreak{}unique()}返回的对象可以直接存放。如果你想把所管理对象的所有权交给容器中的\texttt{unique\_\allowbreak{}ptr}对象，可以用\texttt{std::\allowbreak{}move()}把一个左值对象静态转换为右值对象：
+
+
+%%C090239 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{o}{+}\PYG{o}{+}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{data}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{i}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{to\PYGZus{}string}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{pf}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{data}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{pf}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C090240 h3
+
+\subsection{工作原理}
+
+
+%%C090241 p
+
+\texttt{unique\_\allowbreak{}ptr}是一个智能指针，它通过裸指针管理堆上分配的一个对象或一个数组，并在智能指针离开作用域、用\texttt{operator=}被赋予新指针，或用\texttt{release()}方法放弃所有权时，执行适当的释放操作。默认情况下使用delete运算符销毁所管理的对象。不过，用户可以在构造智能指针时提供自定义删除器。这个删除器必须是一个函数对象——对函数对象的左值引用或函数均可——并且这个可调用对象必须接受一个类型为\myttbr{unique\_\allowbreak{}ptr<\allowbreak{}T, Deleter>::\allowbreak{}pointer}的单一参数。
+
+
+%%C090242 p
+
+C++14增加了\myttbr{std::\allowbreak{}make\_\allowbreak{}unique()}工具函数模板来创建\texttt{unique\_\allowbreak{}ptr}。它在某些特定场景下可避免内存泄漏，但也有一些限制：
+
+
+%%C090243 li
+
+\begin{itemize}
+\item 它只能用于分配数组，不能同时用于初始化数组，而用\texttt{unique\_\allowbreak{}ptr}的构造函数则可以。下面两段示例代码是等价的：
+
+
+%%C090244 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+c1}{// 分配并初始化数组}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pa}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 先分配，再初始化数组}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pa}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{i}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{pa}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090245 li
+
+\item 它不能用于创建带用户自定义删除器的\texttt{unique\_\allowbreak{}ptr}对象。
+
+\end{itemize}
+
+
+%%C090246 p
+
+正如刚才提到的，\texttt{make\_\allowbreak{}unique()}的最大优势在于，它有助于在某些抛出异常的场景下避免内存泄漏。如果分配失败，或者它创建的对象构造函数抛出任何异常，\texttt{make\_\allowbreak{}unique()}本身也可能抛出\texttt{std::\allowbreak{}bad\_\allowbreak{}alloc}。考虑下面的示例：
+
+
+%%C090247 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{some\PYGZus{}function}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* 做点什么 */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+
+\PYG{n}{some\PYGZus{}function}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{some\PYGZus{}function}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090248 p
+
+无论\texttt{foo}的分配与构造过程中发生了什么，都不会有内存泄漏，不管你是用\texttt{make\_\allowbreak{}unique()}还是用\texttt{unique\_\allowbreak{}ptr}的构造函数。不过，在稍有不同的一段代码中，情况就变了：
+
+
+%%C090249 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{some\PYGZus{}other\PYGZus{}function}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{not implemented}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{c+c1}{// 可能泄漏内存}
+\PYG{n}{some\PYGZus{}other\PYGZus{}function}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 不会泄漏内存}
+\PYG{n}{some\PYGZus{}other\PYGZus{}function}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090250 p
+
+在这个示例中，\myttbr{some\_\allowbreak{}other\_\allowbreak{}function()}多了一个参数：一个整数值。传给该函数的整数实参是另一个函数的返回值。如果这个函数调用抛出异常，那么用\texttt{unique\_\allowbreak{}ptr}的构造函数创建智能指针就可能造成内存泄漏。原因在于，调用\myttbr{some\_\allowbreak{}other\_\allowbreak{}function()}时，编译器可能先调用\texttt{foo}的构造函数，再调用\myttbr{function\_\allowbreak{}that\_\allowbreak{}throws()}，最后调用\texttt{unique\_\allowbreak{}ptr}的构造函数。如果\myttbr{function\_\allowbreak{}that\_\allowbreak{}throws()}抛出错误，那么已分配的\texttt{foo}就会泄漏。如果调用顺序是先\myttbr{function\_\allowbreak{}that\_\allowbreak{}throws()}，再\texttt{new} \texttt{foo()}与\texttt{unique\_\allowbreak{}ptr}的构造函数，就不会发生内存泄漏；这是因为栈在\texttt{foo}对象分配之前就开始展开了。然而，通过使用\texttt{make\_\allowbreak{}unique()}函数，这种情况被避免了。这是因为只调用了\texttt{make\_\allowbreak{}unique()}与\myttbr{function\_\allowbreak{}that\_\allowbreak{}throws()}。如果先调用\myttbr{function\_\allowbreak{}that\_\allowbreak{}throws()}，那么\texttt{foo}对象根本不会被分配。如果先调用\texttt{make\_\allowbreak{}unique()}，则\texttt{foo}对象被构造出来，其所有权被交给\texttt{unique\_\allowbreak{}ptr}。如果随后的\myttbr{function\_\allowbreak{}that\_\allowbreak{}throws()}调用确实抛出异常，那么栈展开时\texttt{unique\_\allowbreak{}ptr}会被销毁，\texttt{foo}对象也就由智能指针的析构函数销毁了。
+
+
+%%C090251 p
+
+常量\texttt{unique\_\allowbreak{}ptr}对象不能把所管理对象或数组的所有权转移给另一个\texttt{unique\_\allowbreak{}ptr}对象。另一方面，可以通过\texttt{get()}或\texttt{release()}获取指向所管理对象的裸指针。前一个方法只返回底层指针，而后者还会释放所管理对象的所有权，其名称也正源于此。调用\texttt{release()}之后，\texttt{unique\_\allowbreak{}ptr}对象会变为空，此时调用\texttt{get()}将返回\texttt{nullptr}。
+
+
+%%C090252 p
+
+如果\texttt{Derived}派生自\texttt{Base}，那么管理\texttt{Derived}类对象的\texttt{unique\_\allowbreak{}ptr}可以隐式转换为管理\texttt{Base}类对象的\texttt{unique\_\allowbreak{}ptr}。只有当\texttt{Base}具有虚析构函数（所有基类都应该有）时，这种隐式转换才是安全的；否则会导致未定义行为：
+
+%%C090253 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Base}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{o}{\PYGZti{}}\PYG{n}{Base}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZti{}Base()}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Derived}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Base}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{o}{\PYGZti{}}\PYG{n}{Derived}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZti{}Derived()}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Derived}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pd}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{Derived}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Base}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pb}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{pd}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090254 p
+
+可以把\texttt{unique\_\allowbreak{}ptr}存放在容器（例如\texttt{std::\allowbreak{}vector}）中。由于任一时刻只有一个\texttt{unique\_\allowbreak{}ptr}对象能拥有所管理的对象，所以这个智能指针不能被复制进容器，只能被移动。这一点可以用\texttt{std::\allowbreak{}move()}做到，它执行一次到右值引用类型的\texttt{static\_\allowbreak{}cast}。这样就能把所管理对象的所有权转移给在容器中创建的那个\texttt{unique\_\allowbreak{}ptr}对象。
+
+
+%%C090255 h3
+
+\subsection{延伸阅读}
+
+
+%%C090256 li
+
+\begin{itemize}
+\item \textit{用shared\_ptr共享内存资源}
+
+\end{itemize}
+
+
+%%C090257 h2
+
+\section{用shared\_ptr共享内存资源}
+
+
+%%C090258 p
+
+当对象或数组需要共享时，就无法用\texttt{std::\allowbreak{}unique\_\allowbreak{}ptr}管理动态分配的对象或数组，因为\texttt{std::\allowbreak{}unique\_\allowbreak{}ptr}保留的是独占所有权。C++标准提供了另一种智能指针\texttt{std::\allowbreak{}shared\_\allowbreak{}ptr}；它在许多方面与\texttt{std::\allowbreak{}unique\_\allowbreak{}ptr}相似，区别在于它可以与其他\texttt{std::\allowbreak{}shared\_\allowbreak{}ptr}共享同一个对象或数组的所有权。本案例将介绍\texttt{std::\allowbreak{}shared\_\allowbreak{}ptr}的工作方式，以及它与\texttt{std::\allowbreak{}uniqueu\_\allowbreak{}ptr}的区别。我们还会介绍\texttt{std::\allowbreak{}weak\_\allowbreak{}ptr}，它是一种不拥有资源的智能指针，持有对某个由\texttt{std::\allowbreak{}shared\_\allowbreak{}ptr}管理的对象的引用。
+
+
+%%C090259 h3
+
+\subsection{准备工作}
+
+
+%%C090260 p
+
+请务必先阅读前一案例\textit{用unique\_ptr独占内存资源}，熟悉\texttt{unique\_\allowbreak{}ptr}与\texttt{make\_\allowbreak{}unique()}的工作方式。本案例将使用该案例中定义的\texttt{foo}、\texttt{foo\_\allowbreak{}deleter}、\texttt{Base}和\texttt{Derived}类，并多次引用它们。
+
+
+%%C090261 p
+
+\texttt{shared\_\allowbreak{}ptr}与\texttt{weak\_\allowbreak{}ptr}类，以及\texttt{make\_\allowbreak{}shared()}函数模板，都位于\texttt{<\allowbreak{}memory>}头文件的\texttt{std}命名空间中。
+
+
+%%C090262 note
+
+\begin{myNote}
+为简洁易读，本案例不使用完全限定名\texttt{std::\allowbreak{}unique\_\allowbreak{}ptr}、\texttt{std::\allowbreak{}shared\_\allowbreak{}ptr}、\texttt{std::\allowbreak{}weak\_\allowbreak{}pointer}，而使用\texttt{unique\_\allowbreak{}ptr}、\texttt{shared\_\allowbreak{}ptr}和\texttt{weak\_\allowbreak{}ptr}。
+\end{myNote}
+
+
+%%C090263 h3
+
+\subsection{具体做法}
+
+
+%%C090264 p
+
+下面是使用\texttt{shared\_\allowbreak{}ptr}与\texttt{weak\_\allowbreak{}ptr}时需要了解的典型操作：
+
+
+%%C090265 li
+
+\begin{itemize}
+\item 使用某个可用的重载构造函数创建\texttt{shared\_\allowbreak{}ptr}，通过指针管理一个对象。默认构造函数创建空的\texttt{shared\_\allowbreak{}ptr}，它不管理任何对象：
+
+
+%%C090266 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pnull1}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pnull2}\PYG{p}{(}\PYG{n+nb}{nullptr}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pi1}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pi2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pi1}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pf1}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pf2}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090267 li
+
+\item 或者使用自C++11起提供的\myttbr{std::\allowbreak{}make\_\allowbreak{}shared()}函数模板来创建\texttt{shared\_\allowbreak{}ptr}对象：
+
+
+%%C090268 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pf1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pf2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090269 li
+
+\item 如果默认的删除操作不适合销毁所管理的对象，就使用接受自定义删除器的重载构造函数：
+
+
+%%C090270 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pf1}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                         }\PYG{n}{foo\PYGZus{}deleter}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pf2}\PYG{p}{(}
+\PYG{+w}{          }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{          }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{deleting foo from lambda...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090271 li
+
+\item 管理对象数组时一定要指定删除器。删除器既可以是针对数组的\myttbr{std::\allowbreak{}default\_\allowbreak{}delete}偏特化，也可以是任何接受指向模板类型指针的函数：
+
+
+%%C090272 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pa1}\PYG{p}{(}
+\PYG{+w}{  }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{default\PYGZus{}delete}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pa2}\PYG{p}{(}
+\PYG{+w}{  }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{delete}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090273 li
+
+\item 要取得指向所管理对象的裸指针，可以使用\texttt{get()}函数：
+
+
+%%C090274 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{else}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{null}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pi}\PYG{p}{;}
+\PYG{n}{func}\PYG{p}{(}\PYG{n}{pi}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{func}\PYG{p}{(}\PYG{n}{pi}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090275 li
+
+\item 使用\texttt{operator*}和\texttt{operator->}解引用指向所管理对象的指针：
+
+
+%%C090276 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{o}{*}\PYG{n}{pi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{21}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pf}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{pf}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{print}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090277 li
+
+\item 如果\texttt{shared\_\allowbreak{}ptr}管理的是对象数组，可以用\texttt{operator[]}访问数组中的各个元素。该运算符仅在C++17中可用：
+
+
+%%C090278 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pa1}\PYG{p}{(}
+\PYG{+w}{  }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{default\PYGZus{}delete}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{i}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{pa1}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{*}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090279 li
+
+\item 要检查\texttt{shared\_\allowbreak{}ptr}是否管理着对象，可以使用显式的\texttt{operator bool}，或者检查\texttt{get() != nullptr}（这正是\texttt{operator bool}所做的事情）：
+
+
+%%C090280 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pnull}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{pnull}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{not null}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pi}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{pi}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{not null}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090281 li
+
+\item \texttt{shared\_\allowbreak{}ptr}对象可以存放在容器（例如\texttt{std::\allowbreak{}vector}）中：
+
+
+%%C090282 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{o}{+}\PYG{o}{+}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{data}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{i}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{to\PYGZus{}string}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{pf}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{data}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{pf}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{assert}\PYG{p}{(}\PYG{o}{!}\PYG{n}{pf}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090283 li
+
+\item 使用\texttt{weak\_\allowbreak{}ptr}维护对共享对象的非拥有引用，之后可以通过由该\texttt{weak\_\allowbreak{}ptr}对象构造出的\texttt{shared\_\allowbreak{}ptr}访问这个对象：
+
+
+%%C090284 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sp1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{assert}\PYG{p}{(}\PYG{n}{sp1}\PYG{p}{.}\PYG{n}{use\PYGZus{}count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{weak\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{wpi}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{sp1}\PYG{p}{;}
+\PYG{n}{assert}\PYG{p}{(}\PYG{n}{sp1}\PYG{p}{.}\PYG{n}{use\PYGZus{}count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sp2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{wpi}\PYG{p}{.}\PYG{n}{lock}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{assert}\PYG{p}{(}\PYG{n}{sp1}\PYG{p}{.}\PYG{n}{use\PYGZus{}count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{assert}\PYG{p}{(}\PYG{n}{sp2}\PYG{p}{.}\PYG{n}{use\PYGZus{}count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{sp1}\PYG{p}{.}\PYG{n}{reset}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{assert}\PYG{p}{(}\PYG{n}{sp1}\PYG{p}{.}\PYG{n}{use\PYGZus{}count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{assert}\PYG{p}{(}\PYG{n}{sp2}\PYG{p}{.}\PYG{n}{use\PYGZus{}count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090285 li
+
+\item 当需要为已被另一个\texttt{shared\_\allowbreak{}ptr}对象管理的实例创建\texttt{shared\_\allowbreak{}ptr}对象时，可以把\myttbr{std::\allowbreak{}enable\_\allowbreak{}shared\_\allowbreak{}from\_\allowbreak{}this}类模板用作该类型的基类：
+
+
+%%C090286 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Apprentice}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Master}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{enable\PYGZus{}shared\PYGZus{}from\PYGZus{}this}\PYG{o}{\PYGZlt{}}\PYG{n}{Master}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{o}{\PYGZti{}}\PYG{n}{Master}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZti{}Master}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{take\PYGZus{}apprentice}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Apprentice}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Apprentice}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{apprentice}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Apprentice}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{o}{\PYGZti{}}\PYG{n}{Apprentice}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZti{}Apprentice}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{take\PYGZus{}master}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{weak\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Master}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{weak\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Master}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{master}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{Master::take\PYGZus{}apprentice}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Apprentice}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{apprentice}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{apprentice}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{take\PYGZus{}master}\PYG{p}{(}\PYG{n}{shared\PYGZus{}from\PYGZus{}this}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{Apprentice::take\PYGZus{}master}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{weak\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Master}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{master}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{m}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{Master}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{Apprentice}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{m}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{take\PYGZus{}apprentice}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+\end{itemize}
+
+
+%%C090287 h3
+
+\subsection{工作原理}
+
+
+%%C090288 p
+
+\texttt{shared\_\allowbreak{}ptr}在很多方面与\texttt{unique\_\allowbreak{}ptr}非常相似；不过它的用途不同：共享对象或数组的所有权。两个或更多的\texttt{shared\_\allowbreak{}ptr}智能指针可以管理同一块动态分配的对象或数组，当最后一个智能指针离开作用域、被\texttt{operator=}赋以新指针，或者被\texttt{reset()}方法重置时，该对象会被自动销毁。默认情况下对象用\texttt{operator delete}销毁；不过用户可以向构造函数提供自定义删除器，而使用\myttbr{std::\allowbreak{}make\_\allowbreak{}shared()}时无法做到这一点。如果用\texttt{shared\_\allowbreak{}ptr}管理对象数组，就必须提供自定义删除器。这时可以使用\myttbr{std::\allowbreak{}default\_\allowbreak{}delete<\allowbreak{}T[]>}，它是\myttbr{std::\allowbreak{}default\_\allowbreak{}delete}类模板的偏特化，会用\texttt{operator delete[]}删除动态分配的数组。
+
+
+%%C090289 p
+
+工具函数\myttbr{std::\allowbreak{}make\_\allowbreak{}shared()}（自C++11起可用）与\myttbr{std::\allowbreak{}make\_\allowbreak{}unique()}不同，后者自C++14起才可用；除非需要提供自定义删除器，否则都应该用它来创建智能指针。主要原因与\texttt{make\_\allowbreak{}unique()}相同：避免在某些上下文中抛出异常时可能出现的内存泄漏。关于这一点，请阅读前一案例中对\myttbr{std::\allowbreak{}make\_\allowbreak{}unique()}的说明。
+
+
+%%C090290 p
+
+另外，与\texttt{unique\_\allowbreak{}ptr}的情况一样，管理\texttt{Derived}类对象的\texttt{shared\_\allowbreak{}ptr}可以隐式转换为管理\texttt{Base}类对象的\texttt{shared\_\allowbreak{}ptr}。只要\texttt{Derived}类派生自\texttt{Base}，这种转换就是可行的。只有\texttt{Base}具有虚析构函数时，这种隐式转换才是安全的（当对象要通过基类的指针或引用多态地删除时，所有基类都应该如此）；否则会导致未定义行为。C++17新增了几个非成员函数：\myttbr{std::\allowbreak{}static\_\allowbreak{}pointer\_\allowbreak{}cast()}、\myttbr{std::\allowbreak{}dynamic\_\allowbreak{}pointer\_\allowbreak{}cast()}、\myttbr{std::\allowbreak{}const\_\allowbreak{}pointer\_\allowbreak{}cast()}和\myttbr{std::\allowbreak{}reinterpret\_\allowbreak{}pointer\_\allowbreak{}cast()}。它们分别对所存储的指针执行\texttt{static\_\allowbreak{}cast}、\texttt{dynamic\_\allowbreak{}cast}、\texttt{const\_\allowbreak{}cast}和\texttt{reinterpret\_\allowbreak{}cast}，并返回指向指定类型的新\texttt{shared\_\allowbreak{}ptr}。
+
+
+%%C090291 p
+
+在下面的例子中，\texttt{Base}与\texttt{Derived}就是前一案例中使用的那些类：
+
+
+%%C090292 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Derived}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pd}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{Derived}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Base}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pb}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pd}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{static\PYGZus{}pointer\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{Derived}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{pb}\PYG{p}{)}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{print}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090293 p
+
+有些情况下，你需要一个指向共享对象的智能指针，但不希望它参与共享所有权。假设你在为树形结构建模，某个节点持有对其子节点的引用，这些引用用\texttt{shared\_\allowbreak{}ptr}对象表示。另一方面，节点还需要保存对父节点的引用。如果这个引用也是\texttt{shared\_\allowbreak{}ptr}，就会造成循环引用，任何对象都不会被自动销毁。
+
+
+%%C090294 p
+
+\texttt{weak\_\allowbreak{}ptr}就是用来打破这种循环依赖的智能指针。它持有对\texttt{shared\_\allowbreak{}ptr}所管理对象或数组的非拥有引用。\texttt{weak\_\allowbreak{}ptr}可以由\texttt{shared\_\allowbreak{}ptr}对象创建。要访问所管理的对象，你需要取得一个临时的\texttt{shared\_\allowbreak{}ptr}对象。为此需要使用\texttt{lock()}方法。该方法以原子方式检查所引用的对象是否仍然存在：如果对象已不存在，就返回空的\texttt{shared\_\allowbreak{}ptr}；如果仍然存在，就返回拥有该对象的\texttt{shared\_\allowbreak{}ptr}。由于\texttt{weak\_\allowbreak{}ptr}是非拥有型智能指针，所引用的对象可能在\texttt{weak\_\allowbreak{}ptr}离开作用域之前就被销毁，也可能在所有拥有该对象的\texttt{shared\_\allowbreak{}ptr}被销毁、重置或赋给其他指针时被销毁。可以用\texttt{expired()}方法检查所引用的对象已被销毁还是仍然可用。
+
+
+%%C090295 p
+
+在\textit{具体做法}一节中，前面的例子建模了师傅与学徒的关系。其中有\texttt{Master}类和\texttt{Apprentice}类。\texttt{Master}类持有对\texttt{Apprentice}类的引用，以及一个名为\texttt{take\_\allowbreak{}apprentice()}的方法，用来设置\texttt{Apprentice}对象。\texttt{Apprentice}类持有对\texttt{Master}类的引用，以及\texttt{take\_\allowbreak{}master()}方法，用来设置\texttt{Master}对象。为了避免循环依赖，其中一个引用必须用\texttt{weak\_\allowbreak{}ptr}表示。在给出的例子中，\texttt{Master}类用\texttt{shared\_\allowbreak{}ptr}拥有\texttt{Apprentice}对象，而\texttt{Apprentice}类用\texttt{weak\_\allowbreak{}ptr}跟踪对\texttt{Master}对象的引用。不过这个例子稍复杂一些，因为这里的\myttbr{Apprentice::\allowbreak{}take\_\allowbreak{}master()}方法是从\myttbr{Master::\allowbreak{}take\_\allowbreak{}apprentice()}中调用的，而它需要一个\texttt{weak\_\allowbreak{}ptr<\allowbreak{}Master>}。为了能在\texttt{Master}类内部调用它，我们必须能够在\texttt{Master}类中用\texttt{this}指针创建\myttbr{shared\_\allowbreak{}ptr<\allowbreak{}Master>}。安全地做到这一点的唯一方式就是使用\myttbr{std::\allowbreak{}enable\_\allowbreak{}shared\_\allowbreak{}from\_\allowbreak{}this}。
+
+
+%%C090296 p
+
+\myttbr{std::\allowbreak{}enable\_\allowbreak{}shared\_\allowbreak{}from\_\allowbreak{}this}是一个类模板，凡是需要在当前对象（\texttt{this}指针）已被另一个\texttt{shared\_\allowbreak{}ptr}管理时为其创建\texttt{shared\_\allowbreak{}ptr}的类，都必须把它用作基类。它的类型模板参数必须是派生自它的那个类，这与奇异递归模板模式相同。它有两个方法：\myttbr{shared\_\allowbreak{}from\_\allowbreak{}this()}返回一个\texttt{shared\_\allowbreak{}ptr}，共享\texttt{this}对象的所有权；\texttt{weak\_\allowbreak{}from\_\allowbreak{}this()}返回一个\texttt{weak\_\allowbreak{}ptr}，共享对\texttt{this}对象的非拥有引用。后一个方法仅在C++17中可用。这些方法只能在由已有\texttt{shared\_\allowbreak{}ptr}管理的对象上调用；否则，从C++17起它们会抛出\myttbr{std::\allowbreak{}bad\_\allowbreak{}weak\_\allowbreak{}ptr}异常。在C++17之前，其行为是未定义的。
+
+
+%%C090297 p
+
+如果不使用\myttbr{std::\allowbreak{}enable\_\allowbreak{}shared\_\allowbreak{}from\_\allowbreak{}this}，而是直接创建\myttbr{shared\_\allowbreak{}ptr<\allowbreak{}T>(\allowbreak{}this)}，就会得到多个\texttt{shared\_\allowbreak{}ptr}对象，它们各自独立地管理同一个对象，彼此并不知道对方的存在。一旦如此，这个对象最终会被不同的\texttt{shared\_\allowbreak{}ptr}对象多次销毁。
+
+
+%%C090298 h3
+
+\subsection{延伸阅读}
+
+
+%%C090299 li
+
+\begin{itemize}
+\item \textit{用unique\_ptr独占内存资源}
+
+\end{itemize}
+
+
+%%C090300 h2
+
+\section{实现移动语义}
+
+
+%%C090301 p
+
+移动语义是推动现代C++性能提升的关键特性。它允许移动而不是复制资源，或者更一般地说，移动那些复制代价高昂的对象。不过这要求类实现移动构造函数与移动赋值运算符。在某些情况下编译器会提供它们，但在实践中，经常需要你显式编写。本案例将介绍如何实现移动构造函数与移动赋值运算符。
+
+
+%%C090302 h3
+
+\subsection{准备工作}
+
+
+%%C090303 p
+
+你需要具备右值引用与特殊成员函数（构造函数、赋值运算符和析构函数）的基础知识。下面用\texttt{Buffer}类演示如何实现移动构造函数与移动赋值运算符：
+
+
+%%C090304 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Buffer}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{length}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{Buffer}\PYG{p}{(}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{(}\PYG{n+nb}{nullptr}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{length}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{Buffer}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{)}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{ptr}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{[}\PYG{n}{size}\PYG{p}{]}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{length}\PYG{p}{(}\PYG{n}{size}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{o}{\PYGZti{}}\PYG{n}{Buffer}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{delete}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{Buffer}\PYG{p}{(}\PYG{n}{Buffer}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{ptr}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{[}\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{]}\PYG{p}{)}\PYG{p}{,}
+\PYG{n}{length}\PYG{p}{(}\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{copy}\PYG{p}{(}\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{Buffer}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{Buffer}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{other}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{delete}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{;}
+\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{[}\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{]}\PYG{p}{;}
+\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{copy}\PYG{p}{(}\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{length}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090305 h3
+
+\subsection{具体做法}
+
+
+%%C090306 p
+
+要为类实现移动构造函数，请按以下步骤操作：
+
+
+%%C090307 p
+
+编写一个接受该类类型右值引用的构造函数：
+
+
+%%C090308 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{Buffer}\PYG{p}{(}\PYG{n}{Buffer}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090309 p
+
+把右值引用中的所有数据成员赋值给当前对象。这一步
+
+
+%%C090310 p
+
+既可以在构造函数体内完成（如下所示），也可以在初始化列表中完成，后者是更推荐的做法：
+
+
+%%C090311 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{p}{;}
+\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090312 p
+
+把右值引用中的数据成员赋值为默认值：
+
+
+%%C090313 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090314 p
+
+综合起来，\texttt{Buffer}类的移动构造函数如下所示：
+
+
+%%C090315 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{Buffer}\PYG{p}{(}\PYG{n}{Buffer}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{o}{:}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090316 p
+
+要为类实现移动赋值运算符，请按以下步骤操作：
+
+
+%%C090317 p
+
+编写一个赋值运算符，它接受该类类型的右值引用，并
+
+
+%%C090318 p
+
+返回对它的引用：
+
+
+%%C090319 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{Buffer}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{Buffer}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090320 p
+
+检查该右值引用所指的不是与\texttt{this}相同的对象，如果
+
+
+%%C090321 p
+
+两者不同，就执行第3到第5步：
+
+
+%%C090322 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{other}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090323 p
+
+释放当前
+
+
+%%C090324 p
+
+对象持有的全部资源（例如内存、句柄等）：
+
+
+%%C090325 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{delete}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090326 p
+
+把右值引用中的所有数据成员赋值给当前对象：
+
+
+%%C090327 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{p}{;}
+\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090328 p
+
+把右值引用中的数据成员赋值为默认值：
+
+
+%%C090329 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090330 p
+
+返回对当前对象的引用，无论第3到第5步是否
+
+
+%%C090331 p
+
+已执行：
+
+
+%%C090332 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090333 p
+
+综合起来，\texttt{Buffer}类的移动赋值运算符如下所示：
+
+
+%%C090334 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{Buffer}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{Buffer}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{other}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{delete}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{;}
+\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{p}{;}
+\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{other}\PYG{p}{.}\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{other}\PYG{p}{.}\PYG{n}{length}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090335 h3
+
+\subsection{工作原理}
+
+%%C090336 p
+
+除非已经存在用户定义的复制构造函数、移动构造函数、复制赋值运算符、移动赋值运算符或析构函数，否则编译器会默认提供移动构造函数与移动赋值运算符。当由编译器提供时，这两个函数按成员逐一执行移动。移动构造函数会递归调用类数据成员的移动构造函数；类似地，移动赋值运算符会递归调用类数据成员的移动赋值运算符。
+
+
+%%C090337 p
+
+在这里，移动为那些大到不值得复制的对象（例如\texttt{string}或容器），以及本就不该被复制的对象（例如\texttt{unique\_\allowbreak{}ptr}智能指针），带来了性能收益。并非所有类都需要同时实现复制语义与移动语义。有些类应当只可移动，另一些则既可复制又可移动。另一方面，一个类可复制却不可移动并没有太大意义，尽管从技术上说是可以做到的。
+
+
+%%C090338 p
+
+并非所有类型都能从移动语义中获益。对于内置类型（例如\texttt{bool}、\texttt{int}或\texttt{double}）、数组以及POD，移动实际上就是复制操作。另一方面，移动语义只在右值的语境下带来性能收益，这里所说的右值就是临时对象。右值是没有名字的对象；它在表达式求值期间临时存在，并在遇到下一个分号时被销毁：
+
+
+%%C090339 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090340 p
+
+在上面的示例中，\texttt{a}、\texttt{b}与\texttt{c}都是左值；它们是有名字的对象，在对象的整个生存期内，都可以用这个名字引用它。另一方面，当你对表达式\texttt{a+b}求值时，编译器会创建一个临时对象（在本例中该对象被赋给\texttt{c}），随后再销毁它（在遇到分号时）。这些临时对象被称为右值，因为它们通常出现在赋值表达式的右侧。在C++11中，我们可以通过右值引用来引用这些对象，右值引用用\texttt{\&\&}表示。
+
+
+%%C090341 p
+
+移动语义在右值的语境下非常重要。这是因为移动语义允许你接管那个即将被销毁的临时对象的资源，而客户端在这次移动操作完成之后再也无法使用该临时对象。另一方面，左值不能被移动，只能被复制。这是因为移动操作之后左值仍然可以被访问，而客户端期望对象保持原来的状态。例如在上面的示例中，表达式\texttt{b = a}把\texttt{a}赋给\texttt{b}。
+
+
+%%C090342 p
+
+该操作完成之后，作为左值的对象\texttt{a}仍然可以被客户端使用，并且应当与操作前处于相同的状态。另一方面，\texttt{a+b}的结果是临时的，它的数据可以安全地移动到\texttt{c}。
+
+
+%%C090343 p
+
+移动构造函数与复制构造函数不同，它接受类类型的右值引用\texttt{T(\allowbreak{}T\&\&)}，而复制构造函数\texttt{T(\allowbreak{}T const\&)}接受的是左值引用。类似地，移动赋值接受右值引用，即\myttbr{T\& operator=(\allowbreak{}T\&\&)}，而复制赋值运算符接受左值引用，即\myttbr{T\& operator=(\allowbreak{}T const \&)}。尽管两者返回的都是对\texttt{T\&}类的引用，情况依然如此。编译器会根据实参的类型——是右值还是左值——来选择相应的构造函数或赋值运算符。
+
+
+%%C090344 p
+
+当存在移动构造函数／移动赋值运算符时，右值会被自动移动。左值也可以被移动，但这需要显式地静态转换到右值引用。这可以用\texttt{std::\allowbreak{}move()}函数完成，它基本上就是执行一次\myttbr{static\_\allowbreak{}cast<\allowbreak{}T\&\&>}：
+
+
+%%C090345 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Buffer}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}
+\PYG{n}{c}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{Buffer}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// 移动}
+\PYG{n}{Buffer}\PYG{+w}{ }\PYG{n+nf}{b}\PYG{p}{(}\PYG{l+m+mi}{200}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{c}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{            }\PYG{c+c1}{// 复制}
+\PYG{n}{c}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 移动}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090346 p
+
+对象被移动之后必须仍处于有效状态。不过，标准并没有规定这个状态应该是什么。为了一致性，你应当把所有成员字段都设置为默认值（数值类型设为0，指针设为\texttt{nullptr}，布尔值设为\texttt{false}，依此类推）。
+
+
+%%C090347 p
+
+下面的示例展示了构造与赋值\texttt{Buffer}对象的各种不同方式：
+
+
+%%C090348 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{Buffer}\PYG{+w}{ }\PYG{n}{b1}\PYG{p}{;}\PYG{+w}{                }\PYG{c+c1}{// 默认构造函数}
+\PYG{n}{Buffer}\PYG{+w}{ }\PYG{n+nf}{b2}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{           }\PYG{c+c1}{// 显式构造函数}
+\PYG{n}{Buffer}\PYG{+w}{ }\PYG{n+nf}{b3}\PYG{p}{(}\PYG{n}{b2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{            }\PYG{c+c1}{// 复制构造函数}
+\PYG{n}{b1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b3}\PYG{p}{;}\PYG{+w}{                  }\PYG{c+c1}{// 赋值运算符}
+\PYG{n}{Buffer}\PYG{+w}{ }\PYG{n+nf}{b4}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{b1}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 移动构造函数}
+\PYG{n}{b3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{b4}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// 移动赋值}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090349 h3
+
+\subsection{更多内容}
+
+
+%%C090350 p
+
+正如\texttt{Buffer}示例所示，同时实现移动构造函数与移动赋值运算符意味着要写两段相似的代码（移动构造函数中的全部代码在移动赋值运算符中也出现过）。实际上，可以在移动构造函数中调用移动赋值运算符来避免这种重复：
+
+
+%%C090351 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{Buffer}\PYG{p}{(}\PYG{n}{Buffer}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{(}\PYG{n+nb}{nullptr}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{length}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{o}{*}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{other}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C090352 p
+
+这个示例中有两点需要注意：
+
+
+%%C090353 li
+
+\begin{itemize}
+\item 必须在构造函数的初始化列表中初始化成员，因为这些成员稍后可能会在移动赋值运算符中被用到（例如本例中的\texttt{ptr}成员）。
+
+
+%%C090354 li
+
+\item 要把\texttt{other}静态转换到右值引用。如果没有这个显式转换，被调用的将是复制赋值运算符。这是因为即使传给该构造函数的是右值，一旦它被赋予名字，就会绑定到左值上。因此\texttt{other}实际上是左值，必须把它转换为右值引用才能调用移动赋值运算符。
+
+\end{itemize}
+
+
+%%C090355 h3
+
+\subsection{延伸阅读}
+
+
+%%C090356 li
+
+\begin{itemize}
+\item \texttt{Chapter 3}（\textit{函数探究}）中的\textit{默认化与删除的函数}案例
+
+\end{itemize}

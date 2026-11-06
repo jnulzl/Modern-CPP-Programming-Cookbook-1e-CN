@@ -1,0 +1,3790 @@
+%%C110001 p
+
+本章包含以下案例：
+
+
+%%C110002 li
+
+\begin{itemize}
+\item Boost.Test入门
+
+
+%%C110003 li
+
+\item 用Boost.Test编写并调用测试
+
+
+%%C110004 li
+
+\item 用Boost.Test做断言
+
+
+%%C110005 li
+
+\item 在Boost.Test中使用测试夹具
+
+
+%%C110006 li
+
+\item 控制Boost.Test的输出
+
+
+%%C110007 li
+
+\item Google Test入门
+
+
+%%C110008 li
+
+\item 用Google Test编写并调用测试
+
+
+%%C110009 li
+
+\item 用Google Test做断言
+
+
+%%C110010 li
+
+\item 在Google Test中使用测试夹具
+
+
+%%C110011 li
+
+\item 控制Google Test的输出
+
+
+%%C110012 li
+
+\item Catch入门
+
+
+%%C110013 li
+
+\item 用Catch编写并调用测试
+
+
+%%C110014 li
+
+\item 用Catch做断言
+
+
+%%C110015 li
+
+\item 控制Catch的输出
+\end{itemize}
+
+
+%%C110016 h2
+
+\section{引言}
+
+
+%%C110017 p
+
+测试代码是软件开发中的重要一环。虽然C++标准并未提供测试支持，但用于单元测试C++代码的框架种类繁多。本章的目的是带你入门几个现代且广泛使用的测试框架，让你能写出可移植的测试代码。本章讨论的框架之所以入选，是因为它们功能丰富、编写与执行测试简便、易于扩展并且可定制。
+
+
+%%C110018 h2
+
+\section{Boost.Test入门}
+
+
+%%C110019 p
+
+Boost.Test是最古老、最流行的C++测试框架之一。它提供了一套易用的API，用于编写测试并把它们组织成测试用例与测试套件。它对断言、异常处理、测试夹具以及其他测试框架必备的重要特性都有良好的支持。在接下来的几个案例中，我们将探索它最重要的那些特性，正是这些特性让你能够编写单元测试。本案例将展示如何安装该框架并创建一个简单的测试项目。
+
+
+%%C110020 h3
+
+\subsection{准备工作}
+
+
+%%C110021 p
+
+Boost.Test框架的API基于宏。虽然编写测试时你只需要使用它提供的宏，但若想用好这个框架，建议你对宏有较好的理解。
+
+
+%%C110022 h3
+
+\subsection{具体做法}
+
+
+%%C110023 p
+
+为了配置好使用Boost.Test的环境，请这样做：
+
+
+%%C110024 p
+
+从http://\allowbreak{}www.\allowbreak{}boost.\allowbreak{}org/\allowbreak{}下载最新版本的Boost库。
+
+
+%%C110025 p
+
+解压压缩包中的内容。
+
+
+%%C110026 p
+
+使用随附的工具与脚本构建库，以便使用
+
+
+%%C110027 p
+
+静态库或共享库版本。如果只打算使用仅头文件版本，这一步并非必需。
+
+
+%%C110028 p
+
+要使用Boost.Test库的仅头文件版本创建第一个测试程序，请这样做：
+
+
+%%C110029 p
+
+新建一个空的C++项目。
+
+
+%%C110030 p
+
+针对你所用的开发环境完成必要的设置，以便
+
+
+%%C110031 p
+
+让项目能够访问boost的\texttt{main}文件夹，从而包含头文件。
+
+
+%%C110032 p
+
+向项目中添加一个新源文件，内容如下：
+
+
+%%C110033 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BOOST\PYGZus{}TEST\PYGZus{}MODULE My first test module}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}boost/test/included/unit\PYGZus{}test.hpp\PYGZgt{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{first\PYGZus{}test\PYGZus{}function}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110034 p
+
+构建并运行该项目。
+
+
+%%C110035 h3
+
+\subsection{工作原理}
+
+
+%%C110036 p
+
+该库可以与其他Boost库一起下载。本书使用1.63版，但本案例讨论的特性在今后许多版本中很可能依然可用。\texttt{Test}库有三种版本：
+
+
+%%C110037 li
+
+\begin{itemize}
+\item \textbf{单头文件}：它让你无需构建库就能编写测试程序，只需包含一个头文件。其局限是一个模块只能有一个翻译单元；不过你仍可把模块拆到多个头文件中，从而把不同的测试套件分到不同的文件里。
+
+
+%%C110038 li
+
+\item \textbf{静态库}：它让你可以把一个模块拆分到多个翻译单元中，但必须先把该库构建为静态库。
+
+
+%%C110039 li
+
+\item \textbf{共享库}：它支持与静态库相同的场景。其优点是，对于包含多个测试模块的程序，该库只被链接一次，而不必为每个模块各链接一次，因此生成的二进制文件更小。不过在这种情况下，运行时必须能找到该共享库。
+
+
+\end{itemize}
+
+
+%%C110040 p
+
+为简便起见，本书使用单头文件版本。若使用静态库或共享库版本，就需要先构建该库。下载的压缩包中包含构建该库的脚本。不过具体步骤因平台和编译器而异；这里不涉及这些内容，但你可以在网上找到。
+
+
+%%C110041 p
+
+要使用该库，你需要理解以下几个术语与概念：
+
+
+%%C110042 li
+
+\begin{itemize}
+\item \textbf{测试模块}是执行测试的程序。模块有两种类型：\textbf{单文件}（使用单头文件版本时）与\textbf{多文件}（使用静态库或共享库版本时）。
+
+
+%%C110043 li
+
+\item \textbf{测试断言}是由测试模块检查的条件。
+
+
+%%C110044 li
+
+\item \textbf{测试用例}是一组一个或多个测试断言，由测试模块独立执行与监控，这样即使它失败或漏出未捕获的异常，也不会中断其他测试的执行。
+
+
+%%C110045 li
+
+\item \textbf{测试套件}是一个或多个测试用例或测试套件的集合。
+
+
+%%C110046 li
+
+\item \textbf{测试单元}是指测试用例或测试套件。
+
+
+%%C110047 li
+
+\item \textbf{测试树}是测试单元的层次结构。在这种结构中，测试用例是叶子，测试套件是非叶节点。
+
+
+%%C110048 li
+
+\item \textbf{测试运行器}是一个组件，它在给定测试树的情况下完成必要的初始化、测试执行与结果报告。
+
+
+%%C110049 li
+
+\item \textbf{测试报告}是测试运行器根据测试执行情况生成的报告。
+
+
+%%C110050 li
+
+\item \textbf{测试日志}是对测试模块执行期间发生的全部事件的记录。
+
+
+%%C110051 li
+
+\item \textbf{测试准备}是测试模块中负责框架初始化、测试树构建以及各测试用例准备工作的部分。
+
+
+%%C110052 li
+
+\item \textbf{测试清理}是测试模块中负责清理操作的部分。
+
+
+%%C110053 li
+
+\item \textbf{测试夹具}是一对准备与清理操作，它们会为多个测试单元调用，以避免代码重复。
+
+
+\end{itemize}
+
+
+%%C110054 p
+
+有了这些概念，就可以解释前面列出的示例代码了：
+
+
+%%C110055 p
+
+\myttbr{\#define BOOST\_\allowbreak{}TEST\_\allowbreak{}MODULE My first test module}为模块初始化定义了一个桩，并为主要的测试套件设置名称。
+
+
+%%C110056 p
+
+它必须在你包含任何库头文件之前定义。\myttbr{\#include <\allowbreak{}boost/\allowbreak{}test/\allowbreak{}included/\allowbreak{}unit\_\allowbreak{}test.\allowbreak{}hpp>}引入
+
+
+%%C110057 p
+
+单头文件形式的库，其中包含所有其他必需的头文件。\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}CASE(\allowbreak{}first\_\allowbreak{}test\_\allowbreak{}function)}声明一个不带
+
+
+%%C110058 p
+
+参数的测试用例（\myttbr{first\_\allowbreak{}test\_\allowbreak{}function}），并自动将其注册到测试树中，作为所在测试套件的一部分。在本例中，该测试套件就是由\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}MODULE}定义的主测试套件。
+
+
+%%C110059 p
+
+\texttt{BOOST\_\allowbreak{}TEST(\allowbreak{}true)\allowbreak{};}执行一次测试断言。
+
+
+%%C110060 p
+
+执行该测试模块的输出如下：
+
+
+%%C110061 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{case}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{o}{*}\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{n+no}{No}\PYG{+w}{ }\PYG{n+no}{errors}\PYG{+w}{ }\PYG{n+no}{detected}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110062 h3
+
+\subsection{更多内容}
+
+
+%%C110063 p
+
+如果你不希望库生成\texttt{main()}函数，而是自己编写它，那么需要在包含任何库头文件之前再定义两个宏--\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}NO\_\allowbreak{}MAIN}和\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}ALTERNATIVE\_\allowbreak{}INIT\_\allowbreak{}API}--。然后，在你提供的\texttt{main()}函数中，把默认初始化函数\texttt{init\_\allowbreak{}unit\_\allowbreak{}test()}作为参数传入，调用名为\texttt{unit\_\allowbreak{}test\_\allowbreak{}main()}的默认测试运行器，如下面的代码片段所示：
+
+
+%%C110064 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BOOST\PYGZus{}TEST\PYGZus{}MODULE My first test module}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BOOST\PYGZus{}TEST\PYGZus{}NO\PYGZus{}MAIN}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BOOST\PYGZus{}TEST\PYGZus{}ALTERNATIVE\PYGZus{}INIT\PYGZus{}API}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}boost/test/included/unit\PYGZus{}test.hpp\PYGZgt{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{first\PYGZus{}test\PYGZus{}function}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{main}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{argv}\PYG{p}{[}\PYG{p}{]}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test\PYGZus{}main}\PYG{p}{(}\PYG{n}{init\PYGZus{}unit\PYGZus{}test}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{argv}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110065 p
+
+也可以自定义测试运行器的初始化函数。此时必须去掉\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}MODULE}宏的定义，改为编写一个不接受参数、返回\texttt{bool}值的初始化函数：
+
+
+%%C110066 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BOOST\PYGZus{}TEST\PYGZus{}NO\PYGZus{}MAIN}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BOOST\PYGZus{}TEST\PYGZus{}ALTERNATIVE\PYGZus{}INIT\PYGZus{}API}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}boost/test/included/unit\PYGZus{}test.hpp\PYGZgt{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{first\PYGZus{}test\PYGZus{}function}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{custom\PYGZus{}init\PYGZus{}unit\PYGZus{}test}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test runner custom init}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{main}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{argv}\PYG{p}{[}\PYG{p}{]}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test\PYGZus{}main}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{custom\PYGZus{}init\PYGZus{}unit\PYGZus{}test}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{argv}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110067 note
+
+\begin{myNote}[tip]
+不自己编写\texttt{main()}函数也可以自定义初始化函数。此时不应定义\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}NO\_\allowbreak{}MAIN}宏，并且初始化函数必须命名为\texttt{init\_\allowbreak{}unit\_\allowbreak{}test()}。
+\end{myNote}
+
+
+%%C110068 h3
+
+\subsection{延伸阅读}
+
+
+%%C110069 li
+
+\begin{itemize}
+\item \textit{用Boost.Test编写并调用测试}
+
+\end{itemize}
+
+
+%%C110070 h2
+
+\section{用Boost.Test编写并调用测试}
+
+
+%%C110071 p
+
+该库既提供自动方式，也提供手动方式，把测试用例与测试套件注册给测试运行器执行。自动注册是最简单的方式，因为它让你只需声明测试单元就能构建测试树。本案例将展示如何使用该库的单头文件版本创建测试套件与测试用例，以及如何运行测试。
+
+
+%%C110072 h3
+
+\subsection{准备工作}
+
+
+%%C110073 p
+
+为了演示测试套件与测试用例的创建，我们使用下面这个表示三维点的类：
+
+
+%%C110074 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{point3d}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{y\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{z\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{point3d}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}
+\PYG{+w}{          }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{y}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}
+\PYG{+w}{          }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{z}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{o}{:}\PYG{n}{x\PYGZus{}}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{y\PYGZus{}}\PYG{p}{(}\PYG{n}{y}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{z\PYGZus{}}\PYG{p}{(}\PYG{n}{z}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{point3d}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{y\PYGZus{}}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{point3d}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{y\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{z\PYGZus{}}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{point3d}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{z}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{z}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{z\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{z}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{o}{=}\PYG{p}{(}\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{.}\PYG{n}{x\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{y\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{.}\PYG{n}{y\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{z\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{.}\PYG{n}{z\PYGZus{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{!}\PYG{o}{=}\PYG{p}{(}\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{!}\PYG{p}{(}\PYG{o}{*}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{.}\PYG{n}{x\PYGZus{}}\PYG{+w}{ }\PYG{o}{|}\PYG{o}{|}\PYG{+w}{ }\PYG{n}{y\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{.}\PYG{n}{y\PYGZus{}}\PYG{+w}{ }\PYG{o}{|}\PYG{o}{|}\PYG{+w}{ }\PYG{n}{z\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{.}\PYG{n}{z\PYGZus{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{friend}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{ostream}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{ostream}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{stream}\PYG{p}{,}
+\PYG{+w}{                            }\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{stream}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{(}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{.}\PYG{n}{x\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{,}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{.}\PYG{n}{y\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{,}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{pt}\PYG{p}{.}\PYG{n}{z\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{)}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{stream}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{offset}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{offsetx}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{offsety}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{offsetz}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{x\PYGZus{}}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{offsetx}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{y\PYGZus{}}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{offsety}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{z\PYGZus{}}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{offsetz}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{point3d}\PYG{+w}{ }\PYG{n}{origin}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110075 note
+
+\begin{myNote}
+继续往下读之前请注意：本案例中的测试用例故意包含错误的测试，以便让它们产生失败。
+\end{myNote}
+
+
+%%C110076 h3
+
+\subsection{具体做法}
+
+
+%%C110077 p
+
+使用以下宏来创建测试单元：
+
+
+%%C110078 li
+
+\begin{itemize}
+\item 要创建测试套件，使用\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}SUITE(\allowbreak{}name)}与\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}SUITE\_\allowbreak{}END()}：
+
+
+%%C110079 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE}\PYG{p}{(}\PYG{n}{test\PYGZus{}construction}\PYG{p}{)}
+\PYG{c+c1}{// 测试用例}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE\PYGZus{}END}\PYG{p}{(}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110080 li
+
+\item 要创建测试用例，使用\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}CASE(\allowbreak{}name)}。测试用例定义在\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}SUITE(\allowbreak{}name)}与\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}SUITE\_\allowbreak{}END()}之间，如下面的代码片段所示：
+
+
+%%C110081 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{test\PYGZus{}constructor}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 将失败}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{test\PYGZus{}origin}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{o}{:}\PYG{o}{:}\PYG{n}{origin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110082 li
+
+\item 要创建嵌套的测试套件，就在另一个测试套件内部定义一个测试套件：
+
+
+%%C110083 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE}\PYG{p}{(}\PYG{n}{test\PYGZus{}operations}\PYG{p}{)}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE}\PYG{p}{(}\PYG{n}{test\PYGZus{}methods}\PYG{p}{)}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{test\PYGZus{}offset}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{p}\PYG{p}{.}\PYG{n}{offset}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 将失败}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE\PYGZus{}END}\PYG{p}{(}\PYG{p}{)}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE\PYGZus{}END}\PYG{p}{(}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110084 li
+
+\item 要为测试单元添加装饰器，就给该测试单元的宏增加一个额外参数。装饰器可以包括描述、标签、前置条件、依赖关系、测试夹具等。下面的代码片段说明了这一点：
+
+
+%%C110085 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE}\PYG{p}{(}\PYG{n}{test\PYGZus{}operations}\PYG{p}{)}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE}\PYG{p}{(}\PYG{n}{test\PYGZus{}operators}\PYG{p}{)}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{test\PYGZus{}equal}\PYG{p}{,}
+\PYG{+w}{  }\PYG{o}{*}\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{description}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test operator==}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{o}{*}\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{label}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{opeq}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{p3}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 将失败}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{test\PYGZus{}not\PYGZus{}equal}\PYG{p}{,}
+\PYG{+w}{  }\PYG{o}{*}\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{description}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test operator!=}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{o}{*}\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{label}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{opeq}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{o}{*}\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{depends\PYGZus{}on}\PYG{p}{(}
+\PYG{+w}{    }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test\PYGZus{}operations/test\PYGZus{}operators/test\PYGZus{}equal}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{test\PYGZus{}less}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{o}{!}\PYG{p}{(}\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{p3}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE\PYGZus{}END}\PYG{p}{(}\PYG{p}{)}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE\PYGZus{}END}\PYG{p}{(}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110086 p
+
+要执行测试，请这样做：
+
+
+%%C110087 li
+
+\begin{itemize}
+\item 要执行整棵测试树，不带任何参数运行该程序（即测试模块）：
+
+
+%%C110088 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11bt\PYGZus{}02}\PYG{p}{.}\PYG{n}{exe}
+\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{o}{/}\PYG{n}{chapter11bt\PYGZus{}02}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{12}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test\PYGZus{}construction/test\PYGZus{}}
+\PYG{n}{constructor}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{: check p.z() == 4 has failed [3 != 4]}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{o}{/}\PYG{n}{chapter11bt\PYGZus{}02}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{35}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test\PYGZus{}operations/test\PYGZus{}}
+\PYG{n}{methods}\PYG{o}{/}\PYG{n}{test\PYGZus{}offset}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{: check p.z() == 3 has failed [4 != 3]}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{o}{/}\PYG{n}{chapter11bt\PYGZus{}02}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{55}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test\PYGZus{}operations/test\PYGZus{}}
+\PYG{n}{operators}\PYG{o}{/}\PYG{n}{test\PYGZus{}equal}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{: check p1 == p3 has failed [(1,2,3) !=}
+\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{]}
+\PYG{o}{*}\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{n}{failures}\PYG{+w}{ }\PYG{n}{are}\PYG{+w}{ }\PYG{n}{detected}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{n}{the}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{module}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Testing point 3d}\PYG{l+s}{\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110089 li
+
+\item 要执行单个测试套件，运行程序时用\texttt{run\_\allowbreak{}test}参数指定该测试套件的路径：
+
+
+%%C110090 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11bt\PYGZus{}02}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{run\PYGZus{}test}\PYG{o}{=}\PYG{n}{test\PYGZus{}construction}
+\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{o}{/}\PYG{n}{chapter11bt\PYGZus{}02}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{12}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test\PYGZus{}construction/test\PYGZus{}}
+\PYG{n}{constructor}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{: check p.z() == 4 has failed [3 != 4]}
+\PYG{o}{*}\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failure}\PYG{+w}{ }\PYG{n}{is}\PYG{+w}{ }\PYG{n}{detected}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{n}{the}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{module}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Testing point 3d}\PYG{l+s}{\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110091 li
+
+\item 要执行单个测试用例，运行程序时用\texttt{run\_\allowbreak{}test}参数指定该测试用例的路径：
+
+
+%%C110092 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11bt\PYGZus{}02}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{run\PYGZus{}test}\PYG{o}{=}\PYG{n}{test\PYGZus{}construction}\PYG{o}{/}\PYG{n}{test\PYGZus{}origin}
+\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{case}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{o}{*}\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{n+no}{No}\PYG{+w}{ }\PYG{n+no}{errors}\PYG{+w}{ }\PYG{n+no}{detected}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110093 li
+
+\item 要执行定义在同一标签下的若干测试套件与测试用例，运行程序时用\texttt{run\_\allowbreak{}test}参数指定该标签名，并在前面加上\texttt{@}：
+
+
+%%C110094 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11bt\PYGZus{}02}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{run\PYGZus{}test}\PYG{o}{=}\PYG{err}{@}\PYG{n}{opeq}
+\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{o}{/}\PYG{n}{chapter11bt\PYGZus{}02}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{56}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test\PYGZus{}operations/test\PYGZus{}}
+\PYG{n}{operators}\PYG{o}{/}\PYG{n}{test\PYGZus{}equal}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{: check p1 == p3 has failed [(1,2,3) !=}
+\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{]}
+\PYG{o}{*}\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failure}\PYG{+w}{ }\PYG{n}{is}\PYG{+w}{ }\PYG{n}{detected}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{n}{the}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{module}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Testing point 3d}\PYG{l+s}{\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110095 h3
+
+\subsection{工作原理}
+
+
+%%C110096 p
+
+测试树由测试套件与测试用例构成。一个测试套件可以包含一个或多个测试用例，也可以包含其他嵌套的测试套件。测试套件类似于命名空间，也就是说，它们可以在同一个文件或不同文件中多次停止并重新开始。测试套件的自动注册由宏\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}SUITE}（它需要一个名称）与\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}SUITE\_\allowbreak{}END}完成。测试用例的自动注册由\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}CASE}完成。测试单元（无论用例还是套件）都会成为离它最近的测试套件的成员。在文件作用域层次定义的测试单元会成为主测试套件的成员--主测试套件是由\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}MODULE}声明隐式创建的测试套件。
+
+
+%%C110097 p
+
+测试套件与测试用例都可以用一系列属性来装饰，这些属性会影响测试模块执行期间测试单元的处理方式。目前支持的装饰器如下：
+
+
+%%C110098 li
+
+\begin{itemize}
+\item \texttt{depends\_\allowbreak{}on}：表示当前测试单元与某个指定测试单元之间的依赖关系。
+
+
+%%C110099 li
+
+\item \texttt{description}：为测试单元提供语义描述。
+
+
+%%C110100 li
+
+\item \texttt{enabled}/\texttt{disabled}：把测试单元的默认运行状态设为\texttt{true}或\texttt{false}。
+
+
+%%C110101 li
+
+\item \texttt{enable\_\allowbreak{}if}：根据编译期表达式的求值结果，把测试单元的默认运行状态设为\texttt{true}或\texttt{false}。
+
+
+%%C110102 li
+
+\item \texttt{fixture}：指定一对函数（启动与清理），在测试单元执行前后调用。
+
+
+%%C110103 li
+
+\item \texttt{label}：借助它可以把测试单元与一个标签关联起来。同一个标签可用于多个测试单元，一个测试单元也可以有多个标签。
+
+
+%%C110104 li
+
+\item \texttt{precondition}：为测试单元关联一个谓词，在运行期用它判断该测试单元的运行状态。
+
+
+\end{itemize}
+
+
+%%C110105 p
+
+如果测试用例的执行过程中抛出了未被处理的异常，框架会捕获该异常，并以失败结束该测试用例的执行。不过，框架提供了若干宏，用来检验某段代码是否抛出异常。更多信息见下一个案例：\textit{用Boost.Test做断言}。
+
+%%C110106 p
+
+构成模块测试树的测试单元可以全部执行，也可以只执行其中一部分。无论哪种情况，要执行测试单元，只需运行代表该测试模块的（二进制）程序。若只想执行部分测试单元，可使用\texttt{--\allowbreak{}run\_\allowbreak{}test}命令行选项（如果想用更短的名字，可以用\texttt{--\allowbreak{}t}）。该选项让你过滤测试单元，指定路径或标签。路径由一系列测试套件和/或测试用例名称组成，例如\texttt{test\_\allowbreak{}construction}或\texttt{test\_\allowbreak{}operations}/\texttt{test\_\allowbreak{}methods}/\texttt{test\_\allowbreak{}offset}。标签是用\texttt{label}装饰器定义的名字，作为\texttt{run\_\allowbreak{}test}参数时需加上\texttt{@}前缀。该参数可以重复给出，也就是说你可以在它上面指定多个过滤器。
+
+
+%%C110107 h3
+
+\subsection{延伸阅读}
+
+
+%%C110108 li
+
+\begin{itemize}
+\item \textit{Boost.Test入门}
+
+
+%%C110109 li
+
+\item \textit{用Boost.Test做断言}
+
+\end{itemize}
+
+
+%%C110110 h2
+
+\section{用Boost.Test做断言}
+
+
+%%C110111 p
+
+一个测试用例包含一个或多个测试。\texttt{Boost.\allowbreak{}Test}库以宏的形式提供了一系列用于编写测试的API。在上一案例中，你已经大致了解了\texttt{BOOST\_\allowbreak{}TEST}宏，它是该库中最重要、使用最广的宏。本案例将更详细地讨论它的用法。
+
+
+%%C110112 h3
+
+\subsection{准备工作}
+
+
+%%C110113 p
+
+现在你应当已经熟悉如何编写测试套件与测试用例，这是上一案例涉及的内容。
+
+
+%%C110114 h3
+
+\subsection{具体做法}
+
+
+%%C110115 p
+
+下面的列表给出了执行测试时最常用的一些API：
+
+
+%%C110116 li
+
+\begin{itemize}
+\item \texttt{BOOST\_\allowbreak{}TEST}以最简单的形式用于大多数测试：
+
+
+%%C110117 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{;}
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{l+m+mf}{4.201}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{4.200}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{s1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sample}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{s2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{text}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{s1}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{s2}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110118 li
+
+\item \texttt{BOOST\_\allowbreak{}TEST}与\texttt{tolerance()}操纵器一起用于指明浮点比较的容差：
+
+
+%%C110119 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{l+m+mf}{4.201}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{4.200}\PYG{p}{,}
+\PYG{+w}{           }\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{test\PYGZus{}tools}\PYG{o}{:}\PYG{o}{:}\PYG{n}{tolerance}\PYG{p}{(}\PYG{l+m+mf}{0.001}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110120 li
+
+\item \texttt{BOOST\_\allowbreak{}TEST}与\texttt{per\_\allowbreak{}element()}操纵器一起用于对容器做逐元素比较（容器类型甚至可以不同）：
+
+
+%%C110121 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{list}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{short}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{test\PYGZus{}tools}\PYG{o}{:}\PYG{o}{:}\PYG{n}{per\PYGZus{}element}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110122 li
+
+\item \texttt{BOOST\_\allowbreak{}TEST}与三元运算符以及使用逻辑\texttt{||}或\texttt{\&\&}的复合语句一起使用时，需要额外加一对括号：
+
+
+%%C110123 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{o}{?}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110124 li
+
+\item \texttt{BOOST\_\allowbreak{}ERROR}用于无条件让测试失败，并在报告中产生一条消息。它等价于\myttbr{BOOST\_\allowbreak{}TEST(\allowbreak{}false, message)}：
+
+
+%%C110125 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}ERROR}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{this test will fail}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110126 li
+
+\item \texttt{BOOST\_\allowbreak{}TEST\_\allowbreak{}WARN}用于在测试失败时于报告中产生一条警告，既不增加已遇到的错误数，也不终止测试用例的执行：
+
+
+%%C110127 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}TEST\PYGZus{}WARN}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{something is not right}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110128 li
+
+\item \myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}REQUIRE}用于确保测试用例的前置条件得到满足；否则终止测试用例的执行：
+
+
+%%C110129 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}TEST\PYGZus{}REQUIRE}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{this is critical}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110130 li
+
+\item \texttt{BOOST\_\allowbreak{}FAIL}用于无条件终止测试用例的执行、增加已遇到的错误数，并在报告中产生一条消息。它等价于\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}REQUIRE(\allowbreak{}false, message)}：
+
+
+%%C110131 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}FAIL}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{must be implemented}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110132 li
+
+\item \texttt{BOOST\_\allowbreak{}IS\_\allowbreak{}DEFINED}用于在运行期检查某个特定的预处理符号是否已定义。它通常与\texttt{BOOST\_\allowbreak{}TEST}配合来做校验与日志记录：
+
+
+%%C110133 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{BOOST\PYGZus{}IS\PYGZus{}DEFINED}\PYG{p}{(}\PYG{n}{UNICODE}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110134 h3
+
+\subsection{工作原理}
+
+
+%%C110135 p
+
+该库定义了多种宏与操纵器来执行测试断言。最常用的是\texttt{BOOST\_\allowbreak{}TEST}。这个宏只是对一个表达式求值；若求值失败，它增加错误计数，但继续执行测试用例。实际上它有三个变体：
+
+
+%%C110136 li
+
+\begin{itemize}
+\item \texttt{BOOST\_\allowbreak{}TEST\_\allowbreak{}CHECK}与\texttt{BOOST\_\allowbreak{}TEST}相同，用于执行上一节所述的检查。
+
+
+%%C110137 li
+
+\item \texttt{BOOST\_\allowbreak{}TEST\_\allowbreak{}WARN}用于那些意在提供信息的断言，它不增加错误计数，也不终止测试用例的执行。
+
+
+%%C110138 li
+
+\item \myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}REQUIRE}意在确保测试用例继续执行所需的前置条件得到满足。一旦失败，该宏增加错误计数并终止测试用例的执行。
+
+\end{itemize}
+
+
+%%C110139 p
+
+测试宏的一般形式是\myttbr{BOOST\_\allowbreak{}TEST(\allowbreak{}statement)}。该宏提供丰富而灵活的报告能力。默认情况下，它不仅显示语句本身，还显示操作数的值，以便迅速定位失败的原因。不过，用户也可以提供另一种失败描述；此时该消息会被记录到测试报告中：
+
+
+%%C110140 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 错误：\PYGZdq{}regular\PYGZus{}tests\PYGZdq{} 中的检查 a == b 失败 [2 != 4]}
+\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{not equal}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 错误：\PYGZdq{}regular\PYGZus{}tests\PYGZdq{} 中：not equal}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110141 p
+
+该宏还允许你控制比较过程，对以下情形提供专门支持：
+
+
+%%C110142 li
+
+\begin{itemize}
+\item 第一是浮点比较，可以定义容差来测试相等性。
+
+
+%%C110143 li
+
+\item 第二，它支持容器比较，有几种方式：默认比较（使用重载的\texttt{operator==}）、逐元素比较，以及按字典序的比较（使用字典序）。逐元素比较允许按容器前向迭代器给出的顺序比较不同类型的容器（如\texttt{vector}与\texttt{list}）；它还会考虑容器的大小（即先比较大小，只有大小相等时才继续比较元素）。
+
+
+%%C110144 li
+
+\item 最后，它支持对操作数做按位比较。失败时，框架会报告比较失败的那一位的索引。
+
+\end{itemize}
+
+
+%%C110145 p
+
+\texttt{BOOST\_\allowbreak{}TEST}宏确实有一些限制。它不能用于使用逗号的复合语句，因为这类语句会被预处理器截获并处理，它也不能用于使用逻辑运算符\texttt{||}与\texttt{\&\&}的复合语句。后一种情况有变通办法：再加一对括号，如\myttbr{BOOST\_\allowbreak{}TEST((\allowbreak{}statement))}。
+
+
+%%C110146 p
+
+还有若干宏可用于测试在表达式求值期间是否抛出某个特定异常。在下面的列表中，\texttt{<\allowbreak{}level>}可以是\texttt{CHECK}、\texttt{WARN}或\texttt{REQUIRE}：
+
+
+%%C110147 li
+
+\begin{itemize}
+\item \myttbr{BOOST\_<\allowbreak{}level>\_\allowbreak{}NO\_\allowbreak{}THROW(\allowbreak{}expr)}检查是否从\texttt{expr}表达式抛出异常。\texttt{expr}求值期间抛出的任何异常都会被该断言捕获，不会传播到测试体。若有异常发生，断言失败。
+
+
+%%C110148 li
+
+\item \myttbr{BOOST\_<\allowbreak{}level>\_\allowbreak{}THROW(\allowbreak{}expr, exception\_\allowbreak{}type)}检查是否从\texttt{expr}表达式抛出\texttt{exception\_\allowbreak{}type}类型的异常。若表达式\texttt{expr}不抛出任何异常，则断言失败。类型不是\texttt{expression\_\allowbreak{}type}的异常不会被该断言捕获，可能传播到测试体。测试用例中未被捕获的异常会由执行监视器捕获，但会导致测试用例失败。
+
+
+%%C110149 li
+
+\item \myttbr{BOOST\_<\allowbreak{}level>\_\allowbreak{}EXCEPTION(\allowbreak{}expr, exception\_\allowbreak{}type, predicate)}检查是否从\texttt{expr}表达式抛出\texttt{expression\_\allowbreak{}type}类型的异常；若抛出，则把该异常传给谓词做进一步检查。若没有抛出异常，或抛出的异常类型不同于\texttt{exception\_\allowbreak{}type}，则该断言的行为与\myttbr{BOOST\_<\allowbreak{}level>\_\allowbreak{}THROW}相同。
+
+\end{itemize}
+
+
+%%C110150 h3
+
+\subsection{更多内容}
+
+
+%%C110151 p
+
+本案例只讨论最常用的测试API及其典型用法。不过，该库提供的API远不止这些。如需进一步参考，请查阅在线文档。1.63版的地址为http://\allowbreak{}www.\allowbreak{}boost.\allowbreak{}org/\allowbreak{}doc/\allowbreak{}libs/\allowbreak{}1\_\allowbreak{}63\_\allowbreak{}0/\allowbreak{}libs/\allowbreak{}test/\allowbreak{}doc/\allowbreak{}html/\allowbreak{}index.\allowbreak{}html。
+
+
+%%C110152 h3
+
+\subsection{延伸阅读}
+
+
+%%C110153 li
+
+\begin{itemize}
+\item \textit{用Boost.Test编写并调用测试}
+
+\end{itemize}
+
+
+%%C110154 h2
+
+\section{在Boost.Test中使用测试夹具}
+
+
+%%C110155 p
+
+测试模块越大、测试用例彼此越相似，就越可能出现需要相同搭建、清理乃至相同数据的测试用例。包含这些内容的组件称为\textit{测试夹具}（test fixture）或\textit{测试上下文}（test context）。Boost.Test提供了多种方式，可为测试用例、测试套件或模块（全局）定义测试夹具。本案例将看看夹具是如何工作的。
+
+
+%%C110156 h3
+
+\subsection{准备工作}
+
+
+%%C110157 p
+
+本案例的示例使用以下类和函数来指定测试单元的夹具：
+
+
+%%C110158 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{standard\PYGZus{}fixture}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{standard\PYGZus{}fixture}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{n}{BOOST\PYGZus{}TEST\PYGZus{}MESSAGE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{setup}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{o}{\PYGZti{}}\PYG{n}{standard\PYGZus{}fixture}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{BOOST\PYGZus{}TEST\PYGZus{}MESSAGE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{cleanup}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{42}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{extended\PYGZus{}fixture}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}
+\PYG{n}{extended\PYGZus{}fixture}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{(}\PYG{n}{n}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST\PYGZus{}MESSAGE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{setup }\PYG{l+s}{\PYGZdq{}}\PYG{o}{+}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{o}{\PYGZti{}}\PYG{n}{extended\PYGZus{}fixture}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{BOOST\PYGZus{}TEST\PYGZus{}MESSAGE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{cleanup }\PYG{l+s}{\PYGZdq{}}\PYG{o}{+}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{fixture\PYGZus{}setup}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST\PYGZus{}MESSAGE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{fixture setup}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{fixture\PYGZus{}cleanup}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST\PYGZus{}MESSAGE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{fixture cleanup}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110159 h3
+
+\subsection{具体做法}
+
+
+%%C110160 p
+
+使用以下方法可为一个或多个测试单元定义测试夹具：
+
+
+%%C110161 li
+
+\begin{itemize}
+\item 要为某个特定测试用例定义夹具，可使用\myttbr{BOOST\_\allowbreak{}FIXTURE\_\allowbreak{}TEST\_\allowbreak{}CASE}宏：
+
+
+%%C110162 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}FIXTURE\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{test\PYGZus{}case}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{extended\PYGZus{}fixture}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{data}\PYG{o}{+}\PYG{o}{+}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{data}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110163 li
+
+\item 要为某个测试套件中的所有测试用例定义夹具，可使用\myttbr{BOOST\_\allowbreak{}FIXTURE\_\allowbreak{}TEST\_\allowbreak{}SUITE}：
+
+
+%%C110164 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}FIXTURE\PYGZus{}TEST\PYGZus{}SUITE}\PYG{p}{(}\PYG{n}{suite1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{extended\PYGZus{}fixture}\PYG{p}{)}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{case1}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{data}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{case2}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{data}\PYG{o}{+}\PYG{o}{+}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{data}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE\PYGZus{}END}\PYG{p}{(}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110165 li
+
+\item 要为某个测试套件中的所有测试单元定义夹具、但排除其中一个或几个测试单元，可先用\myttbr{BOOST\_\allowbreak{}FIXTURE\_\allowbreak{}TEST\_\allowbreak{}SUITE}，再针对特定测试单元覆盖它：测试用例用\myttbr{BOOST\_\allowbreak{}FIXTURE\_\allowbreak{}TEST\_\allowbreak{}CASE}，嵌套测试套件用\myttbr{BOOST\_\allowbreak{}FIXTURE\_\allowbreak{}TEST\_\allowbreak{}SUITE}：
+
+
+%%C110166 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}FIXTURE\PYGZus{}TEST\PYGZus{}SUITE}\PYG{p}{(}\PYG{n}{suite2}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{extended\PYGZus{}fixture}\PYG{p}{)}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{case1}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{data}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}FIXTURE\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{case2}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{standard\PYGZus{}fixture}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{n}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE\PYGZus{}END}\PYG{p}{(}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110167 li
+
+\item 要为测试用例或测试套件定义不止一个夹具，可把\myttbr{boost::\allowbreak{}unit\_\allowbreak{}test::\allowbreak{}fixture}与\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}SUITE}、\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}CASE}宏配合使用：
+
+
+%%C110168 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{test\PYGZus{}case\PYGZus{}multifix}\PYG{p}{,}
+\PYG{+w}{  }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fixture}\PYG{o}{\PYGZlt{}}\PYG{n}{extended\PYGZus{}fixture}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{      }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{fix1}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fixture}\PYG{o}{\PYGZlt{}}\PYG{n}{extended\PYGZus{}fixture}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{      }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{fix2}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fixture}\PYG{o}{\PYGZlt{}}\PYG{n}{standard\PYGZus{}fixture}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110169 li
+
+\item 若要把自由函数用作夹具的搭建与拆除操作，可使用\myttbr{boost::\allowbreak{}unit\_\allowbreak{}test::\allowbreak{}fixture}：
+
+
+%%C110170 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{test\PYGZus{}case\PYGZus{}funcfix}\PYG{p}{,}
+\PYG{+w}{  }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{boost}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unit\PYGZus{}test}\PYG{o}{:}\PYG{o}{:}\PYG{n}{fixture}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{fixture\PYGZus{}setup}\PYG{p}{,}
+\PYG{+w}{                              }\PYG{o}{\PYGZam{}}\PYG{n}{fixture\PYGZus{}cleanup}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110171 li
+
+\item 要为模块定义夹具，可使用\myttbr{BOOST\_\allowbreak{}GLOBAL\_\allowbreak{}FIXTURE}：
+
+
+%%C110172 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{BOOST\PYGZus{}GLOBAL\PYGZus{}FIXTURE}\PYG{p}{(}\PYG{n}{standard\PYGZus{}fixture}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110173 h3
+
+\subsection{工作原理}
+
+
+%%C110174 p
+
+该库支持几种夹具模型：
+
+
+%%C110175 li
+
+\begin{itemize}
+\item 一种是\textit{类模型}，其中构造函数充当搭建函数，析构函数充当清理函数。扩展模型允许构造函数带一个参数。在上面的例子中，\texttt{standard\_\allowbreak{}fixture}实现的是第一种模型，\texttt{extended\_\allowbreak{}fixture}实现的是第二种模型。
+
+
+%%C110176 li
+
+\item 另一种是\textit{一对自由函数}：一个定义搭建，另一个（可选）实现清理代码。在上面的例子中，我们在讨论\texttt{fixture\_\allowbreak{}setup()}与\texttt{fixture\_\allowbreak{}cleanup()}时已见过这种模型。
+
+\end{itemize}
+
+
+%%C110177 p
+
+以类实现的夹具还可以有数据成员，这些成员对测试单元可用。若为某个测试套件定义了夹具，则该套件下的所有测试单元都隐式拥有它。不过，该测试套件中的测试单元有可能重新定义夹具。此时，对该测试单元可用的是定义在最近作用域中的那个夹具。
+
+
+%%C110178 p
+
+可以为同一个测试单元定义多个夹具。不过这要用\myttbr{boost::\allowbreak{}unit\_\allowbreak{}test::\allowbreak{}fixture()}装饰器而不是宏来完成。此时测试套件和测试用例分别用\texttt{BOOST\_\allowbreak{}TEST\_\allowbreak{}SUITE}/\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}SUITE}与\texttt{BOOST\_\allowbreak{}TEST\_\allowbreak{}CASE}/\myttbr{BOOST\_\allowbreak{}AUTO\_\allowbreak{}TEST\_\allowbreak{}CASE}宏定义。多个\texttt{fixture()}装饰器可以用\texttt{operator *}组合起来，如上一节所示。这种做法的缺点是：若你把夹具装饰器用于带成员数据的类，这些成员对测试单元将不可用。
+
+
+%%C110179 p
+
+每个测试用例执行时都会构造一个新的夹具对象，该对象在测试用例结束时被销毁。
+
+
+%%C110180 note
+
+\begin{myNote}
+夹具状态不会在不同测试用例之间共享。因此，构造函数和析构函数对每个测试用例各调用一次。你必须确保这些特殊函数里不含只应在每个模块执行一次的代码。若有这种情况，应当为整个模块设置一个全局夹具。
+\end{myNote}
+
+
+%%C110181 p
+
+全局夹具使用通用的测试类模型（即带默认构造函数的模型）；你可以定义任意多个全局夹具（必要时可借此按类别组织搭建与清理）。全局夹具用\myttbr{BOOST\_\allowbreak{}GLOBAL\_\allowbreak{}FIXTURE}宏定义，且必须定义在测试文件作用域上（不能放在任何测试单元内部）。
+
+
+%%C110182 h3
+
+\subsection{延伸阅读}
+
+
+%%C110183 li
+
+\begin{itemize}
+\item \textit{用Boost.Test编写并调用测试}
+
+\end{itemize}
+
+
+%%C110184 h2
+
+\section{控制Boost.Test的输出}
+
+
+%%C110185 p
+
+框架允许你自定义测试日志与测试报告中显示的内容以及结果的格式。目前支持两种格式：人类可读格式与XML（测试日志还支持JUNIT格式）。不过，你也可以创建并添加自己的格式。输出内容的配置既可以在运行期通过命令行开关完成，也可以在编译期通过各种API完成。测试执行期间，框架把所有事件收集到日志中。最后，它生成一份报告，以不同的详细程度概括本次执行。若发生失败，报告会包含关于位置与原因的详细信息，包括实际值与期望值。这有助于开发者迅速定位错误。本案例将介绍如何控制日志与报告中写什么内容、用什么格式；我们通过运行期的命令行选项来实现。
+
+
+%%C110186 h3
+
+\subsection{准备工作}
+
+
+%%C110187 p
+
+本案例给出的示例将使用如下测试模块：
+
+
+%%C110188 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define BOOST\PYGZus{}TEST\PYGZus{}MODULE Controlling output}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}boost/test/included/unit\PYGZus{}test.hpp\PYGZgt{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{test\PYGZus{}case}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE}\PYG{p}{(}\PYG{n}{test\PYGZus{}suite}\PYG{p}{)}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{n}{test\PYGZus{}case}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{BOOST\PYGZus{}TEST}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{BOOST\PYGZus{}AUTO\PYGZus{}TEST\PYGZus{}SUITE\PYGZus{}END}\PYG{p}{(}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110189 h3
+
+\subsection{具体做法}
+
+
+%%C110190 p
+
+要控制测试日志的输出，可做如下操作：
+
+
+%%C110191 li
+
+\begin{itemize}
+\item 用\myttbr{--\allowbreak{}log\_\allowbreak{}format=<\allowbreak{}format>}或\texttt{-\allowbreak{}f <\allowbreak{}format>}命令行选项指定日志格式。可用的格式有\texttt{HRF}（默认值）、\texttt{XML}与\texttt{JUNIT}。
+
+
+%%C110192 li
+
+\item 用\myttbr{--\allowbreak{}log\_\allowbreak{}level=<\allowbreak{}level>}或\texttt{-\allowbreak{}l <\allowbreak{}level>}命令行选项指定日志级别。可用的日志级别包括\texttt{error}（HRF与XML的默认值）、\texttt{warning}、\texttt{all}\textit{、}或\texttt{success}（JUNIT的默认值）。
+
+
+%%C110193 li
+
+\item 用\myttbr{--\allowbreak{}log\_\allowbreak{}sink=<\allowbreak{}stream or file name>}或\texttt{-\allowbreak{}k <\allowbreak{}stream or} \texttt{file name>}命令行选项指定框架写入测试日志的位置。可用的选项有\texttt{stdout}（HRM与XML的默认值）、\texttt{stderr}或任意文件名（JUNIT的默认值）。
+
+\end{itemize}
+
+
+%%C110194 p
+
+要控制测试报告的输出，可做如下操作：
+
+
+%%C110195 li
+
+\begin{itemize}
+\item 用\myttbr{--\allowbreak{}report\_\allowbreak{}format=<\allowbreak{}format>}或\texttt{-\allowbreak{}m <\allowbreak{}format>}命令行选项指定报告格式。可用的格式有\texttt{HRF}（默认值）与\texttt{XML}。
+
+
+%%C110196 li
+
+\item 用\myttbr{--\allowbreak{}report\_\allowbreak{}level=<\allowbreak{}format>}或\texttt{-\allowbreak{}r <\allowbreak{}format>}命令行选项指定报告级别。可用的格式有\texttt{confirm}（默认值）、\texttt{no}（不生成报告）、\texttt{short}与\texttt{detailed}。
+
+
+%%C110197 li
+
+\item 用\myttbr{--\allowbreak{}report\_\allowbreak{}sink=<\allowbreak{}stream or file name>}或\texttt{-\allowbreak{}e <\allowbreak{}stream or} \texttt{file name>}命令行选项指定框架写入报告日志的位置。可用的选项有\texttt{stderr}（默认值）、\texttt{stdout}或任意文件名。
+
+\end{itemize}
+
+
+%%C110198 h3
+
+\subsection{工作原理}
+
+
+%%C110199 p
+
+在控制台/终端中运行测试模块时，你会同时看到测试日志与测试报告，测试报告跟在测试日志之后。对于前面展示的测试模块，默认输出如下。前三行是测试日志，最后一行是测试报告：
+
+%%C110200 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{o}{/}\PYG{n}{chapter11bt\PYGZus{}05}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{14}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test\PYGZus{}suite/test\PYGZus{}case}\PYG{l+s}{\PYGZdq{}}\PYG{o}{:}
+\PYG{n}{check}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{n}{has}\PYG{+w}{ }\PYG{n}{failed}\PYG{+w}{ }\PYG{p}{[}\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{]}
+\PYG{o}{*}\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failure}\PYG{+w}{ }\PYG{n}{is}\PYG{+w}{ }\PYG{n}{detected}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{n}{the}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{module}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Controlling output}\PYG{l+s}{\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110201 p
+
+测试日志与测试报告的内容都可以用多种格式提供。默认格式是人类可读格式（human-readable format，HRF）；不过框架还支持XML，测试日志则另外支持JUNIT格式。JUNIT格式面向自动化工具，例如持续构建或持续集成工具。除了这些选项，你还可以从\myttbr{boost::\allowbreak{}unit\_\allowbreak{}test::\allowbreak{}unit\_\allowbreak{}test\_\allowbreak{}log\_\allowbreak{}formatter}派生自己的类，为测试日志实现自定义格式。下一个例子演示如何用XML格式化测试日志（第一个例子）与测试报告（第二个例子）（两者都用粗体标出）：
+
+
+%%C110202 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11bt\PYGZus{}05}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{f}\PYG{+w}{ }\PYG{n}{XML}
+\PYG{o}{\PYGZlt{}}\PYG{n}{TestLog}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZlt{}}\PYG{n}{Error}\PYG{+w}{ }\PYG{n}{file}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{f:/chapter11bt\PYGZus{}05/main.cpp}\PYG{l+s}{\PYGZdq{}}
+\PYG{n}{line}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{14}\PYG{l+s}{\PYGZdq{}}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZlt{}}\PYG{o}{!}\PYG{p}{[}\PYG{n}{CDATA}\PYG{p}{[}\PYG{n}{check}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{n}{has}\PYG{+w}{ }\PYG{n}{failed}\PYG{+w}{ }\PYG{p}{[}\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{]}\PYG{p}{]}\PYG{o}{\PYGZgt{}}
+\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{Error}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{TestLog}\PYG{o}{\PYGZgt{}}
+\PYG{o}{*}\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failure}\PYG{+w}{ }\PYG{n}{is}\PYG{+w}{ }\PYG{n}{detected}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{n}{the}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{module}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Controlling output}\PYG{l+s}{\PYGZdq{}}
+\PYG{n}{chapter11bt\PYGZus{}05}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{m}\PYG{+w}{ }\PYG{n}{XML}
+\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{o}{/}\PYG{n}{chapter11bt\PYGZus{}05}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{14}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test\PYGZus{}suite/test\PYGZus{}case}\PYG{l+s}{\PYGZdq{}}\PYG{o}{:}
+\PYG{n}{check}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{n}{has}\PYG{+w}{ }\PYG{n}{failed}\PYG{+w}{ }\PYG{p}{[}\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{]}
+\PYG{o}{\PYGZlt{}}\PYG{n}{TestResult}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZlt{}}\PYG{n}{TestSuite}\PYG{+w}{ }\PYG{n}{name}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Controlling output}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{result}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{failed}\PYG{l+s}{\PYGZdq{}}
+\PYG{n}{assertions\PYGZus{}passed}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{assertions\PYGZus{}failed}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{warnings\PYGZus{}failed}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}
+\PYG{n}{expected\PYGZus{}failures}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{test\PYGZus{}cases\PYGZus{}passed}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}
+\PYG{n}{test\PYGZus{}cases\PYGZus{}passed\PYGZus{}with\PYGZus{}warnings}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{test\PYGZus{}cases\PYGZus{}failed}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}
+\PYG{n}{test\PYGZus{}cases\PYGZus{}skipped}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{test\PYGZus{}cases\PYGZus{}aborted}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{TestSuite}\PYG{o}{\PYGZgt{}}
+\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{TestResult}\PYG{o}{\PYGZgt{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110203 p
+
+日志或报告的级别表示输出的详细程度。日志详细级别的可选值如下表所示，按从低到高的顺序排列。表中较高的级别包含其上方所有级别的消息。
+
+
+%%C110204 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.198\hsize\raggedright\arraybackslash}X>{\hsize=0.802\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\textbf{级别}} & \textcolor{white}{\textbf{报告的消息}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\textbf{级别}} & \textcolor{white}{\textbf{报告的消息}} \\
+\endhead
+\myttbr{nothing} & 不记录任何内容\\
+\myttbr{fatal\_\allowbreak{}error} & 系统或用户的致命错误，以及所有描述\myttbr{REQUIRE}级别断言失败的消息（例如\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}REQUIRE}与\myttbr{BOOST\_\allowbreak{}REQUIRE\_}）\\
+\myttbr{system\_\allowbreak{}error} & 系统非致命错误\\
+\myttbr{cpp\_\allowbreak{}exception} & 未捕获的C++异常\\
+\myttbr{error} & \myttbr{CHECK}级别的断言失败（\myttbr{BOOST\_\allowbreak{}TEST}与\myttbr{BOOST\_\allowbreak{}CHECK\_}）\\
+\myttbr{warning} & \myttbr{WARN}级别的断言失败（\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}WARN}与\myttbr{BOOST\_\allowbreak{}WARN\_}）\\
+\myttbr{message} & 由\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}MESSAGE}生成的消息\\
+\myttbr{test\_\allowbreak{}suite} & 每个测试单元开始与结束状态的通知\\
+\myttbr{all} / \myttbr{success} & 所有消息，包括通过的断言\\
+\end{xltabular}
+\myTableEnd
+
+
+%%C110205 p
+
+测试报告的可用格式如下表所示：
+
+
+%%C110206 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.128\hsize\raggedright\arraybackslash}X>{\hsize=0.872\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\textbf{级别}} & \textcolor{white}{\textbf{说明}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\textbf{级别}} & \textcolor{white}{\textbf{说明}} \\
+\endhead
+\myttbr{no} & 不生成任何报告\\
+\myttbr{confirm} & \textbf{通过的测试：}*** 未检测到错误\textbf{跳过的测试：}*** <name>测试套件被跳过，详情见标准输出\textbf{中止的测试：}*** <name>测试套件被中止，详情见标准输出\textbf{没有断言失败的失败测试：}*** 在<name>测试套件中检测到错误，详情见标准输出\textbf{失败的测试：}*** 在<name>测试套件中检测到N个失败\textbf{存在预期失败的失败测试：}*** 在<name>测试套件中检测到N个失败（预期M个失败）\\
+\end{xltabular}
+\myTableEnd
+
+
+%%C110207 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.128\hsize\raggedright\arraybackslash}X>{\hsize=0.872\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\myttbr{detailed}} & \textcolor{white}{结果按层次结构报告（每个测试单元作为父测试单元的一部分被报告），但只显示相关信息。没有断言失败的测试用例不会在报告中产生条目。测试用例/套件<name>已通过/被跳过/被中止/失败，同时：M个断言中有N个通过M个断言中有N个失败M个告警中有N个失败 预期X个失败} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\myttbr{detailed}} & \textcolor{white}{结果按层次结构报告（每个测试单元作为父测试单元的一部分被报告），但只显示相关信息。没有断言失败的测试用例不会在报告中产生条目。测试用例/套件<name>已通过/被跳过/被中止/失败，同时：M个断言中有N个通过M个断言中有N个失败M个告警中有N个失败 预期X个失败} \\
+\endhead
+\myttbr{short} & 与detailed类似，但只把信息报告到主测试套件\\
+\end{xltabular}
+\myTableEnd
+
+
+%%C110208 p
+
+标准输出流（\texttt{stdout}）是写入测试日志的默认位置，标准错误流（\texttt{stderr}）则是测试报告的默认位置。不过，测试日志与测试报告都可以重定向到另一个流或文件。除了这些选项，还可以用\myttbr{--\allowbreak{}report\_\allowbreak{}memory\_\allowbreak{}leaks\_\allowbreak{}to=<\allowbreak{}file name>}命令行选项指定一个单独的文件来报告内存泄漏。如果没有给出该选项而又检测到内存泄漏，泄漏信息会报告到标准错误流。
+
+
+%%C110209 h3
+
+\subsection{更多内容}
+
+
+%%C110210 p
+
+除了本案例讨论的选项之外，框架还提供了用于控制输出的其他编译期API。关于这些API以及本案例所述特性的完整说明，请查阅框架文档：http://\allowbreak{}www.\allowbreak{}boost.\allowbreak{}org/\allowbreak{}doc/\allowbreak{}libs/\allowbreak{}1\_\allowbreak{}63\_\allowbreak{}0/\allowbreak{}libs/\allowbreak{}test/\allowbreak{}doc/\allowbreak{}html/\allowbreak{}index.\allowbreak{}html。
+
+
+%%C110211 h3
+
+\subsection{延伸阅读}
+
+
+%%C110212 li
+
+\begin{itemize}
+\item \textit{用Boost.Test编写并调用测试}
+
+\end{itemize}
+
+
+%%C110213 h2
+
+\section{Google Test入门}
+
+
+%%C110214 p
+
+\textit{Google Test}是C++中最常用的测试框架之一。它让开发者能够在多个平台上、用多种编译器编写单元测试。Google Test是一个可移植的轻量级框架，提供了简洁而全面的断言式测试API；在它这里，测试被分组为测试用例（test case），测试用例又被分组为测试程序（test program）。
+
+
+%%C110215 p
+
+该框架提供了若干有用的特性，例如把某个测试重复运行多次，以及在第一个测试失败时中断测试并调入调试器。无论是否启用异常，它的断言都能正常工作。下一个案例将介绍该框架最重要的特性。本案例将向你展示如何安装该框架并搭建第一个测试工程。
+
+
+%%C110216 h3
+
+\subsection{准备工作}
+
+
+%%C110217 p
+
+Google Test框架与Boost.Test一样，提供基于宏的API。虽然编写测试时你只需要使用框架提供的宏，但为了更好地使用该框架，建议你对宏有较好的理解。
+
+
+%%C110218 h3
+
+\subsection{具体做法}
+
+
+%%C110219 p
+
+为了搭建使用Google Test的环境，请执行以下操作：
+
+
+%%C110220 p
+
+从https://\allowbreak{}github.\allowbreak{}com/\allowbreak{}google/\allowbreak{}googl克隆或下载Git仓库
+
+
+%%C110221 p
+
+etest。下载仓库之后，解压归档文件的内容。
+
+
+%%C110222 p
+
+使用随附的构建脚本构建该框架。
+
+
+%%C110223 p
+
+要使用Google Test创建第一个测试程序，请执行以下操作：
+
+
+%%C110224 p
+
+新建一个空的C++工程。
+
+
+%%C110225 p
+
+针对你使用的开发环境完成必要的设置，
+
+
+%%C110226 p
+
+使框架的\textit{headers}目录可供工程包含头文件。把工程链接到\textit{gtest}共享库。
+
+
+%%C110227 p
+
+向工程添加一个新的源文件，内容如下：
+
+
+%%C110228 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}gtest/gtest.h\PYGZgt{}}
+\PYG{n}{TEST}\PYG{p}{(}\PYG{n}{FirstTestCase}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{FirstTestFunction}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}TRUE}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{main}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{o}{*}\PYG{o}{*}\PYG{n}{argv}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{o}{:}\PYG{o}{:}\PYG{n}{testing}\PYG{o}{:}\PYG{o}{:}\PYG{n}{InitGoogleTest}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{argv}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{RUN\PYGZus{}ALL\PYGZus{}TESTS}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110229 p
+
+构建并运行该工程。
+
+
+%%C110230 h3
+
+\subsection{工作原理}
+
+
+%%C110231 p
+
+Google Test框架提供了一组简单易用的宏，用于创建测试和编写断言。与其他测试框架（例如Boost.Test）相比，它的测试结构也更简单。测试函数被分组为测试用例，测试用例被分组为测试程序。要注意，Google Test中的测试函数相当于Boost.Test及其他框架中的测试用例，而Google Test中的测试用例相当于Boost.Test中的测试套件。不过，Google Test的测试用例不能包含其他测试用例，只能包含测试函数。该框架提供了丰富的断言（既有致命断言，也有非致命断言）、对异常处理的良好支持，以及自定义测试执行方式与输出生成方式的能力。关于该框架的文档可在GitHub的项目页面上找到。上一节展示的示例代码包含以下几个部分：
+
+
+%%C110232 p
+
+\myttbr{\#include <\allowbreak{}gtest/\allowbreak{}gtest.\allowbreak{}h>}引入该框架的主头文件。
+
+
+%%C110233 p
+
+\myttbr{TEST(\allowbreak{}FirstTestCase, FirstTestFunction)}声明一个测试函数，其名称为
+
+
+%%C110234 p
+
+\texttt{FirstTestFunction}，它属于名为\texttt{FirstTestCase}的测试用例。测试函数没有参数，返回\texttt{void}。多个测试函数可以归入同一个测试用例。\myttbr{ASSERT\_\allowbreak{}TRUE(\allowbreak{}true)\allowbreak{};}是一个断言宏，当条件求值为\texttt{false}时会产生致命错误并从当前函数返回。
+
+
+%%C110235 p
+
+框架还定义了许多其他断言宏，我们将在\textit{用Google Test做断言}案例中看到。\myttbr{::\allowbreak{}testing::\allowbreak{}InitGoogleTest(\&argc, argv)\allowbreak{};}负责初始化该框架。
+
+
+%%C110236 p
+
+它必须在\texttt{RUN\_\allowbreak{}ALL\_\allowbreak{}TESTS()}之前调用。
+
+
+%%C110237 p
+
+\myttbr{return RUN\_\allowbreak{}ALL\_\allowbreak{}TESTS()\allowbreak{};}会自动检测并调用全部测试，
+
+
+%%C110238 p
+
+这些测试是用\texttt{TEST()}或\texttt{TEST\_\allowbreak{}F()}宏定义的。该宏的返回值被用作\texttt{main()}函数的返回值。这一点很重要，因为自动化测试服务是根据\texttt{main()}函数返回的值（而不是打印到\texttt{stdout}或\texttt{stderr}流的内容）来判定测试程序的结果的。\texttt{RUN\_\allowbreak{}ALL\_\allowbreak{}TESTS()}宏只能调用一次；多次调用不被支持，因为它会与框架的某些高级特性冲突。
+
+
+%%C110239 p
+
+执行这个测试程序会得到以下结果：
+
+
+%%C110240 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{p}{[}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{from}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{case}\PYG{p}{.}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{Global}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{environment}\PYG{+w}{ }\PYG{n+no}{set}\PYG{o}{\PYGZhy{}}\PYG{n+no}{up}\PYG{p}{.}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{from}\PYG{+w}{ }\PYG{n+no}{FirstTestCase}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{RUN}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{FirstTestCase}\PYG{p}{.}\PYG{n+no}{FirstTestFunction}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{OK}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{FirstTestCase}\PYG{p}{.}\PYG{n+no}{FirstTestFunction}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{n+no}{ms}\PYG{p}{)}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{from}\PYG{+w}{ }\PYG{n+no}{FirstTestCase}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{n+no}{ms}\PYG{+w}{ }\PYG{n+no}{total}\PYG{p}{)}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{Global}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{environment}\PYG{+w}{ }\PYG{n+no}{tear}\PYG{o}{\PYGZhy{}}\PYG{n+no}{down}
+\PYG{p}{[}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{from}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{case}\PYG{+w}{ }\PYG{n+no}{ran}\PYG{p}{.}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{n+no}{ms}\PYG{+w}{ }\PYG{n+no}{total}\PYG{p}{)}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{PASSED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{p}{.}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110241 p
+
+对许多测试程序而言，\texttt{main()}函数的内容都与本案例\textit{具体做法}一节中的示例相同。为避免编写这样的\texttt{main()}函数，框架提供了一个基本实现，你只需把程序与\texttt{gtest\_\allowbreak{}main}共享库链接即可使用。
+
+
+%%C110242 h3
+
+\subsection{更多内容}
+
+
+%%C110243 p
+
+Google Test框架也可以与其他测试框架一起使用。你可以用其他测试框架（例如Boost.Test或CppUnit）编写测试，同时使用Google Test的断言宏。为此，需要在代码中或命令行上用\myttbr{--\allowbreak{}gtest\_\allowbreak{}throw\_\allowbreak{}on\_\allowbreak{}failure}参数设置\texttt{throw\_\allowbreak{}on\_\allowbreak{}failure}标志。另一种做法是使用\myttbr{GTEST\_\allowbreak{}THROW\_\allowbreak{}ON\_\allowbreak{}FAILURE}环境变量并初始化框架，如下面的代码片段所示：
+
+
+%%C110244 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}gtest/gtest.h\PYGZdq{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{main}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{argv}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{o}{:}\PYG{o}{:}\PYG{n}{testing}\PYG{o}{:}\PYG{o}{:}\PYG{n}{GTEST\PYGZus{}FLAG}\PYG{p}{(}\PYG{n}{throw\PYGZus{}on\PYGZus{}failure}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{+w}{  }\PYG{o}{:}\PYG{o}{:}\PYG{n}{testing}\PYG{o}{:}\PYG{o}{:}\PYG{n}{InitGoogleTest}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{argv}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110245 p
+
+启用\texttt{throw\_\allowbreak{}on\_\allowbreak{}failure}选项后，失败的断言会打印错误消息并抛出异常，该异常会被宿主测试框架捕获并视为失败。如果未启用异常，那么失败的Google Test断言会让程序以非零返回码退出，这同样会被宿主测试框架视为失败。
+
+
+%%C110246 h3
+
+\subsection{延伸阅读}
+
+
+%%C110247 li
+
+\begin{itemize}
+\item \textit{用Google Test编写并调用测试}
+
+
+%%C110248 li
+
+\item \textit{用Google Test做断言}
+
+\end{itemize}
+
+
+%%C110249 h2
+
+\section{用Google Test编写并调用测试}
+
+
+%%C110250 p
+
+上一个案例中，我们初步了解了用Google Test框架编写简单测试需要做些什么。多个测试可以归入一个测试用例，一个或多个测试用例又可以归入一个测试程序。本案例将介绍如何创建并运行测试。
+
+
+%%C110251 h3
+
+\subsection{准备工作}
+
+
+%%C110252 p
+
+本案例的示例代码使用\textit{用Boost.Test编写并调用测试}案例中讨论过的\texttt{point3d}类。
+
+
+%%C110253 h3
+
+\subsection{具体做法}
+
+
+%%C110254 p
+
+使用以下宏创建测试：
+
+
+%%C110255 li
+
+\begin{itemize}
+\item \myttbr{TEST(\allowbreak{}TestCaseName, TestName)}定义一个名为\texttt{TestName}的测试，它属于名为\texttt{TestCaseName}的测试用例：
+
+
+%%C110256 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{TEST}\PYG{p}{(}\PYG{n}{TestConstruction}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{TesConstructor}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{TEST}\PYG{p}{(}\PYG{n}{TestConstruction}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{TestOrigin}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{o}{:}\PYG{o}{:}\PYG{n}{origin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110257 li
+
+\item \myttbr{TEST\_\allowbreak{}F(\allowbreak{}TestCaseWithFixture, TestName)}使用名为\myttbr{TestCaseWithFixture}的测试夹具，定义一个名为\texttt{TestName}的测试并归入该测试用例。关于它的工作原理，详见\textit{在Google Test中使用文本夹具}案例。
+
+\end{itemize}
+
+
+%%C110258 p
+
+要执行测试，请执行以下操作：
+
+
+%%C110259 li
+
+\begin{itemize}
+\item 使用\texttt{RUN\_\allowbreak{}ALL\_\allowbreak{}TESTS()}宏运行测试程序中定义的所有测试。它只能在框架初始化之后，从\texttt{main()}函数中调用一次。
+
+
+%%C110260 li
+
+\item 使用\myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=<\allowbreak{}filter>}命令行选项筛选要运行的测试。
+
+
+%%C110261 li
+
+\item 使用\myttbr{--\allowbreak{}gtest\_\allowbreak{}repeat=<\allowbreak{}count>}命令行选项，把选中的测试重复运行指定的次数。
+
+
+%%C110262 li
+
+\item 使用\myttbr{--\allowbreak{}gtest\_\allowbreak{}break\_\allowbreak{}on\_\allowbreak{}failure}命令行选项，在第一个测试失败时附加调试器来调试测试程序。
+
+\end{itemize}
+
+
+%%C110263 h3
+
+\subsection{工作原理}
+
+
+%%C110264 p
+
+可用于定义测试（作为测试用例的一部分）的宏有好几个，最常见的是\texttt{TEST}与\texttt{TEST\_\allowbreak{}F}。后者用于测试夹具，我们将在后面的案例中详细讨论。用于定义测试的其他宏还有编写类型化测试的\texttt{TYPED\_\allowbreak{}TEST}，以及编写类型参数化测试的\texttt{TYPED\_\allowbreak{}TEST\_\allowbreak{}P}。不过这些是更高级的话题，超出了本书的范围。\texttt{TEST}与\texttt{TEST\_\allowbreak{}F}宏接受两个参数：第一个是测试用例的名称，第二个是测试的名称。两者共同构成测试的全名，它们必须是合法的C++标识符；不过不应包含下划线。不同的测试用例可以包含同名的测试（因为全名仍然唯一）。这两个宏都会自动把测试注册到框架中；因此无需用户显式提供任何输入。
+
+
+%%C110265 p
+
+测试要么失败，要么成功。如果断言失败或出现未捕获的异常，测试就失败。除了这两种情况，测试总是成功。
+
+
+%%C110266 p
+
+要调用测试，需调用\texttt{RUN\_\allowbreak{}ALL\_\allowbreak{}TESTS()}，但在一个测试程序中只能这样做一次，而且必须在用\myttbr{::\allowbreak{}testing::\allowbreak{}InitGoogleTest()}初始化框架之后。该宏会运行测试程序中的所有测试。不过你有可能只想运行其中一部分测试。这可以通过设置名为\texttt{GTEST\_\allowbreak{}FILTER}的环境变量并给出合适的筛选器来实现，也可以用\texttt{--\allowbreak{}gtest\_\allowbreak{}filter}标志把筛选器作为命令行参数传入。只要二者之一存在，框架就只运行全名匹配该筛选器的测试。
+
+
+%%C110267 p
+
+筛选器可以包含通配符：\texttt{*}匹配任意字符串，\texttt{?}匹配任意单个字符。否定模式（表示应省略什么）用连字符（\texttt{-}）引出。下面是筛选器的一些例子：
+
+
+%%C110268 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.788\hsize\raggedright\arraybackslash}X>{\hsize=0.212\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\textbf{筛选器}} & \textcolor{white}{\textbf{说明}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\textbf{筛选器}} & \textcolor{white}{\textbf{说明}} \\
+\endhead
+\myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=*} & 运行所有测试\\
+\myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=TestConstruction.\allowbreak{}*} & 运行名为\textit{TestConstruction}的测试用例中的所有测试\\
+\myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=TestOperations.\allowbreak{}*-\allowbreak{}TestOperations.\allowbreak{}TestLess} & 运行名为\textit{TestOperations}的测试用例中的所有测试，但名为\textit{TestLess}的测试除外\\
+\myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=*Operations*:\allowbreak{}*Construction*} & 运行全名中包含\textit{Operations}或\textit{Construction}的所有测试\\
+\end{xltabular}
+\myTableEnd
+
+
+%%C110269 p
+
+下面的清单是用命令行参数\myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=TestConstruction.\allowbreak{}*-\allowbreak{}TestConstruction.\allowbreak{}TestConstructor}调用前面所示测试程序时的输出：
+
+
+%%C110270 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n+nl}{Note}\PYG{p}{:}\PYG{+w}{ }\PYG{n}{Google}\PYG{+w}{ }\PYG{n}{Test}\PYG{+w}{ }\PYG{n}{filter}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TestConstruction}\PYG{p}{.}\PYG{o}{*}\PYG{o}{\PYGZhy{}}
+\PYG{n}{TestConstruction}\PYG{p}{.}\PYG{n}{TestConstructor}
+\PYG{p}{[}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{from}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{case}\PYG{p}{.}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{Global}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{environment}\PYG{+w}{ }\PYG{n+no}{set}\PYG{o}{\PYGZhy{}}\PYG{n+no}{up}\PYG{p}{.}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{from}\PYG{+w}{ }\PYG{n+no}{TestConstruction}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{RUN}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{TestConstruction}\PYG{p}{.}\PYG{n+no}{TestOrigin}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{OK}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{TestConstruction}\PYG{p}{.}\PYG{n+no}{TestOrigin}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{n+no}{ms}\PYG{p}{)}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{from}\PYG{+w}{ }\PYG{n+no}{TestConstruction}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{n+no}{ms}\PYG{+w}{ }\PYG{n+no}{total}\PYG{p}{)}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{Global}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{environment}\PYG{+w}{ }\PYG{n+no}{tear}\PYG{o}{\PYGZhy{}}\PYG{n+no}{down}
+\PYG{p}{[}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{from}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{case}\PYG{+w}{ }\PYG{n+no}{ran}\PYG{p}{.}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{6}\PYG{+w}{ }\PYG{n+no}{ms}\PYG{+w}{ }\PYG{n+no}{total}\PYG{p}{)}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{PASSED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{p}{.}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110271 h3
+
+\subsection{延伸阅读}
+
+
+%%C110272 li
+
+\begin{itemize}
+\item \textit{Google Test入门}
+
+
+%%C110273 li
+
+\item \textit{用Google Test做断言}
+
+
+%%C110274 li
+
+\item \textit{在Google Test中使用文本夹具}
+
+\end{itemize}
+
+%%C110275 h2
+
+\section{用Google Test做断言}
+
+
+%%C110276 p
+
+Google Test框架提供了一整套丰富的致命与非致命断言宏，它们用起来像函数调用，用来验证被测代码。断言失败时，框架会显示源文件、行号与相关错误信息（包括自定义错误信息），帮助开发者迅速定位出错的代码。前面已经看过几个使用\texttt{ASSERT\_\allowbreak{}TRUE}宏的简单例子；本案例将介绍其他可用的宏。
+
+
+%%C110277 h3
+
+\subsection{具体做法}
+
+
+%%C110278 p
+
+使用下列宏来验证被测代码：
+
+
+%%C110279 li
+
+\begin{itemize}
+\item 用\myttbr{ASSERT\_\allowbreak{}TRUE(\allowbreak{}condition)}或\myttbr{EXPECT\_\allowbreak{}TRUE(\allowbreak{}condition)}检查条件是否为\texttt{true}，用\myttbr{ASSERT\_\allowbreak{}FASE(\allowbreak{}condition)}或\myttbr{EXPECT\_\allowbreak{}FALSE(\allowbreak{}condition)}检查条件是否为\texttt{false}，如下所示：
+
+
+%%C110280 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{EXPECT\PYGZus{}TRUE}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}FALSE}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}TRUE}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}FALSE}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110281 li
+
+\item 用\myttbr{ASSERT\_\allowbreak{}XX(\allowbreak{}val1, val2)}或\myttbr{EXPECT\_\allowbreak{}XX(\allowbreak{}val1, val2)}比较两个值，其中\texttt{XX}是下列之一：\texttt{EQ(\allowbreak{}val1 == val2)}、\texttt{NE(\allowbreak{}val1 !=}\texttt{val2)}、\texttt{LT(\allowbreak{}val1 < val2)}、\texttt{LE(\allowbreak{}val1 <\allowbreak{}= val2)}、\texttt{GT(\allowbreak{}val1 > val2)}或\texttt{GE(\allowbreak{}val1 >\allowbreak{}= val2)}。下面的代码演示了这一点：
+
+
+%%C110282 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}NE}\PYG{p}{(}\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}LT}\PYG{p}{(}\PYG{n}{b}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}LE}\PYG{p}{(}\PYG{n}{b}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{11}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}GT}\PYG{p}{(}\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}GE}\PYG{p}{(}\PYG{n}{b}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110283 li
+
+\item 用\myttbr{ASSERT\_\allowbreak{}STRXX(\allowbreak{}str1, str2)}或\myttbr{EXPECT\_\allowbreak{}STRXX(\allowbreak{}str1, str2)}比较两个以空字符结尾的字符串，其中\texttt{XX}是下列之一：\texttt{EQ}（两个字符串内容相同）、\texttt{NE}（两个字符串内容不同）、\texttt{CASEEQ}（忽略大小写时内容相同）与\texttt{CASENE}（忽略大小写时内容不同）。下面的代码片段演示了这一点：
+
+
+%%C110284 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{str}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sample}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}STREQ}\PYG{p}{(}\PYG{n}{str}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sample}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}STRNE}\PYG{p}{(}\PYG{n}{str}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{simple}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}STRCASEEQ}\PYG{p}{(}\PYG{n}{str}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{SAMPLE}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}STRCASENE}\PYG{p}{(}\PYG{n}{str}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{SIMPLE}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110285 li
+
+\item 用\myttbr{ASSERT\_\allowbreak{}FLOAT\_\allowbreak{}EQ(\allowbreak{}val1, val2)}或\myttbr{EXPECT\_\allowbreak{}FLOAT\_\allowbreak{}EQ(\allowbreak{}val1, val2)}检查两个\texttt{float}值是否近似相等，用\myttbr{ASSERT\_\allowbreak{}DOUBLE\_\allowbreak{}EQ(\allowbreak{}val1, val2)}或\myttbr{EXPECT\_\allowbreak{}DOUBLE\_\allowbreak{}EQ(\allowbreak{}val1, val2)}检查两个\texttt{double}值是否近似相等；两者的差值最多为4ULP（\textit{最后一位的单位}）。用\myttbr{ASSERT\_\allowbreak{}NEAR(\allowbreak{}val1, val2, abserr)}或\myttbr{ASSERT\_\allowbreak{}NEAR(\allowbreak{}val1, val2, abserr)}检查两个值的差值是否不大于指定的绝对值：
+
+
+%%C110286 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{EXPECT\PYGZus{}FLOAT\PYGZus{}EQ}\PYG{p}{(}\PYG{l+m+mf}{1.9999999f}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1.9999998f}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}FLOAT\PYGZus{}EQ}\PYG{p}{(}\PYG{l+m+mf}{1.9999999f}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1.9999998f}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110287 li
+
+\item 用\myttbr{ASSERT\_\allowbreak{}THROW(\allowbreak{}statement, exception\_\allowbreak{}type)}或\myttbr{EXPECT\_\allowbreak{}THROW(\allowbreak{}statement, exception\_\allowbreak{}type)}检查语句是否抛出指定类型的异常，用\myttbr{ASSERT\_\allowbreak{}ANY\_\allowbreak{}THROW(\allowbreak{}statement)}或\myttbr{EXPECT\_\allowbreak{}ANY\_\allowbreak{}THROW(\allowbreak{}statement)}检查语句是否抛出任意类型的异常，用\myttbr{ASSERT\_\allowbreak{}NO\_\allowbreak{}THROW(\allowbreak{}statement)}或\myttbr{EXPECT\_\allowbreak{}NO\_\allowbreak{}THROW(\allowbreak{}statement)}检查语句是否不抛出任何异常：
+
+
+%%C110288 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{error}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{function\PYGZus{}no\PYGZus{}throw}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{EXPECT\PYGZus{}THROW}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{             }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}ANY\PYGZus{}THROW}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}NO\PYGZus{}THROW}\PYG{p}{(}\PYG{n}{function\PYGZus{}no\PYGZus{}throw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}THROW}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{             }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}ANY\PYGZus{}THROW}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}NO\PYGZus{}THROW}\PYG{p}{(}\PYG{n}{function\PYGZus{}no\PYGZus{}throw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110289 li
+
+\item 用\myttbr{ASSERT\_\allowbreak{}PRED1(\allowbreak{}pred, val)}或\myttbr{EXPECT\_\allowbreak{}PRED1(\allowbreak{}pred, val)}检查\texttt{pred(\allowbreak{}val)}是否返回\texttt{true}，用\myttbr{ASSERT\_\allowbreak{}PRED2(\allowbreak{}pred, val1, val2)}或\myttbr{EXPECT\_\allowbreak{}PRED2(\allowbreak{}pred, val1, val2)}检查\texttt{pred(\allowbreak{}val1, val2)}是否返回\texttt{true}，依此类推；这适用于n元谓词函数或函数对象：
+
+
+%%C110290 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n+nf}{is\PYGZus{}positive}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{val}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{val}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n+nf}{is\PYGZus{}double}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{val1}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{val2}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{val2}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{val2}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{val1}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{EXPECT\PYGZus{}PRED1}\PYG{p}{(}\PYG{n}{is\PYGZus{}positive}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{EXPECT\PYGZus{}PRED2}\PYG{p}{(}\PYG{n}{is\PYGZus{}double}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{21}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}PRED1}\PYG{p}{(}\PYG{n}{is\PYGZus{}positive}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ASSERT\PYGZus{}PRED2}\PYG{p}{(}\PYG{n}{is\PYGZus{}double}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{21}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110291 li
+
+\item 用\myttbr{ASSERT\_\allowbreak{}HRESULT\_\allowbreak{}SUCCEEDED(\allowbreak{}expr)}或\myttbr{EXPECT\_\allowbreak{}HRESULT\_\allowbreak{}SUCCEEDED(\allowbreak{}expr)}检查\texttt{expr}是否为成功的\texttt{HRESULT}，用\myttbr{ASSERT\_\allowbreak{}HRESULT\_\allowbreak{}FAILED(\allowbreak{}expr)}或\myttbr{EXPECT\_\allowbreak{}HRESULT\_\allowbreak{}FAILED(\allowbreak{}expr)}检查\texttt{expr}是否为失败的\texttt{HRESULT}。这些断言只用于Windows平台。
+
+
+%%C110292 li
+
+\item 用\texttt{FAIL()}产生致命失败，用\texttt{ADD\_\allowbreak{}FAILURE()}或\myttbr{ADD\_\allowbreak{}FAILURE\_\allowbreak{}AT(\allowbreak{}filename, line)}产生非致命失败：
+
+
+%%C110293 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{ADD\PYGZus{}FAILURE}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ADD\PYGZus{}FAILURE\PYGZus{}AT}\PYG{p}{(}\PYG{n}{\PYGZus{}\PYGZus{}FILE\PYGZus{}\PYGZus{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}LINE\PYGZus{}\PYGZus{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110294 h3
+
+\subsection{工作原理}
+
+
+%%C110295 p
+
+所有断言都有两个版本：
+
+
+%%C110296 li
+
+\begin{itemize}
+\item \texttt{ASSERT\_\allowbreak{}*}：产生致命失败，当前测试函数不再继续执行。
+
+
+%%C110297 li
+
+\item \texttt{EXPECT\_\allowbreak{}*}：产生非致命失败，也就是说即使断言失败，测试函数仍会继续执行。
+
+\end{itemize}
+
+
+%%C110298 p
+
+如果条件不满足不算严重错误，或者你希望测试函数继续执行以便尽量多收集错误信息，就使用\texttt{EXPECT\_\allowbreak{}*}断言。其他情况下应使用\texttt{ASSERT\_\allowbreak{}*}版本的测试断言。
+
+
+%%C110299 p
+
+这里介绍的断言，其详细说明见框架的在线文档（项目托管在GitHub上，文档也在那里）。不过，浮点比较需要特别说明。由于舍入误差（小数部分无法表示为2的负幂的有限和），浮点值不会精确相等，因此比较应在相对误差界内进行。宏\texttt{ASSERT\_\allowbreak{}EQ}/\texttt{EXPECT\_\allowbreak{}EQ}不适合比较浮点数，框架为此提供了另一组断言：\texttt{ASSERT\_\allowbreak{}FLOAT\_\allowbreak{}EQ}/\texttt{ASSERT\_\allowbreak{}DOUBLE\_\allowbreak{}EQ}与\texttt{EXPECT\_\allowbreak{}FLOAT\_\allowbreak{}EQ}/\texttt{EXPECT\_\allowbreak{}DOUBLE\_\allowbreak{}EQ}，它们按默认的4ULP误差进行比较。
+
+
+%%C110300 note
+
+\begin{myNote}[tip]
+ULP是衡量浮点数之间间距的计量单位，即最低有效位取1时所代表的值。关于这一点，可以阅读Bruce Dawson的文章Comparing Floating Point Numbers, 2012 Edition：https://\allowbreak{}randomascii.\allowbreak{}wordpress.\allowbreak{}com/\allowbreak{}2012/\allowbreak{}02/\allowbreak{}25/\allowbreak{}comparing-\allowbreak{}floating-\allowbreak{}point-\allowbreak{}numbers-\allowbreak{}2012-\allowbreak{}edition/\allowbreak{}。
+\end{myNote}
+
+
+%%C110301 h3
+
+\subsection{延伸阅读}
+
+
+%%C110302 li
+
+\begin{itemize}
+\item \textit{用Google Test编写并调用测试}
+
+\end{itemize}
+
+
+%%C110303 h2
+
+\section{在Google Test中使用文本夹具}
+
+
+%%C110304 p
+
+框架支持把夹具用作测试用例中所有测试的可复用组件。它还支持设置运行测试所需的全局环境。本案例将逐步说明如何定义和使用测试夹具，以及如何设置测试环境。
+
+
+%%C110305 h3
+
+\subsection{准备工作}
+
+
+%%C110306 p
+
+现在你应该已经熟悉如何用Google Test框架编写和调用测试了，本章前面讲过这个主题，具体见\textit{用Google Test编写}\textit{并调用测试}案例。
+
+
+%%C110307 h3
+
+\subsection{具体做法}
+
+
+%%C110308 p
+
+要创建并使用测试夹具，请按以下步骤操作：
+
+
+%%C110309 p
+
+创建一个派生自\texttt{::\allowbreak{}testing::\allowbreak{}Test}类的类：
+
+
+%%C110310 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{TestFixture}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{o}{:}\PYG{o}{:}\PYG{n}{testing}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Test}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110311 p
+
+在构造函数中初始化夹具，在析构函数中清理：
+
+
+%%C110312 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{TestFixture}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{constructing fixture}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{data}\PYG{p}{.}\PYG{n}{resize}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{iota}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{data}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{data}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{o}{\PYGZti{}}\PYG{n}{TestFixture}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{destroying fixture}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110313 p
+
+另一种做法是重写虚函数\texttt{SetUp()}与\texttt{TearDown()}，
+
+
+%%C110314 p
+
+以达到同样的目的。再给类添加成员数据与成员函数，使测试可以使用它们：
+
+
+%%C110315 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110316 p
+
+用\texttt{TEST\_\allowbreak{}F}宏定义使用夹具的测试，并把夹具类的
+
+
+%%C110317 p
+
+名字指定为测试用例名：
+
+
+%%C110318 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{TEST\PYGZus{}F}\PYG{p}{(}\PYG{n}{TestFixture}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{TestData}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{data}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{data}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{data}\PYG{p}{[}\PYG{n}{data}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{]}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110319 p
+
+要自定义运行测试的环境设置，请按以下步骤操作：
+
+
+%%C110320 p
+
+创建一个派生自\myttbr{::\allowbreak{}testing::\allowbreak{}Environment}的类：
+
+
+%%C110321 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{TestEnvironment}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{o}{:}\PYG{o}{:}\PYG{n}{testing}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Environment}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110322 p
+
+重写虚函数\texttt{SetUp()}与\texttt{TearDown()}，以执行初始化与
+
+
+%%C110323 p
+
+清理操作：
+
+
+%%C110324 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{SetUp}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{environment setup}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{TearDown}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{environment cleanup}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110325 p
+
+通过调用
+
+
+%%C110326 p
+
+\myttbr{::\allowbreak{}testing::\allowbreak{}AddGlobalTestEnvironment()}注册该环境，注意要在调用\texttt{RUN\_\allowbreak{}ALL\_\allowbreak{}TESTS()}之前完成：
+
+
+%%C110327 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{main}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{o}{*}\PYG{o}{*}\PYG{n}{argv}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{o}{:}\PYG{o}{:}\PYG{n}{testing}\PYG{o}{:}\PYG{o}{:}\PYG{n}{InitGoogleTest}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{argv}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{o}{:}\PYG{o}{:}\PYG{n}{testing}\PYG{o}{:}\PYG{o}{:}\PYG{n}{AddGlobalTestEnvironment}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{TestEnvironment}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{RUN\PYGZus{}ALL\PYGZus{}TESTS}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110328 h3
+
+\subsection{工作原理}
+
+
+%%C110329 p
+
+文本夹具让用户可以在多个测试之间共享数据配置。夹具对象并不在测试之间共享：与文本函数关联的每个测试都会各自创建一个独立的夹具对象。对于来自同一夹具的每个测试，框架都会执行以下操作：
+
+
+%%C110330 p
+
+创建一个新的夹具对象。
+
+
+%%C110331 p
+
+调用它的\texttt{SetUp()}虚函数。
+
+
+%%C110332 p
+
+运行测试。
+
+
+%%C110333 p
+
+调用夹具的\texttt{TearDown()}虚函数。
+
+
+%%C110334 p
+
+销毁夹具对象。
+
+
+%%C110335 p
+
+可以通过两种方式设置与清理夹具对象：使用构造函数与析构函数，或者使用\texttt{SetUp()}与\texttt{TearDown()}这对虚函数。多数情况下推荐前者。不过，在以下几种情况下使用虚函数更合适：
+
+
+%%C110336 li
+
+\begin{itemize}
+\item 清理操作可能抛出异常时，因为异常不允许从析构函数中逃出。
+
+
+%%C110337 li
+
+\item 需要在清理过程中使用断言宏，并且使用了\myttbr{--\allowbreak{}gtest\_\allowbreak{}throw\_\allowbreak{}on\_\allowbreak{}failure}选项（该选项决定断言失败时是否抛出异常）。
+
+
+%%C110338 li
+
+\item 需要调用虚函数（它可能在派生类中被重写）时，因为不应在构造函数或析构函数中发起虚调用。
+
+\end{itemize}
+
+
+%%C110339 p
+
+使用夹具的测试必须用\texttt{TEST\_\allowbreak{}F}宏定义（其中\texttt{\_\allowbreak{}F}代表fixture）。若改用\texttt{TEST}宏声明这类测试，会产生编译错误。
+
+
+%%C110340 p
+
+运行测试的环境同样可以自定义。其机制与测试夹具类似：派生\myttbr{testing::\allowbreak{}Environment}基类，并重写\texttt{SetUp()}与\texttt{TearDown()}虚函数。这些派生环境类的实例必须通过调用\myttbr{testing::\allowbreak{}AddGlobalTestEnvironment()}注册到框架，而且必须在运行测试之前完成。你想注册多少个实例都可以；注册多个时，\texttt{SetUp()}按注册顺序依次调用，\texttt{TearDown()}则按相反顺序调用。传给该函数的必须是动态创建的对象。框架会接管这些对象的所有权，并在程序结束前删除它们，因此不要自行删除。
+
+
+%%C110341 note
+
+\begin{myNote}
+环境对象既不能供测试使用，也不是用来向测试提供数据的。它们的作用是自定义运行测试的全局环境。
+\end{myNote}
+
+
+%%C110342 h3
+
+\subsection{延伸阅读}
+
+
+%%C110343 li
+
+\begin{itemize}
+\item \textit{用Google Test编写并调用测试}
+
+\end{itemize}
+
+
+%%C110344 h2
+
+\section{控制Google Test的输出}
+
+
+%%C110345 p
+
+默认情况下，Google Test测试程序的输出写入标准流，以人类可读的形式打印。框架提供了若干选项来自定义输出，例如把基于JUNIT格式的XML打印到磁盘文件。本案例将探讨可用于控制输出的各种选项。
+
+
+%%C110346 h3
+
+\subsection{准备工作}
+
+
+%%C110347 p
+
+本案例使用下面这个测试程序：
+
+
+%%C110348 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}gtest/gtest.h\PYGZgt{}}
+\PYG{n}{TEST}\PYG{p}{(}\PYG{n}{Sample}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Test}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{ASSERT\PYGZus{}EQ}\PYG{p}{(}\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{main}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{o}{*}\PYG{o}{*}\PYG{n}{argv}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{o}{:}\PYG{o}{:}\PYG{n}{testing}\PYG{o}{:}\PYG{o}{:}\PYG{n}{InitGoogleTest}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{argc}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{argv}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{RUN\PYGZus{}ALL\PYGZus{}TESTS}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110349 p
+
+它的输出如下：
+
+
+%%C110350 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{p}{[}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{from}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{case}\PYG{p}{.}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{Global}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{environment}\PYG{+w}{ }\PYG{n+no}{set}\PYG{o}{\PYGZhy{}}\PYG{n+no}{up}\PYG{p}{.}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{from}\PYG{+w}{ }\PYG{n+no}{Sample}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{RUN}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{Sample}\PYG{p}{.}\PYG{n+no}{Test}
+\PYG{n+no}{f}\PYG{p}{:}\PYG{o}{/}\PYG{n}{chapter11gt\PYGZus{}05}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{6}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{Expected}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{a}
+\PYG{+w}{  }\PYG{n}{Which}\PYG{+w}{ }\PYG{n}{is}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{42}
+\PYG{n}{To}\PYG{+w}{ }\PYG{n}{be}\PYG{+w}{ }\PYG{n}{equal}\PYG{+w}{ }\PYG{n}{to}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{0}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n}{FAILED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Sample}\PYG{p}{.}\PYG{n}{Test}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{ms}\PYG{p}{)}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{from}\PYG{+w}{ }\PYG{n}{Sample}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{ms}\PYG{+w}{ }\PYG{n}{total}\PYG{p}{)}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Global}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{environment}\PYG{+w}{ }\PYG{n}{tear}\PYG{o}{\PYGZhy{}}\PYG{n}{down}
+\PYG{p}{[}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{from}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{case}\PYG{+w}{ }\PYG{n+no}{ran}\PYG{p}{.}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{n+no}{ms}\PYG{+w}{ }\PYG{n+no}{total}\PYG{p}{)}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{PASSED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{n+no}{tests}\PYG{p}{.}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{FAILED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{p}{,}\PYG{+w}{ }\PYG{n+no}{listed}\PYG{+w}{ }\PYG{n+no}{below}\PYG{p}{:}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n}{FAILED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Sample}\PYG{p}{.}\PYG{n}{Test}
+\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{FAILED}\PYG{+w}{ }\PYG{n}{TEST}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110351 h3
+
+\subsection{具体做法}
+
+
+%%C110352 p
+
+要控制测试程序的输出，你可以：
+
+
+%%C110353 li
+
+\begin{itemize}
+\item 使用\texttt{--\allowbreak{}gtest\_\allowbreak{}output}命令行选项或\texttt{GTEST\_\allowbreak{}OUTPUT}环境变量，取值为\texttt{xml:\allowbreak{}filepath}，以指定写入XML报告的文件的路径：
+
+
+%%C110354 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11gt\PYGZus{}05}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{gtest\PYGZus{}output}\PYG{o}{=}\PYG{n}{xml}\PYG{o}{:}\PYG{n}{report}\PYG{p}{.}\PYG{n}{xml}
+\PYG{o}{\PYGZlt{}}\PYG{o}{?}\PYG{n}{xml}\PYG{+w}{ }\PYG{n}{version}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1.0}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{encoding}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{UTF\PYGZhy{}8}\PYG{l+s}{\PYGZdq{}}\PYG{o}{?}\PYG{o}{\PYGZgt{}}
+\PYG{o}{\PYGZlt{}}\PYG{n}{testsuites}\PYG{+w}{ }\PYG{n}{tests}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{failures}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{n}{disabled}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{errors}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{n}{timestamp}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{2017\PYGZhy{}02\PYGZhy{}25T00:02:27}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{n}{time}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0.006}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{name}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{AllTests}\PYG{l+s}{\PYGZdq{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{n}{testsuite}\PYG{+w}{ }\PYG{n}{name}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Sample}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{tests}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{n}{failures}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{disabled}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{n}{errors}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{time}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0.003}\PYG{l+s}{\PYGZdq{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{n}{testcase}\PYG{+w}{ }\PYG{n}{name}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Test}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{status}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{run}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{time}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0.002}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{              }\PYG{n}{classname}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Sample}\PYG{l+s}{\PYGZdq{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{      }\PYG{o}{\PYGZlt{}}\PYG{n}{failure}\PYG{+w}{ }\PYG{n}{message}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{f:/chapter11gt\PYGZus{}05/main.cpp:6}
+\PYG{+w}{ }\PYG{n+nl}{Expected}\PYG{p}{:}\PYG{+w}{ }\PYG{n}{a}
+\PYG{+w}{ }\PYG{n}{Which}\PYG{+w}{ }\PYG{n}{is}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{42}
+\PYG{+w}{ }\PYG{n}{To}\PYG{+w}{ }\PYG{n}{be}\PYG{+w}{ }\PYG{n}{equal}\PYG{+w}{ }\PYG{n}{to}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ type=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZgt{}}
+\PYG{+w}{        }\PYG{o}{\PYGZlt{}}\PYG{o}{!}\PYG{p}{[}\PYG{n}{CDATA}\PYG{p}{[}\PYG{n}{f}\PYG{o}{:}\PYG{o}{/}\PYG{n}{chapter11gt\PYGZus{}05}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{o}{:}\PYG{l+m+mi}{6}
+\PYG{+w}{              }\PYG{n+nl}{Expected}\PYG{p}{:}\PYG{+w}{ }\PYG{n}{a}
+\PYG{+w}{              }\PYG{n}{Which}\PYG{+w}{ }\PYG{n}{is}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{42}
+\PYG{+w}{        }\PYG{n}{To}\PYG{+w}{ }\PYG{n}{be}\PYG{+w}{ }\PYG{n}{equal}\PYG{+w}{ }\PYG{n}{to}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{failure}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{testcase}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{testsuite}\PYG{o}{\PYGZgt{}}
+\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{testsuites}\PYG{o}{\PYGZgt{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110355 li
+
+\item 使用\texttt{--\allowbreak{}gtest\_\allowbreak{}color}命令行选项或\texttt{GTEST\_\allowbreak{}COLOR}环境变量，取值\texttt{auto}、\texttt{yes}或\texttt{no}，以指明报告是否以彩色形式打印到终端：
+
+
+%%C110356 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11gt\PYGZus{}05}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{gtest\PYGZus{}color}\PYG{o}{=}\PYG{n}{no}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110357 li
+
+\item 使用\myttbr{--\allowbreak{}gtest\_\allowbreak{}print\_\allowbreak{}time}命令行选项或\texttt{GTEST\_\allowbreak{}PRINT\_\allowbreak{}TIME}环境变量，取值为\texttt{0}，以禁止打印每个测试的执行耗时：
+
+
+%%C110358 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11gt\PYGZus{}05}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{gtest\PYGZus{}print\PYGZus{}time}\PYG{o}{=}\PYG{l+m+mi}{0}
+\PYG{p}{[}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Running}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{from}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{case}\PYG{p}{.}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{Global}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{environment}\PYG{+w}{ }\PYG{n+no}{set}\PYG{o}{\PYGZhy{}}\PYG{n+no}{up}\PYG{p}{.}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{+w}{ }\PYG{n+no}{from}\PYG{+w}{ }\PYG{n+no}{Sample}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{RUN}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n+no}{Sample}\PYG{p}{.}\PYG{n+no}{Test}
+\PYG{n+no}{f}\PYG{p}{:}\PYG{o}{/}\PYG{n}{chapter11gt\PYGZus{}05}\PYG{o}{/}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{6}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{Expected}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{a}
+\PYG{+w}{      }\PYG{n}{Which}\PYG{+w}{ }\PYG{n}{is}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{42}
+\PYG{n}{To}\PYG{+w}{ }\PYG{n}{be}\PYG{+w}{ }\PYG{n}{equal}\PYG{+w}{ }\PYG{n}{to}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{0}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n}{FAILED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Sample}\PYG{p}{.}\PYG{n}{Test}
+\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Global}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{environment}\PYG{+w}{ }\PYG{n}{tear}\PYG{o}{\PYGZhy{}}\PYG{n}{down}
+\PYG{p}{[}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{from}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{case}\PYG{+w}{ }\PYG{n+no}{ran}\PYG{p}{.}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{PASSED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{n+no}{tests}\PYG{p}{.}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n+no}{FAILED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n+no}{test}\PYG{p}{,}\PYG{+w}{ }\PYG{n+no}{listed}\PYG{+w}{ }\PYG{n+no}{below}\PYG{p}{:}
+\PYG{p}{[}\PYG{+w}{ }\PYG{n}{FAILED}\PYG{+w}{ }\PYG{p}{]}\PYG{+w}{ }\PYG{n}{Sample}\PYG{p}{.}\PYG{n}{Test}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110359 h3
+
+\subsection{工作原理}
+
+
+%%C110360 p
+
+生成XML格式的报告不会影响打印到终端的人类可读报告。输出路径可以是一个文件，也可以是一个目录（此时会创建以可执行文件名命名的文件；如果该文件在上一次运行中已经存在，则在文件名后加上数字生成一个新文件名），还可以留空，此时报告写入当前目录下名为\texttt{test\_\allowbreak{}detail.\allowbreak{}xml}的文件。
+
+
+%%C110361 p
+
+XML报告格式基于JUnitReport Ant任务，包含以下主要元素：
+
+
+%%C110362 li
+
+\begin{itemize}
+\item \texttt{<\allowbreak{}testsuites>}：这是根元素，对应整个测试程序。
+
+
+%%C110363 li
+
+\item \texttt{<\allowbreak{}testsuite>}：对应一个测试用例，因为Google Test的测试用例相当于其他框架中的测试套件。
+
+
+%%C110364 li
+
+\item \texttt{<\allowbreak{}testcase>}：对应一个测试函数，因为Google Test的测试函数相当于其他框架中的测试用例。
+
+\end{itemize}
+
+
+%%C110365 p
+
+默认情况下，框架会报告每个测试的执行耗时。这一特性可以用\myttbr{--\allowbreak{}gtest\_\allowbreak{}print\_\allowbreak{}time}命令行选项或\texttt{GTEST\_\allowbreak{}PRINT\_\allowbreak{}TIME}环境变量关闭，前面已经演示过。在1.3.0版本之前，打印耗时是默认行为。
+
+
+%%C110366 h3
+
+\subsection{延伸阅读}
+
+
+%%C110367 li
+
+\begin{itemize}
+\item \textit{用Google Test编写并调用测试}
+
+
+%%C110368 li
+
+\item \textit{在Google Test中使用文本夹具}
+
+\end{itemize}
+
+
+%%C110369 h2
+
+\section{Catch入门}
+
+
+%%C110370 p
+
+\textit{Catch}是一个多范式、仅头文件的C++与Objective-C测试框架。Catch这个名字代表\textit{C++ Automated Test Cases in Headers}。开发者既可以用传统风格编写测试，把测试函数按测试用例分组，也可以用\textit{行为驱动}\textit{开发（BDD）}风格，配以\textit{given-when-then}小节。测试会自动注册，框架提供了若干断言宏；其中用得最多的是两个：致命断言\texttt{REQUIRE}与非致命断言\texttt{CHECK}。它们会对左右两侧的值做表达式分解，并在失败时记录下来。
+
+
+%%C110371 h3
+
+\subsection{准备工作}
+
+
+%%C110372 p
+
+Catch测试框架的API基于宏。写测试时你只需要使用框架提供的宏，但若想用好这个框架，建议对宏有较好的理解。
+
+
+%%C110373 h3
+
+\subsection{具体做法}
+
+
+%%C110374 p
+
+要搭建使用Catch测试框架的环境，请按以下步骤操作：
+
+
+%%C110375 p
+
+从https://\allowbreak{}github.\allowbreak{}com/\allowbreak{}philsquared克隆或下载Git仓库
+
+
+%%C110376 p
+
+/Catch。下载仓库后，解压归档文件的内容。
+
+
+%%C110377 p
+
+要用Catch创建你的第一个测试程序，请按以下步骤操作：
+
+
+%%C110378 p
+
+新建一个空的C++项目。
+
+%%C110379 p
+
+针对你所使用的开发环境完成必要的设置，
+
+
+%%C110380 p
+
+使框架的头文件目录对项目可用，以便包含头文件。向项目中新增一个源文件，内容如下：
+
+
+%%C110381 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define CATCH\PYGZus{}CONFIG\PYGZus{}MAIN}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}catch.hpp\PYGZdq{}}
+\PYG{n}{TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{first\PYGZus{}test\PYGZus{}case}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{[learn][catch]}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{SECTION}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{first\PYGZus{}test\PYGZus{}function}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110382 p
+
+构建并运行该项目。
+
+
+%%C110383 h3
+
+\subsection{工作原理}
+
+
+%%C110384 p
+
+Catch让开发者可以把测试用例写成自注册的函数；它甚至能为\texttt{main()}函数提供默认实现，这样你就能专注于编写测试代码，减少准备工作代码。测试用例被划分为若干独立运行的节（section）。该框架并不遵循\textit{setup-test-teardown}架构的风格。相反，测试用例的节（更准确地说，是最内层的节，因为节可以嵌套）才是测试单元，它们与所属的外层节一起执行。这使得测试夹具不再必要，因为数据以及准备与清理代码可以在多个层级上复用。
+
+
+%%C110385 p
+
+测试用例和节都用字符串而非标识符来标识（大多数测试框架则使用标识符）。测试用例还可以打上标签，从而可以按标签来执行或列出测试。测试结果以人类可读的文本形式打印；不过也可以导出为XML，使用Catch专有的模式或JUNIT ANT模式，便于与持续交付系统集成。测试的执行可以参数化，使其在失败时中断（在Windows和Mac上），这样你就能附加调试器并检查程序。
+
+
+%%C110386 p
+
+该框架易于安装，且不需要编译。全部代码都以头文件形式提供。有两种选择：单个头文件，或一组相互包含的头文件。无论哪种情况，测试程序中唯一需要包含的头文件都是\texttt{catch.\allowbreak{}hpp}。
+
+
+%%C110387 p
+
+上一节展示的示例代码包含以下几部分：
+
+
+%%C110388 p
+
+\myttbr{\#define CATCH\_\allowbreak{}CONFIG\_\allowbreak{}MAIN}定义一个宏，指示框架
+
+
+%%C110389 p
+
+为\texttt{main()}函数提供默认实现。
+
+
+%%C110390 p
+
+\myttbr{\#include “catch.\allowbreak{}hpp”}包含该库的主头文件（该头文件又会
+
+
+%%C110391 p
+
+包含其他头文件）。\myttbr{TEST\_\allowbreak{}CASE(\allowbreak{}“first\_\allowbreak{}test\_\allowbreak{}case”, “[learn][catch]”)}定义一个测试用例
+
+
+%%C110392 p
+
+名为\texttt{first\_\allowbreak{}test\_\allowbreak{}case}，它带有若干关联标签：\texttt{learn}和\texttt{catch}。标签用于选择运行测试用例，还是仅列出测试用例。多个测试用例可以打上相同的标签。\myttbr{SECTION(\allowbreak{}“first\_\allowbreak{}test\_\allowbreak{}function”)}定义一个节，也就是一个测试函数，
+
+
+%%C110393 p
+
+名为\myttbr{first\_\allowbreak{}test\_\allowbreak{}function}，它是外层测试用例的一部分。
+
+
+%%C110394 p
+
+\texttt{REQUIRE(\allowbreak{}i == 42)\allowbreak{};}是一条断言，表示若条件
+
+
+%%C110395 p
+
+不满足，则判定测试失败。
+
+
+%%C110396 p
+
+运行该程序的输出如下：
+
+
+%%C110397 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}
+\PYG{n}{All}\PYG{+w}{ }\PYG{n}{tests}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{assertions}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110398 h3
+
+\subsection{更多内容}
+
+
+%%C110399 p
+
+如前所述，该框架让我们可以用BDD风格编写测试，使用\textit{given-when-then}形式的节。这是通过若干别名实现的：\texttt{SCENARIO}对应\texttt{TEST\_\allowbreak{}CASE}，而\texttt{GIVE}、\texttt{WHEN}、\texttt{AND\_\allowbreak{}WHEN}、\texttt{THEN}和\texttt{AND\_\allowbreak{}THEN}对应\texttt{SECTION}。使用这种风格，可以把前面展示的测试改写如下：
+
+
+%%C110400 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{SCENARIO}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{first\PYGZus{}scenario}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{[learn][catch]}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{GIVEN}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{an integer}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{WHEN}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{assigned a value}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{THEN}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{the value can be read back}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{      }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{      }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110401 p
+
+成功执行时，程序会打印如下输出：
+
+
+%%C110402 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}
+\PYG{n}{All}\PYG{+w}{ }\PYG{n}{tests}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{assertions}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110403 p
+
+不过，一旦失败（假设我们把条件写错了：\texttt{i == 0}），程序就会打印该场景及失败节的描述，以及失败的表达式和左右两侧的值，如下所示：
+
+
+%%C110404 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n+nl}{Scenario}\PYG{p}{:}\PYG{+w}{ }\PYG{n}{first\PYGZus{}scenario}
+\PYG{+w}{ }\PYG{n+nl}{Given}\PYG{p}{:}\PYG{+w}{ }\PYG{n}{an}\PYG{+w}{ }\PYG{n}{integer}
+\PYG{+w}{ }\PYG{n+nl}{When}\PYG{p}{:}\PYG{+w}{ }\PYG{n}{assigned}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{n}{value}
+\PYG{+w}{ }\PYG{n+nl}{Then}\PYG{p}{:}\PYG{+w}{ }\PYG{n}{the}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{n}{can}\PYG{+w}{ }\PYG{n}{be}\PYG{+w}{ }\PYG{n}{read}\PYG{+w}{ }\PYG{n}{back}
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{+w}{ }\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}01}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{21}\PYG{p}{)}
+\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}01}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{23}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{FAILED}\PYG{o}{:}
+\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{p}{)}
+\PYG{n}{with}\PYG{+w}{ }\PYG{n}{expansion}\PYG{o}{:}
+\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110405 h3
+
+\subsection{延伸阅读}
+
+
+%%C110406 li
+
+\begin{itemize}
+\item \textit{用Catch编写并调用测试}
+
+
+%%C110407 li
+
+\item \textit{用Catch做断言}
+
+\end{itemize}
+
+
+%%C110408 h2
+
+\section{用Catch编写并调用测试}
+
+
+%%C110409 p
+
+Catch框架让你既可以用传统的测试用例与测试函数风格编写测试，也可以用带场景与\textit{given-when-then}节的BDD风格。测试被定义为测试用例的独立节，可以任意深度嵌套。无论你偏好哪种风格，测试都只用两个基础宏来定义。本案例将说明这两个宏是什么，以及它们如何工作。
+
+
+%%C110410 h3
+
+\subsection{具体做法}
+
+
+%%C110411 p
+
+要使用测试用例与测试函数的传统风格编写测试，请这样做：
+
+
+%%C110412 li
+
+\begin{itemize}
+\item 使用\texttt{TEST\_\allowbreak{}CASE}宏定义一个测试用例，给出名称（字符串形式），并可选地给出其关联标签列表：
+
+
+%%C110413 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test construction}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{[create]}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+c1}{// 在这里定义节}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110414 li
+
+\item 使用\texttt{SECTION}宏在测试用例内定义一个测试函数，\texttt{name}以字符串形式给出：
+
+
+%%C110415 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test construction}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{[create]}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{SECTION}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test constructor}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110416 li
+
+\item 如果你希望复用准备与清理代码，或把测试组织成层次结构，可以定义嵌套的节：
+
+
+%%C110417 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test operations}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{[modify]}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{SECTION}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test methods}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{SECTION}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test offset}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{p}\PYG{p}{.}\PYG{n}{offset}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110418 p
+
+要使用BDD风格编写测试，请这样做：
+
+
+%%C110419 li
+
+\begin{itemize}
+\item 使用\texttt{SCENARIO}宏定义场景，并为其指定名称：
+
+
+%%C110420 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{SCENARIO}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{modify existing object}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+c1}{// 在这里定义节}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110421 li
+
+\item 在场景内使用\texttt{GIVEN}、\texttt{WHEN}和\texttt{THEN}宏定义嵌套的节，为每个节分别指定名称：
+
+
+%%C110422 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{SCENARIO}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{modify existing object}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{GIVEN}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{a default constructed point}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{WHEN}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{increased with 1 unit on all dims}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{p}\PYG{p}{.}\PYG{n}{offset}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{THEN}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{all coordinates are equal to 1}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{      }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{      }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110423 p
+
+要执行测试，请这样做：
+
+
+%%C110424 li
+
+\begin{itemize}
+\item 要执行程序中的全部测试（隐藏的测试除外），不带任何命令行参数运行测试程序即可（可用参数见下面的代码）。
+
+
+%%C110425 li
+
+\item 要只执行某组特定的测试用例，请以命令行参数形式提供过滤器。过滤器可以包含测试用例名、通配符、标签名和标签表达式：
+
+
+%%C110426 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11ca\PYGZus{}02}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test construction}\PYG{l+s}{\PYGZdq{}}
+\PYG{n}{test}\PYG{+w}{ }\PYG{n}{construction}
+\PYG{+w}{   }\PYG{n}{test}\PYG{+w}{ }\PYG{n}{constructor}
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}02}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{7}\PYG{p}{)}
+\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}02}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{12}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{FAILED}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{+w}{ }\PYG{p}{)}
+\PYG{n}{with}\PYG{+w}{ }\PYG{n}{expansion}\PYG{o}{:}
+\PYG{+w}{  }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}
+\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}
+\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failed}
+\PYG{n+nl}{assertions}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failed}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110427 li
+
+\item 要只执行某个特定的节（或某组节），请使用命令行参数\texttt{--\allowbreak{}section}或\texttt{-\allowbreak{}c}并给出节名（可重复使用以指定多个节）：
+
+
+%%C110428 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11ca\PYGZus{}02}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test construction}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{section}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test origin}\PYG{l+s}{\PYGZdq{}}
+\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}
+\PYG{n}{All}\PYG{+w}{ }\PYG{n}{tests}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{n}{assertions}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{test}\PYG{+w}{ }\PYG{k}{case}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110429 li
+
+\item 要指定测试用例的运行顺序，请使用命令行参数\texttt{--\allowbreak{}order}，其取值为：\texttt{decl}（按声明顺序）、\texttt{lex}（按名称的字典序）或\texttt{rand}（由\myttbr{std::\allowbreak{}random\_\allowbreak{}shuffle()}确定的随机顺序）。示例如下：
+
+
+%%C110430 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11ca\PYGZus{}02}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{order}\PYG{+w}{ }\PYG{n}{lex}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110431 h3
+
+\subsection{工作原理}
+
+
+%%C110432 p
+
+测试用例是自注册的，除了定义测试用例和测试函数之外，开发者无需为搭建测试程序做额外工作。测试函数定义为测试用例的节（使用\texttt{SECTION}宏），并且可以嵌套。节的嵌套深度没有限制。测试用例与测试函数（下文统称为节）构成一棵树结构：测试用例位于根节点，最内层的节是叶子。测试程序运行时，执行的是叶子节。每个叶子节都与其他叶子节隔离执行。不过，执行路径从根测试用例开始，一路向下延伸到最内层的节。路径上遇到的所有代码在每次运行时都会完整执行。这意味着，当多个节共享公共代码（来自父节或测试用例）时，同一段代码会为每个节各执行一次，各次执行之间不共享任何数据。一方面，这消除了对专门的夹具方法的需求；另一方面，它使得每个节都可以拥有多个夹具（即路径上遇到的所有内容），这是许多测试框架所缺少的特性。
+
+
+%%C110433 p
+
+BDD风格的测试用例编写同样由这两个宏驱动，即\texttt{TEST\_\allowbreak{}CASE}和\texttt{SECTION}，以及对节进行测试的能力。事实上，宏\texttt{SCENARIO}是\texttt{TEST\_\allowbreak{}CASE}的重新定义，而\texttt{GIVEN}、\texttt{WHEN}、\texttt{AND\_\allowbreak{}WHEN}、\texttt{THEN}和\texttt{AND\_\allowbreak{}THEN}是\texttt{SECTION}的重新定义：
+
+
+%%C110434 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define SCENARIO(...) TEST\PYGZus{}CASE(\PYGZdq{}Scenario: \PYGZdq{} \PYGZus{}\PYGZus{}VA\PYGZus{}ARGS\PYGZus{}\PYGZus{})}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define GIVEN(desc) SECTION(std::string(\PYGZdq{} Given: \PYGZdq{}) +}
+\PYG{+w}{                           }\PYG{n}{desc}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define WHEN(desc) SECTION(std::string(\PYGZdq{} When: \PYGZdq{}) +}
+\PYG{+w}{                           }\PYG{n}{desc}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define AND\PYGZus{}WHEN(desc) SECTION(std::string(\PYGZdq{}And when: \PYGZdq{}) +}
+\PYG{+w}{                           }\PYG{n}{desc}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define THEN(desc) SECTION(std::string(\PYGZdq{} Then: \PYGZdq{}) +}
+\PYG{+w}{                           }\PYG{n}{desc}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define AND\PYGZus{}THEN(desc) SECTION(std::string(\PYGZdq{} And: \PYGZdq{}) +}
+\PYG{+w}{                           }\PYG{n}{desc}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110435 p
+
+执行测试程序时，所有已定义的测试都会运行。不过，隐藏的测试除外：隐藏测试用以\texttt{./}开头的名称或以句点开头的标签来指定。也可以通过提供命令行参数\texttt{[.\allowbreak{}]}或\texttt{[hide]}强制运行隐藏测试。
+
+
+%%C110436 p
+
+可以过滤要执行的测试用例。既可以用名称，也可以用标签。下表列出了一些可用的选项：
+
+
+%%C110437 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.324\hsize\raggedright\arraybackslash}X>{\hsize=0.676\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\textbf{参数}} & \textcolor{white}{\textbf{说明}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\textbf{参数}} & \textcolor{white}{\textbf{说明}} \\
+\endhead
+\myttbr{“test construction”} & 名为\textit{test construction}的测试用例\\
+\myttbr{test*} & 所有以\textit{test}开头的测试用例\\
+\myttbr{\textasciitilde{}“test construction”} & 除名为\textit{test construction}的那个之外的所有测试用例\\
+\myttbr{\textasciitilde{}*equal*} & 除名称中含\textit{equal}一词的之外的所有测试用例\\
+\myttbr{[modify]} & 所有带\myttbr{[modify]}标签的测试用例\\
+\myttbr{[modify],[compare][op]} & 所有带\myttbr{[modify]}标签，或同时带\myttbr{[compare]}和\myttbr{[op]}标签的测试用例\\
+\end{xltabular}
+\myTableEnd
+
+
+%%C110438 p
+
+也可以通过命令行参数\texttt{--\allowbreak{}section}或\texttt{-\allowbreak{}c}指定一个或多个节名，来执行特定的测试函数。如果这样做，要注意从根测试用例到所选节的整条测试路径都会执行。此外，如果你没有先指定测试用例或一组测试用例，那么所有测试用例都会执行，但其中只有匹配的节才会运行。
+
+
+%%C110439 h3
+
+\subsection{延伸阅读}
+
+
+%%C110440 li
+
+\begin{itemize}
+\item \textit{Catch入门}
+
+
+%%C110441 li
+
+\item \textit{用Catch做断言}
+
+\end{itemize}
+
+
+%%C110442 h2
+
+\section{用Catch做断言}
+
+
+%%C110443 p
+
+与其他测试框架不同，Catch并不提供一大套断言宏。它有两个主要宏：\texttt{REQUIRE}，失败时产生致命错误并停止该测试用例的执行；以及\texttt{CHECK}，失败时产生非致命错误，继续执行该测试用例。此外还定义了若干附加宏；本案例将介绍如何使用它们。
+
+
+%%C110444 h3
+
+\subsection{准备工作}
+
+
+%%C110445 p
+
+现在你应当已经熟悉如何使用Catch编写测试用例和测试函数，这一主题在上一案例中已经讲过。
+
+
+%%C110446 h3
+
+\subsection{具体做法}
+
+
+%%C110447 p
+
+以下列表列出了使用Catch框架做断言时可用的选项：
+
+
+%%C110448 li
+
+\begin{itemize}
+\item 使用\texttt{CHECK(\allowbreak{}expr)}检查\texttt{expr}是否求值为\texttt{true}，失败时继续执行；使用\texttt{REQUIRE(\allowbreak{}expr)}确保\texttt{expr}求值为\texttt{true}，失败时停止该测试的执行：
+
+
+%%C110449 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{n}{CHECK}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110450 li
+
+\item 使用\texttt{CHECK\_\allowbreak{}FALSE(\allowbreak{}expr)}和\myttbr{REQUIRE\_\allowbreak{}FALSE(\allowbreak{}expr)}确保\texttt{expr}求值为\texttt{false}，失败时分别产生非致命错误或致命错误：
+
+
+%%C110451 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{n}{CHECK\PYGZus{}FALSE}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{100}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{REQUIRE\PYGZus{}FALSE}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{100}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110452 li
+
+\item 使用\texttt{Approx}类按给定的近似程度比较浮点值。方法\texttt{epsilon()}设置允许值偏离的最大百分比（取值为0到1之间）：
+
+
+%%C110453 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{42.5}\PYG{p}{;}
+\PYG{n}{CHECK}\PYG{p}{(}\PYG{l+m+mf}{42.0}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Approx}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{.}\PYG{n}{epsilon}\PYG{p}{(}\PYG{l+m+mf}{0.02}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{l+m+mf}{42.0}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Approx}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{.}\PYG{n}{epsilon}\PYG{p}{(}\PYG{l+m+mf}{0.02}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110454 li
+
+\item 使用\myttbr{CHECK\_\allowbreak{}NOTHROW(\allowbreak{}expr)}/\myttbr{REQUIRE\_\allowbreak{}NOTHROW(\allowbreak{}expr)}验证\texttt{expr}不抛出任何错误，使用\myttbr{CHECK\_\allowbreak{}THROWS(\allowbreak{}expr)}/\myttbr{REQUIRE\_\allowbreak{}THROWS(\allowbreak{}expr)}验证\texttt{expr}确实抛出任意类型的错误，使用\myttbr{CHECK\_\allowbreak{}THROW\_\allowbreak{}AS(\allowbreak{}expr,} \texttt{exprtype)}/\myttbr{REQUIRE\_\allowbreak{}THROW\_\allowbreak{}AS(\allowbreak{}expr, exprtype)}验证\texttt{expr}抛出类型为\texttt{exprtype}的异常，或使用\myttbr{CHECK\_\allowbreak{}THROWS\_\allowbreak{}WITH(\allowbreak{}expression,} \myttbr{string or string matcher)}/\myttbr{REQUIRE\_\allowbreak{}THROWS\_\allowbreak{}WITH(\allowbreak{}expression,} \myttbr{string or string matcher)}验证\texttt{expr}抛出的表达式的描述与指定字符串匹配：
+
+
+%%C110455 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{error}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{function\PYGZus{}no\PYGZus{}throw}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{CHECK\PYGZus{}NOTHROW}\PYG{p}{(}\PYG{n}{function\PYGZus{}no\PYGZus{}throw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{REQUIRE\PYGZus{}NOTHROW}\PYG{p}{(}\PYG{n}{function\PYGZus{}no\PYGZus{}throw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{CHECK\PYGZus{}THROWS}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{REQUIRE\PYGZus{}THROWS}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{CHECK\PYGZus{}THROWS\PYGZus{}AS}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{REQUIRE\PYGZus{}THROWS\PYGZus{}AS}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{CHECK\PYGZus{}THROWS\PYGZus{}WITH}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{                  }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{error}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{REQUIRE\PYGZus{}THROWS\PYGZus{}WITH}\PYG{p}{(}\PYG{n}{function\PYGZus{}that\PYGZus{}throws}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{        }\PYG{n}{Catch}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Matchers}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Contains}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{error}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110456 li
+
+\item 使用\myttbr{CHECK\_\allowbreak{}THAT(\allowbreak{}value, matcher expression)}/\myttbr{REQUIRE\_\allowbreak{}THAT(\allowbreak{}expr,} \myttbr{matcher expression)}检查给定的匹配器表达式对指定值是否求值为\texttt{true}：
+
+
+%%C110457 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{this is an example}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{n}{CHECK\PYGZus{}THAT}\PYG{p}{(}\PYG{n}{text}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{Catch}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Matchers}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Contains}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{EXAMPLE}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Catch}\PYG{o}{:}\PYG{o}{:}\PYG{n}{CaseSensitive}\PYG{o}{:}\PYG{o}{:}\PYG{n}{No}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{REQUIRE\PYGZus{}THAT}\PYG{p}{(}\PYG{n}{text}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{Catch}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Matchers}\PYG{o}{:}\PYG{o}{:}\PYG{n}{StartsWith}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{this}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}
+\PYG{+w}{  }\PYG{n}{Catch}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Matchers}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Contains}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{an}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110458 li
+
+\item 使用\texttt{FAIL (\allowbreak{}message)}报告\texttt{message}并让测试用例失败，使用\texttt{WARN (\allowbreak{}message)}记录消息但不停止测试用例的执行，使用\texttt{INFO(\allowbreak{}message)}把消息记录到缓冲区，只在下一个失败的断言处一并报告。
+
+\end{itemize}
+
+
+%%C110459 h3
+
+\subsection{工作原理}
+
+
+%%C110460 p
+
+\texttt{REQUIRE}/\texttt{CATCH}一族宏会把表达式分解为左右两侧的项，失败时报告失败位置（源文件与行号）、表达式以及左右两侧的值：
+
+
+%%C110461 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}03}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{19}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{FAILED}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{)}
+\PYG{n}{with}\PYG{+w}{ }\PYG{n}{expansion}\PYG{o}{:}
+\PYG{+w}{  }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110462 p
+
+不过，这些宏不支持用逻辑运算符（如\texttt{\&\&}和\texttt{||}）组合而成的复杂表达式。下面的例子是错误的：
+
+
+%%C110463 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{+w}{ }\PYG{o}{|}\PYG{o}{|}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZpc{}}\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110464 p
+
+解决办法是创建一个变量来保存表达式求值的结果，再在断言宏中使用它。不过这样做就失去了打印表达式各元素展开值的能力：
+
+
+%%C110465 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{expr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{+w}{ }\PYG{o}{|}\PYG{o}{|}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZpc{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n}{expr}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110466 p
+
+框架对浮点值提供了特殊处理。它提供一个名为\texttt{Approx}的类；该类重载了相等/不等运算符与比较运算符，使其可与能够构造出\texttt{double}值的类型比较。两个值可以相差多少、或在多大范围内仍视为相等，可以用给定值的百分比来指定。这通过成员函数\texttt{epsilon()}设置。该值必须介于0和1之间（例如0.05表示5个百分点）。epsilon的默认值设置为\myttbr{std::\allowbreak{}numeric\_\allowbreak{}limits<\allowbreak{}float>::\allowbreak{}epsilon()\allowbreak{}*100}。
+
+%%C110467 p
+
+有两组断言可以与匹配器（matcher）配合使用，即\texttt{CHECK\_\allowbreak{}THAT}/\texttt{REQUIRE\_\allowbreak{}THAT}与\myttbr{CHECK\_\allowbreak{}THROWS\_\allowbreak{}WITH}/\myttbr{REQUIRE\_\allowbreak{}THROWS\_\allowbreak{}WITH}。匹配器是可扩展、可组合的组件，负责执行值匹配。框架为字符串提供了若干匹配器（如\texttt{StartsWith}、\texttt{EndsWith}、\texttt{Contains}与\texttt{Equal}），也为\texttt{std::\allowbreak{}vector}提供了匹配器（\texttt{Contains}、\texttt{VectorContains}与\texttt{Equal}）。
+
+
+%%C110468 note
+
+\begin{myNote}[tip]
+\texttt{Contains()}与\texttt{VectorContains()}的区别在于：\texttt{Contains()}是在另一个向量中查找一个向量，而\texttt{VectorContains()}是在向量内部查找单个元素。
+\end{myNote}
+
+
+%%C110469 p
+
+你可以创建自己的匹配器，既可以扩展框架现有的能力，也可以让它作用于自己的类型。为此需要做两件事：
+
+
+%%C110470 p
+
+一个派生自\myttbr{Catch::\allowbreak{}MatcherBase<\allowbreak{}T>}的匹配器类，其中\texttt{T}是被比较的类型。
+
+
+%%C110471 p
+
+必须重写两个虚函数：\texttt{match()}接受待匹配的值，返回一个布尔值表示匹配是否成功；\texttt{describe()}不接受参数，返回描述该匹配器的字符串。此外还需要一个由测试代码调用的构建函数。
+
+
+%%C110472 p
+
+下面的例子为贯穿本章的\texttt{point3d}类定义了一个匹配器，用于检查给定的三维点是否位于三维空间中的一条直线上：
+
+
+%%C110473 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{OnTheLine}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Catch}\PYG{o}{:}\PYG{o}{:}\PYG{n}{MatcherBase}\PYG{o}{\PYGZlt{}}\PYG{n}{point3d}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{OnTheLine}\PYG{p}{(}\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{)}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{p1}\PYG{p}{(}\PYG{n}{p1}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{(}\PYG{n}{p2}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{match}\PYG{p}{(}\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k}{override}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{rx}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{o}{?}
+\PYG{+w}{           }\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{p2}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{.}\PYG{n}{x}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{ry}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{o}{?}
+\PYG{+w}{           }\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{p2}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{.}\PYG{n}{y}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{rz}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{o}{?}
+\PYG{+w}{           }\PYG{p}{(}\PYG{n}{p}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{p2}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{.}\PYG{n}{z}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}
+\PYG{+w}{      }\PYG{n}{Approx}\PYG{p}{(}\PYG{n}{rx}\PYG{p}{)}\PYG{p}{.}\PYG{n}{epsilon}\PYG{p}{(}\PYG{l+m+mf}{0.01}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ry}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}
+\PYG{+w}{      }\PYG{n}{Approx}\PYG{p}{(}\PYG{n}{ry}\PYG{p}{)}\PYG{p}{.}\PYG{n}{epsilon}\PYG{p}{(}\PYG{l+m+mf}{0.01}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{rz}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{describe}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{ostringstream}\PYG{+w}{ }\PYG{n}{ss}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{ss}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{on the line between }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ and }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{ss}\PYG{p}{.}\PYG{n}{str}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{OnTheLine}\PYG{+w}{ }\PYG{n+nf}{IsOnTheLine}\PYG{p}{(}\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{p1}\PYG{p}{,}
+\PYG{+w}{                             }\PYG{n}{point3d}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{OnTheLine}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{p1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{p2}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110474 p
+
+下面的测试用例给出了使用这个自定义匹配器的示例：
+
+
+%%C110475 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{matchers}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{SECTION}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{point origin}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{point3d}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{REQUIRE\PYGZus{}THAT}\PYG{p}{(}\PYG{n}{p}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{IsOnTheLine}\PYG{p}{(}\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{                                }\PYG{n}{point3d}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110476 h3
+
+\subsection{延伸阅读}
+
+
+%%C110477 li
+
+\begin{itemize}
+\item \textit{用Catch编写并调用测试}
+
+\end{itemize}
+
+
+%%C110478 h2
+
+\section{控制Catch的输出}
+
+
+%%C110479 p
+
+与本书讨论的其他测试框架一样，Catch以人类可读的格式把测试程序的执行结果报告到\texttt{stdout}标准流。框架还支持其他选项，例如用XML格式报告，或把结果写入文件。本案例将介绍使用Catch时控制输出的主要选项。
+
+
+%%C110480 h3
+
+\subsection{准备工作}
+
+
+%%C110481 p
+
+为了演示可以怎样修改测试程序的执行输出，请使用以下测试用例：
+
+
+%%C110482 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{case1}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{SECTION}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{function1}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{TEST\PYGZus{}CASE}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{case2}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{SECTION}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{function2}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{n+nb}{false}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110483 p
+
+运行这两个测试用例的输出如下：
+
+
+%%C110484 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n}{case2}
+\PYG{+w}{  }\PYG{n}{function2}
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}04}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{14}\PYG{p}{)}
+\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}04}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{16}\PYG{p}{)}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{FAILED}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{+w}{ }\PYG{p}{)}
+\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}
+\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failed}
+\PYG{n+nl}{assertions}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failed}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110485 h3
+
+\subsection{具体做法}
+
+
+%%C110486 p
+
+使用Catch时，可以通过以下方式控制测试程序的输出：
+
+
+%%C110487 li
+
+\begin{itemize}
+\item 使用命令行参数\texttt{-\allowbreak{}r}或\myttbr{--\allowbreak{}reporter <\allowbreak{}reporter>}指定用于格式化和组织结果的报告器（reporter）。框架提供的默认选项有\texttt{console}、\texttt{compact}、\texttt{xml}\textit{，}以及\texttt{junit}：
+
+
+%%C110488 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11ca\PYGZus{}04}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{r}\PYG{+w}{ }\PYG{n}{junit}
+\PYG{o}{\PYGZlt{}}\PYG{o}{?}\PYG{n}{xml}\PYG{+w}{ }\PYG{n}{version}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1.0}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{encoding}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{UTF\PYGZhy{}8}\PYG{l+s}{\PYGZdq{}}\PYG{o}{?}\PYG{o}{\PYGZgt{}}
+\PYG{o}{\PYGZlt{}}\PYG{n}{testsuites}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{n}{testsuite}\PYG{+w}{ }\PYG{n}{name}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{chapter11ca\PYGZus{}04.exe}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{errors}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{             }\PYG{n}{failures}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{             }\PYG{n}{tests}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{2}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{hostname}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{tbd}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{             }\PYG{n}{time}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0.002039}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{             }\PYG{n}{timestamp}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{2017\PYGZhy{}03\PYGZhy{}02T21:17:04Z}\PYG{l+s}{\PYGZdq{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{n}{testcase}\PYG{+w}{ }\PYG{n}{classname}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{case1}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{name}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{function1}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{              }\PYG{n}{time}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0.00016}\PYG{l+s}{\PYGZdq{}}\PYG{o}{/}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{n}{testcase}\PYG{+w}{ }\PYG{n}{classname}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{case2}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{              }\PYG{n}{name}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{function2}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{time}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{0.00024}\PYG{l+s}{\PYGZdq{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{      }\PYG{o}{\PYGZlt{}}\PYG{n}{failure}\PYG{+w}{ }\PYG{n}{message}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{false}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{n}{type}\PYG{o}{=}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{REQUIRE}\PYG{l+s}{\PYGZdq{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{        }\PYG{n}{at}\PYG{+w}{ }\PYG{n}{f}\PYG{o}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}04}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{16}\PYG{p}{)}
+\PYG{+w}{      }\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{failure}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{testcase}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{n}{system}\PYG{o}{\PYGZhy{}}\PYG{n}{out}\PYG{o}{/}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{n}{system}\PYG{o}{\PYGZhy{}}\PYG{n}{err}\PYG{o}{/}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{testsuite}\PYG{o}{\PYGZgt{}}
+\PYG{o}{\PYGZlt{}}\PYG{o}{/}\PYG{n}{testsuites}\PYG{o}{\PYGZgt{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110489 li
+
+\item 使用命令行参数\texttt{-\allowbreak{}s}或\texttt{--\allowbreak{}success}，同时显示成功的测试用例的结果：
+
+
+%%C110490 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11ca\PYGZus{}04}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{s}
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n}{case1}
+\PYG{+w}{  }\PYG{n}{function1}
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}04}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{6}\PYG{p}{)}
+\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}04}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{o}{:}
+\PYG{n+nl}{PASSED}\PYG{p}{:}
+\PYG{+w}{  }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{+w}{ }\PYG{p}{)}
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n}{case2}
+\PYG{+w}{  }\PYG{n}{function2}
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}04}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{14}\PYG{p}{)}
+\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}04}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{16}\PYG{p}{)}\PYG{o}{:}
+\PYG{n+nl}{FAILED}\PYG{p}{:}
+\PYG{+w}{  }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{+w}{ }\PYG{p}{)}
+\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}
+\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failed}
+\PYG{n+nl}{assertions}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failed}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110491 li
+
+\item 使用命令行参数\texttt{-\allowbreak{}o}或\texttt{--\allowbreak{}out <\allowbreak{}filename>}，把所有输出发送到文件而不是标准流：
+
+
+%%C110492 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11ca\PYGZus{}04}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{o}\PYG{+w}{ }\PYG{n}{test\PYGZus{}report}\PYG{p}{.}\PYG{n}{log}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110493 li
+
+\item 使用命令行参数\texttt{-\allowbreak{}d}或\myttbr{--\allowbreak{}durations <\allowbreak{}yes/\allowbreak{}no>}，显示每个测试用例执行所花费的时间（以毫秒为单位）：
+
+
+%%C110494 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11ca\PYGZus{}04}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{d}\PYG{+w}{ }\PYG{n}{yes}
+\PYG{l+m+mf}{0.000137}\PYG{+w}{ }\PYG{n}{s}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{scenario1}
+\PYG{l+m+mf}{0.000926}\PYG{+w}{ }\PYG{n}{s}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{case1}
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n}{case2}
+\PYG{+w}{   }\PYG{n}{scenario2}
+\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}04}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{14}\PYG{p}{)}
+\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n+nl}{f}\PYG{p}{:}\PYG{err}{\PYGZbs{}}\PYG{n}{chapter11ca\PYGZus{}04}\PYG{err}{\PYGZbs{}}\PYG{n}{main}\PYG{p}{.}\PYG{n}{cpp}\PYG{p}{(}\PYG{l+m+mi}{16}\PYG{p}{)}\PYG{o}{:}
+\PYG{n+nl}{FAILED}\PYG{p}{:}
+\PYG{+w}{  }\PYG{n}{REQUIRE}\PYG{p}{(}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{+w}{ }\PYG{p}{)}
+\PYG{l+m+mf}{0.019106}\PYG{+w}{ }\PYG{n}{s}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{scenario2}
+\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{n}{s}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{case2}
+\PYG{l+m+mf}{4.9e\PYGZhy{}05}\PYG{+w}{ }\PYG{n}{s}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{case2}
+\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}\PYG{o}{=}
+\PYG{n}{test}\PYG{+w}{ }\PYG{n}{cases}\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failed}
+\PYG{n+nl}{assertions}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{passed}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{n}{failed}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C110495 h3
+
+\subsection{工作原理}
+
+
+%%C110496 p
+
+除了默认用于报告测试程序执行结果的人类可读格式之外，Catch框架还支持两种XML格式：
+
+
+%%C110497 li
+
+\begin{itemize}
+\item Catch专用的XML格式（用\texttt{-\allowbreak{}r xml}指定）。
+
+
+%%C110498 li
+
+\item 类似JUnit的XML格式，遵循JUnit ANT任务的结构（用\texttt{-\allowbreak{}r junit}指定）。
+
+\end{itemize}
+
+
+%%C110499 p
+
+前一种报告器在单元测试执行、结果就绪时就以流的方式输出XML内容。它的输出可以作为XSLT转换的输入，以便为该实例生成HTML报告。后一种报告器需要先收集全部程序执行数据，才能组织好报告再打印。JUnit XML格式便于被第三方工具使用，例如持续集成服务器。
+
+
+%%C110500 p
+
+框架还提供了若干附加报告器，但它们需要单独下载。你需要把它们引入项目，并显式包含到测试程序的源代码中（所有附加报告器的头文件都采用\myttbr{catch\_\allowbreak{}reporter\_\allowbreak{}*.\allowbreak{}hpp}这样的命名格式）。这些可用的附加报告器有：
+
+
+%%C110501 li
+
+\begin{itemize}
+\item \textit{TeamCity}报告器（用\texttt{-\allowbreak{}r teamcity}指定）把TeamCity服务消息写入标准输出流。它只适合与TeamCity集成。它是流式报告器，数据一就绪就写出。
+
+
+%%C110502 li
+
+\item \textit{Automake}报告器（用\texttt{-\allowbreak{}r automake}指定）写入automake通过make check所期望的元标签。
+
+
+%%C110503 li
+
+\item \textit{Test Anything Protocol}（简称\textit{TAP}）报告器（用\texttt{-\allowbreak{}r tap}指定）。
+
+\end{itemize}
+
+
+%%C110504 p
+
+下面的例子展示了如何包含TeamCity头文件，以便用TeamCity报告器生成报告：
+
+
+%%C110505 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define CATCH\PYGZus{}CONFIG\PYGZus{}MAIN}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}catch.hpp\PYGZdq{}}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}catch\PYGZus{}reporter\PYGZus{}teamcity.hpp\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110506 p
+
+测试报告的默认目标是标准流\texttt{strout}（即使显式写入\texttt{stderr}的数据最终也会被重定向到\texttt{stdout}）。不过，输出也可以改为写入文件。这些格式化选项可以组合使用。例如，下面的命令指定报告使用JUnit XML格式，并保存到名为\texttt{test\_\allowbreak{}report.\allowbreak{}xml}的文件中：
+
+
+%%C110507 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{chapter11ca\PYGZus{}04}\PYG{p}{.}\PYG{n}{exe}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{r}\PYG{+w}{ }\PYG{n}{junit}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{o}\PYG{+w}{ }\PYG{n}{test\PYGZus{}report}\PYG{p}{.}\PYG{n}{xml}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C110508 h3
+
+\subsection{延伸阅读}
+
+
+%%C110509 li
+
+\begin{itemize}
+\item \textit{Catch入门}
+
+
+%%C110510 li
+
+\item \textit{用Catch编写并调用测试}
+
+\end{itemize}

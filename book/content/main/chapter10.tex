@@ -1,0 +1,2032 @@
+%%C100001 p
+
+本章包含以下案例：
+
+
+%%C100002 li
+
+\begin{itemize}
+\item 避免工厂模式中重复的\texttt{if...\allowbreak{}else}语句
+
+
+%%C100003 li
+
+\item 实现pimpl惯用法
+
+
+%%C100004 li
+
+\item 实现具名参数惯用法
+
+
+%%C100005 li
+
+\item 用非虚接口惯用法分离接口与实现
+
+
+%%C100006 li
+
+\item 用律师-当事人惯用法处理友元关系
+
+
+%%C100007 li
+
+\item 用奇异递归模板模式实现静态多态
+
+
+%%C100008 li
+
+\item 实现线程安全的单例
+
+\end{itemize}
+
+
+%%C100009 h2
+
+\section{引言}
+
+
+%%C100010 p
+
+设计模式是通用的可复用解决方案，可用于解决软件开发中出现的常见问题。惯用法是某一种或多种编程语言中组织代码的模式、算法或做法。关于设计模式的著作已经很多。本章并不打算重复这些内容，而是要展示如何用现代C++实现若干有用的模式与惯用法，并着重于可读性、性能与健壮性。
+
+
+%%C100011 h2
+
+\section{避免工厂模式中重复的\texttt{if...\allowbreak{}else}语句}
+
+
+%%C100012 p
+
+我们经常会写出重复的\texttt{if...\allowbreak{}else}语句（或等价的\texttt{switch}语句），它们做着类似的事情，往往只有细微差别，而且常常是复制粘贴再稍作修改得来的。当分支数量增多时，代码就会变得既难读又难维护。重复的\texttt{if...\allowbreak{}else}语句可以用多种技术替代，例如多态。本案例将展示如何借助函数映射表，避免工厂模式（工厂是用于创建其他对象的函数或对象）中的\texttt{if...\allowbreak{}else}语句。
+
+
+%%C100013 h3
+
+\subsection{准备工作}
+
+
+%%C100014 p
+
+本案例将考虑这样一个问题：构建一个能够处理各种格式图像文件的系统，例如位图、PNG、JPG等。显然，具体细节超出了本案例的范围；我们关心的是创建用于处理各种图像格式的对象。为此，考虑下面的类层次结构：
+
+
+%%C100015 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Image}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{BitmapImage}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Image}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{PngImage}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Image}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{JpgImage}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Image}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100016 p
+
+另一方面，我们为工厂类定义一个接口，它可以创建上述类的实例，同时给出一个使用\texttt{if...\allowbreak{}else}语句的典型实现：
+
+
+%%C100017 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{IImageFactory}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Image}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{Create}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{type}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{ImageFactory}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{IImageFactory}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Image}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{n}{Create}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{type}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{type}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{bmp}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{      }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{BitmapImage}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{type}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{png}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{      }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{PngImage}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{type}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{jpg}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{      }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{JpgImage}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100018 p
+
+本案例的目标是看看如何重构这一实现，以避免重复的\texttt{if...\allowbreak{}else}语句。
+
+
+%%C100019 h3
+
+\subsection{具体做法}
+
+
+%%C100020 p
+
+按照以下步骤重构前面给出的工厂，以避免使用\texttt{if...\allowbreak{}else}语句：
+
+
+%%C100021 p
+
+实现工厂接口：
+
+
+%%C100022 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{ImageFactory}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{IImageFactory}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Image}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{Create}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{type}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// 接第2步和第3步}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100023 p
+
+定义一个映射表，其键是要创建的对象类型，值是
+
+
+%%C100024 p
+
+创建对象的函数：
+
+
+%%C100025 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{static}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Image}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{mapping}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{bmp}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{BitmapImage}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{png}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{PngImage}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{jpg}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{JpgImage}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100026 p
+
+要创建对象，先在映射表中查找对象类型，如果找到，就用
+
+
+%%C100027 p
+
+与之关联的函数创建该类型的新实例：
+
+
+%%C100028 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{mapping}\PYG{p}{.}\PYG{n}{find}\PYG{p}{(}\PYG{n}{type}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{mapping}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100029 h3
+
+\subsection{工作原理}
+
+
+%%C100030 p
+
+第一个实现中重复的\texttt{if...\allowbreak{}else}语句非常相似——它们检查\texttt{type}参数的值，并创建相应\texttt{Image}类的实例。如果要检查的参数是整数类型（例如枚举类型），这串\texttt{if...\allowbreak{}else}也可以写成\texttt{switch}语句的形式。这段代码可以这样使用：
+
+
+%%C100031 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{factory}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ImageFactory}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{image}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{factory}\PYG{p}{.}\PYG{n}{Create}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{png}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100032 p
+
+无论实现使用的是\texttt{if...\allowbreak{}else}语句还是\texttt{switch}，通过重构来避免重复检查都相对简单。在重构后的代码中，我们使用了一个映射表，其键类型为\texttt{std::\allowbreak{}string}，表示图像格式的类型，也就是名称；值则为\myttbr{std::\allowbreak{}function<\allowbreak{}std::\allowbreak{}shared\_\allowbreak{}ptr<\allowbreak{}Image>()>}。这是对一个不接受参数、返回\myttbr{std::\allowbreak{}shared\_\allowbreak{}ptr<\allowbreak{}Image>}的函数的包装（派生类的\texttt{shared\_\allowbreak{}ptr}会隐式转换为基类的\texttt{shared\_\allowbreak{}ptr}）。
+
+
+%%C100033 p
+
+有了这个保存对象创建函数的映射表，工厂的实际实现就简单多了：在映射表中查找待创建对象的类型，如果存在，就把映射表中关联的值当作真正创建对象的函数来调用；如果映射表中没有该对象类型，则返回\texttt{nullptr}。
+
+
+%%C100034 p
+
+这种重构对客户端代码是透明的，因为客户端使用工厂的方式没有任何变化。另一方面，这种做法确实需要更多内存来维护静态映射表，对物联网等某些类别的应用而言，这可能是一个重要方面。这里给出的例子相对简单，因为目的是演示概念。在真实代码中，可能需要以不同的方式创建对象，例如使用不同数量的参数和不同类型的参数。不过，这并不是重构后的实现所特有的问题，用\texttt{if...\allowbreak{}else}/\texttt{switch}语句的解决方案同样要处理它。因此在实际中，原先用\texttt{if...\allowbreak{}else}语句能解决的问题，改用映射表后同样能解决。
+
+
+%%C100035 h3
+
+\subsection{更多内容}
+
+
+%%C100036 p
+
+在前面的实现中，映射表是该虚函数内的局部静态变量，但它也可以是类的成员，甚至是全局变量。下面的实现把映射表定义为类的静态成员，并且不再根据格式名称创建对象，而是根据\texttt{typeid}运算符返回的类型信息来创建：
+
+
+%%C100037 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{IImageFactoryByType}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Image}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{Create}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type\PYGZus{}info}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{type}\PYG{p}{)}
+\PYG{+w}{  }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{ImageFactoryByType}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{IImageFactoryByType}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Image}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{Create}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type\PYGZus{}info}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{type}\PYG{p}{)}
+\PYG{+w}{  }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{mapping}\PYG{p}{.}\PYG{n}{find}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{type}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{mapping}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{      }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type\PYGZus{}info}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{*}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Image}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{mapping}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type\PYGZus{}info}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{*}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Image}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{ImageFactoryByType}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mapping}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{o}{\PYGZam{}}\PYG{k}{typeid}\PYG{p}{(}\PYG{n}{BitmapImage}\PYG{p}{)}\PYG{p}{,}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{p}{)}\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{BitmapImage}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{o}{\PYGZam{}}\PYG{k}{typeid}\PYG{p}{(}\PYG{n}{PngImage}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{p}{)}\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{PngImage}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{o}{\PYGZam{}}\PYG{k}{typeid}\PYG{p}{(}\PYG{n}{JpgImage}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{p}{)}\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{JpgImage}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100038 p
+
+在这种情况下，客户端代码略有不同，因为我们不再传入表示待创建类型的名称（如PNG），而是传入\texttt{typeid}运算符返回的值，如\texttt{typeid(\allowbreak{}PngImage)}：
+
+
+%%C100039 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{factory}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ImageFactoryByType}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{movie}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{factory}\PYG{p}{.}\PYG{n}{Create}\PYG{p}{(}\PYG{k}{typeid}\PYG{p}{(}\PYG{n}{PngImage}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100040 h3
+
+\subsection{延伸阅读}
+
+
+%%C100041 li
+
+\begin{itemize}
+\item \textit{实现pimpl惯用法}
+
+
+%%C100042 li
+
+\item \textit{用shared\_ptr共享内存资源}案例，见\texttt{Chapter 9}\textit{健壮性与}\textit{性能}
+
+\end{itemize}
+
+
+%%C100043 h2
+
+\section{实现pimpl惯用法}
+
+
+%%C100044 p
+
+\textit{PIMPL}是\textit{pointer to implementation}（指向实现）的缩写（也称为\textit{Cheshire cat idiom}（柴郡猫惯用法）或\textit{compiler firewall idiom}（编译器防火墙惯用法）），它是一种不透明指针技术，可以把实现细节与接口分离。这样做的好处是，可以在不修改接口的情况下改变实现，从而不必重新编译使用该接口的代码。当只有实现细节发生变化时，使用pimpl惯用法的库就有可能让其ABI与旧版本保持向后兼容。本案例将展示如何用现代C++特性实现pimpl惯用法。
+
+
+%%C100045 h3
+
+\subsection{准备工作}
+
+
+%%C100046 p
+
+读者应当熟悉智能指针和\texttt{std::\allowbreak{}string\_\allowbreak{}view}，本书前面的章节对这两者都有讨论。
+
+
+%%C100047 p
+
+为了以实用的方式演示pimpl惯用法，我们考虑下面这个类，稍后再按照pimpl模式重构它。这个类表示一个控件，它具有文本、尺寸和可见性等属性。每当这些属性发生变化时，控件都会重绘（在这个模拟实现中，绘制意味着把属性的值打印到控制台）：
+
+
+%%C100048 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{width}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{height}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{visible}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{draw}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}
+\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{control }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ visible: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{boolalpha}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{visible}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{         }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{noboolalpha}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{      }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ size: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{width}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{, }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{height}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{      }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ text: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{set\PYGZus{}text}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{resize}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{width}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{height}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{show}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{visible}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{hide}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{visible}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100049 h3
+
+\subsection{具体做法}
+
+
+%%C100050 p
+
+按照以下步骤实现pimpl惯用法，这里通过重构前面给出的\texttt{control}类来演示：
+
+
+%%C100051 p
+
+把所有私有成员（包括数据和函数）都放入一个单独的类。我们将
+
+
+%%C100052 p
+
+把这个类称为\textit{pimpl类}，把原来的类称为\textit{公有类}。在公有类的头文件中，加入pimpl类的前置声明：
+
+
+%%C100053 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+c1}{// 位于 control.h}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control\PYGZus{}pimpl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100054 p
+
+在公有类的定义中，用一个
+
+
+%%C100055 p
+
+\texttt{unique\_\allowbreak{}ptr}声明指向pimpl类的指针。它应当是类中唯一的私有数据成员：
+
+
+%%C100056 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{    }\PYG{n}{control\PYGZus{}pimpl}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{p}{(}\PYG{o}{*}\PYG{p}{)}\PYG{p}{(}\PYG{n}{control\PYGZus{}pimpl}\PYG{o}{*}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{control}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{set\PYGZus{}text}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{resize}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{show}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{hide}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100057 p
+
+把pimpl类的定义放在公有类的源文件中。pimpl类
+
+
+%%C100058 p
+
+与公有类的公有接口保持一致：
+
+
+%%C100059 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+c1}{// 位于 control.cpp}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control\PYGZus{}pimpl}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{width}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{height}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{visible}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{draw}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{   }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}
+\PYG{+w}{     }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{control }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{     }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ visible: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{boolalpha}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{visible}
+\PYG{+w}{     }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{noboolalpha}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{     }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ size: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{width}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{, }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{height}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{     }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ text: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{set\PYGZus{}text}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{resize}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{width}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{height}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{show}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{visible}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{hide}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{visible}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100060 p
+
+pimpl类在公有类的构造函数中实例化：
+
+
+%%C100061 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{control}\PYG{o}{:}\PYG{o}{:}\PYG{n}{control}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{pimpl}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{control\PYGZus{}pimpl}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{        }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{control\PYGZus{}pimpl}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100062 p
+
+公有类的成员函数调用pimpl类中对应的
+
+
+%%C100063 p
+
+成员函数：
+
+
+%%C100064 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{control::set\PYGZus{}text}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{pimpl}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{set\PYGZus{}text}\PYG{p}{(}\PYG{n}{text}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{control::resize}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{pimpl}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{resize}\PYG{p}{(}\PYG{n}{w}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{control::show}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{pimpl}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{show}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{control::hide}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{pimpl}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{hide}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100065 h3
+
+\subsection{工作原理}
+
+
+%%C100066 p
+
+pimpl惯用法可以把类的内部实现对该类所属的库或模块的客户端隐藏起来。这带来几项好处：
+
+
+%%C100067 li
+
+\begin{itemize}
+\item 客户端看到的类接口干净整洁。
+
+
+%%C100068 li
+
+\item 内部实现的变化不影响公有接口，这使得库的新版本可以做到二进制向后兼容（当公有接口保持不变时）。
+
+
+%%C100069 li
+
+\item 当内部实现发生变化时，使用该惯用法的类的客户端无需重新编译。这可以缩短构建时间。
+
+
+%%C100070 li
+
+\item 头文件不必包含私有实现中所用类型和函数的头文件。这同样可以缩短构建时间。
+
+\end{itemize}
+
+
+%%C100071 p
+
+上述好处并非免费获得，也有几个缺点需要提及：
+
+
+%%C100072 li
+
+\begin{itemize}
+\item 需要编写和维护的代码更多。
+
+
+%%C100073 li
+
+\item 代码的可读性可能变差，因为多了一层间接，而且所有实现细节都要到其他文件中去查找。本案例中pimpl类的定义放在公有类的源文件里，但在实际中它也可以放在单独的文件中。
+
+
+%%C100074 li
+
+\item 由于公有类到pimpl类多了一层间接，会有轻微的运行期开销，但在实际中这很少成为问题。
+
+
+%%C100075 li
+
+\item 这种做法不适用于保护成员，因为这些成员必须对派生类可见。
+
+
+%%C100076 li
+
+\item 这种做法不适用于私有虚函数，这些函数必须出现在类中，或者是因为它们重写了基类的函数，或者是因为它们需要能在派生类中被重写。
+
+\end{itemize}
+
+
+%%C100077 note
+
+\begin{myNote}[tip]
+作为经验法则，在实现pimpl惯用法时，应始终把所有私有数据成员和函数（虚函数除外）放入pimpl类，而把保护数据成员、保护函数以及所有私有虚函数留在公有类中。
+\end{myNote}
+
+
+%%C100078 p
+
+在本案例的示例中，\texttt{control\_\allowbreak{}pimpl}类与原来的\texttt{control}类基本相同。在实际中，当类更大、带有虚函数和保护成员、并且同时含有函数和数据时，pimpl类并不完全等同于该类未被pimpl化时的样子。此外在实际中，pimpl类可能需要一个指向公有类的指针，以便调用那些没有移入pimpl类的成员。
+
+
+%%C100079 p
+
+就重构后的\texttt{control}类的实现而言，指向\texttt{control\_\allowbreak{}pimpl}对象的指针由\texttt{unique\_\allowbreak{}ptr}管理。在这个指针的声明中，我们使用了自定义删除器：
+
+
+%%C100080 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{control\PYGZus{}pimpl}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{p}{(}\PYG{o}{*}\PYG{p}{)}\PYG{p}{(}\PYG{n}{control\PYGZus{}pimpl}\PYG{o}{*}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100081 p
+
+原因在于，\texttt{control}类有一个由编译器隐式定义的析构函数，其定义位置正是\texttt{control\_\allowbreak{}pimpl}类型仍然不完整的地方（也就是头文件中）。这会导致\texttt{unique\_\allowbreak{}ptr}出错，因为它无法删除不完整类型。这个问题可以用两种方式解决：
+
+
+%%C100082 li
+
+\begin{itemize}
+\item 为\texttt{control}类提供用户定义的析构函数，在\texttt{control\_\allowbreak{}pimpl}类的完整定义可见之后再显式实现它（即使它被声明为\texttt{default}）。
+
+
+%%C100083 li
+
+\item 为\texttt{unique\_\allowbreak{}ptr}提供自定义删除器，就像本示例所做的那样。
+
+\end{itemize}
+
+
+%%C100084 h3
+
+\subsection{更多内容}
+
+
+%%C100085 p
+
+原来的\texttt{control}类既可复制也可移动：
+
+
+%%C100086 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{control}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}
+\PYG{n}{c}\PYG{p}{.}\PYG{n}{resize}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{c}\PYG{p}{.}\PYG{n}{set\PYGZus{}text}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sample}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{c}\PYG{p}{.}\PYG{n}{hide}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{control}\PYG{+w}{ }\PYG{n}{c2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}\PYG{+w}{             }\PYG{c+c1}{// 复制}
+\PYG{n}{c2}\PYG{p}{.}\PYG{n}{show}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{control}\PYG{+w}{ }\PYG{n}{c3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{c2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 移动}
+\PYG{n}{c3}\PYG{p}{.}\PYG{n}{hide}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100087 p
+
+重构后的\texttt{control}类只能移动，不能复制。要让它既可复制又可移动，就必须同时提供复制构造函数、复制赋值运算符以及移动构造函数和移动赋值运算符。后两者可以默认化，但前两者必须显式实现，以便从被复制的对象创建新的\texttt{control\_\allowbreak{}pimpl}对象。下面的代码展示了既可复制又可移动的\texttt{control}类的实现：
+
+
+%%C100088 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control\PYGZus{}copyable}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{control\PYGZus{}pimpl}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{p}{(}\PYG{o}{*}\PYG{p}{)}\PYG{p}{(}\PYG{n}{control\PYGZus{}pimpl}\PYG{o}{*}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{control\PYGZus{}copyable}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{control\PYGZus{}copyable}\PYG{p}{(}\PYG{n}{control\PYGZus{}copyable}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{;}
+\PYG{n}{control\PYGZus{}copyable}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{control\PYGZus{}copyable}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{;}
+\PYG{n}{control\PYGZus{}copyable}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{control\PYGZus{}copyable}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{control\PYGZus{}copyable}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{control\PYGZus{}copyable}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{set\PYGZus{}text}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{resize}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{show}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{hide}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{control\PYGZus{}copyable}\PYG{o}{:}\PYG{o}{:}\PYG{n}{control\PYGZus{}copyable}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{pimpl}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{control\PYGZus{}pimpl}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{        }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{control\PYGZus{}pimpl}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{n}{control\PYGZus{}copyable}\PYG{o}{:}\PYG{o}{:}\PYG{n}{control\PYGZus{}copyable}\PYG{p}{(}\PYG{n}{control\PYGZus{}copyable}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}
+\PYG{+w}{   }\PYG{k}{noexcept}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{n}{control\PYGZus{}copyable}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{control\PYGZus{}copyable}\PYG{o}{:}\PYG{o}{:}\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{control\PYGZus{}copyable}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}
+\PYG{+w}{   }\PYG{k}{noexcept}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{n}{control\PYGZus{}copyable}\PYG{o}{:}\PYG{o}{:}\PYG{n}{control\PYGZus{}copyable}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{control\PYGZus{}copyable}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{)}
+\PYG{+w}{   }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{control\PYGZus{}pimpl}\PYG{p}{(}\PYG{o}{*}\PYG{n}{op}\PYG{p}{.}\PYG{n}{pimpl}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{           }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{control\PYGZus{}pimpl}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{n}{control\PYGZus{}copyable}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{control\PYGZus{}copyable}\PYG{o}{:}\PYG{o}{:}\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}
+\PYG{+w}{   }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{control\PYGZus{}copyable}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{op}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{pimpl}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{control\PYGZus{}pimpl}\PYG{p}{,}\PYG{k+kt}{void}\PYG{p}{(}\PYG{o}{*}\PYG{p}{)}\PYG{p}{(}\PYG{n}{control\PYGZus{}pimpl}\PYG{o}{*}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{p}{(}
+\PYG{+w}{               }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{control\PYGZus{}pimpl}\PYG{p}{(}\PYG{o}{*}\PYG{n}{op}\PYG{p}{.}\PYG{n}{pimpl}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{               }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{control\PYGZus{}pimpl}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{pimpl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{c+c1}{// 其他成员函数}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100089 h3
+
+\subsection{延伸阅读}
+
+
+%%C100090 li
+
+\begin{itemize}
+\item \textit{用unique\_ptr独占内存资源}案例，见\texttt{Chapter 9}\textit{健壮性}\textit{与性能}
+
+\end{itemize}
+
+
+%%C100091 h2
+
+\section{实现具名参数惯用法}
+
+%%C100092 p
+
+C++只支持位置参数，也就是说，实参是按形参的位置传递给函数的。其他语言还支持具名参数（named parameter）——即在调用时指定参数名并据此传入实参。这在带有默认值的参数上尤其有用。一个函数可以有带默认值的参数，不过它们总是出现在所有无默认值的参数之后。然而，如果你只想为其中一部分带默认值的参数提供实参，就无法做到——除非同时为形参列表中排在它们前面的那些参数也提供实参。一种称为\textit{具名参数惯用法}（named parameter idiom）的技术提供了模拟具名参数的方法，本案例就来探讨它。
+
+
+%%C100093 h3
+
+\subsection{准备工作}
+
+
+%%C100094 p
+
+\texttt{control}类表示一个可视控件，比如按钮或输入框，它带有若干属性：数字标识符、文本、尺寸和可见性。这些属性都在构造函数中传入，除ID之外，其余都有默认值。在实际项目中，这样的类会有多得多的属性，例如文本画刷、背景画刷、边框样式、字体大小、字体族等等。为了演示具名参数惯用法，我们使用下面代码片段中的\texttt{control}类。
+
+
+%%C100095 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{id\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{text\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{width\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{height\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{visible\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{control}\PYG{p}{(}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{id}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{width}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{height}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}
+\PYG{+w}{    }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{visible}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{)}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{id\PYGZus{}}\PYG{p}{(}\PYG{n}{id}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{text\PYGZus{}}\PYG{p}{(}\PYG{n}{text}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{width\PYGZus{}}\PYG{p}{(}\PYG{n}{width}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{height\PYGZus{}}\PYG{p}{(}\PYG{n}{height}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{visible\PYGZus{}}\PYG{p}{(}\PYG{n}{visible}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100096 h3
+
+\subsection{具体做法}
+
+
+%%C100097 p
+
+要为函数（通常是带有大量默认参数的函数）实现具名参数惯用法，可以按以下步骤进行：
+
+
+%%C100098 p
+
+创建一个类，用来包装该函数的各个参数：
+
+
+%%C100099 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control\PYGZus{}properties}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{id\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{text\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{width\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{height\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{visible\PYGZus{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100100 p
+
+需要访问这些属性的类或函数，可以将其声明为
+
+
+%%C100101 p
+
+\texttt{friend}，从而免去编写取值函数：
+
+
+%%C100102 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{friend}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100103 p
+
+原函数中每一个没有默认值的定位参数，
+
+
+%%C100104 p
+
+都应该成为新类构造函数中一个没有默认值的定位参数：
+
+
+%%C100105 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{control\PYGZus{}properties}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{id}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{n}{id\PYGZus{}}\PYG{p}{(}\PYG{n}{id}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100106 p
+
+原函数中每一个有默认值的定位参数，
+
+
+%%C100107 p
+
+都应该对应一个同名函数，它在内部设置该值，并返回该类的引用：
+
+
+%%C100108 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{control\PYGZus{}properties}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{text\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{control\PYGZus{}properties}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{width}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{width\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{control\PYGZus{}properties}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{height}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{height\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{control\PYGZus{}properties}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{visible}\PYG{p}{(}\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{visible\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100109 p
+
+应当修改原函数，或者为它提供一个重载，使其
+
+
+%%C100110 p
+
+接受新类的实参，并从中读取属性值：
+
+
+%%C100111 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{control}\PYG{p}{(}\PYG{n}{control\PYGZus{}properties}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{cp}\PYG{p}{)}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{id\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{id\PYGZus{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{text\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{text\PYGZus{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{width\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{width\PYGZus{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{height\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{height\PYGZus{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{visible\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{visible\PYGZus{}}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100112 p
+
+把这些放在一起，结果如下：
+
+
+%%C100113 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control\PYGZus{}properties}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{id\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{text\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{width\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{height\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{visible\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{friend}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{control\PYGZus{}properties}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{id}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{n}{id\PYGZus{}}\PYG{p}{(}\PYG{n}{id}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{n}{control\PYGZus{}properties}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{text\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{control\PYGZus{}properties}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{width}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{width\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{control\PYGZus{}properties}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{height}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{height\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{control\PYGZus{}properties}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{visible}\PYG{p}{(}\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{visible\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{id\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{text\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{width\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{height\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{visible\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{control}\PYG{p}{(}\PYG{n}{control\PYGZus{}properties}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{cp}\PYG{p}{)}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{id\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{id\PYGZus{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{text\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{text\PYGZus{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{width\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{width\PYGZus{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{height\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{height\PYGZus{}}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{visible\PYGZus{}}\PYG{p}{(}\PYG{n}{cp}\PYG{p}{.}\PYG{n}{visible\PYGZus{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100114 h3
+
+\subsection{工作原理}
+
+
+%%C100115 p
+
+最初的\texttt{control}类有一个参数很多的构造函数。在实际代码中，你能找到参数数量远比这更多的例子。实践中常见的一种解决办法，是把若干布尔型属性合并成位标志，作为一个整型实参一起传入（例如控件的边框样式，用来定义边框应该出现在哪一侧：上、下、左、右，或这四者的任意组合）。用最初的实现创建\texttt{control}对象是这样写的：
+
+
+%%C100116 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{control}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{(}\PYG{l+m+mi}{1044}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sample}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{100}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100117 p
+
+具名参数惯用法的优点在于：你只需为想指定的参数提供值，顺序任意，而且是按名字指定，这比固定的位置顺序直观得多。
+
+
+%%C100118 p
+
+尽管实现这一惯用法并没有统一的策略，但本案例中的示例相当典型。\texttt{control}类的属性原本作为构造函数的参数提供，现在被放进一个单独的类\myttbr{control\_\allowbreak{}properties}中，该类把\texttt{control}声明为友元类，从而无需提供取值函数就能访问其私有数据成员。这样做有一个副作用：它限制了\myttbr{control\_\allowbreak{}properties}在\texttt{control}类之外的使用。\texttt{control}构造函数中不可省略的参数，同样是\myttbr{control\_\allowbreak{}properties}构造函数中不可省略的参数。对于其余带默认值的参数，\myttbr{control\_\allowbreak{}properties}类为每一个都定义了一个名字相关的函数，它只把数据成员设为传入的实参，然后返回\myttbr{control\_\allowbreak{}properties}的引用。这就让调用方可以按任意顺序链式调用这些函数。
+
+
+%%C100119 p
+
+\texttt{control}类的构造函数已被替换为一个新版本，它只有一个参数，即对\myttbr{control\_\allowbreak{}properties}对象的常量引用，其数据成员会被复制到\texttt{control}的数据成员中。用这种方式实现具名参数惯用法后，创建\texttt{control}对象的写法如下：
+
+
+%%C100120 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{control}\PYG{+w}{ }\PYG{n+nf}{c}\PYG{p}{(}\PYG{n}{control\PYGZus{}properties}\PYG{p}{(}\PYG{l+m+mi}{1044}\PYG{p}{)}
+\PYG{+w}{          }\PYG{p}{.}\PYG{n}{visible}\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}
+\PYG{+w}{          }\PYG{p}{.}\PYG{n}{height}\PYG{p}{(}\PYG{l+m+mi}{20}\PYG{p}{)}
+\PYG{+w}{          }\PYG{p}{.}\PYG{n}{width}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100121 h3
+
+\subsection{延伸阅读}
+
+
+%%C100122 li
+
+\begin{itemize}
+\item \textit{用非虚接口惯用法分离接口与实现}
+
+
+%%C100123 li
+
+\item \textit{用律师-当事人惯用法处理友元关系}
+
+\end{itemize}
+
+
+%%C100124 h2
+
+\section{用非虚接口惯用法分离接口与实现}
+
+
+%%C100125 p
+
+虚函数为类提供了定制点，它允许派生类修改基类的实现。当通过基类的指针或引用操作派生类对象时，对重写后的虚函数的调用最终会执行派生类中的重写实现。另一方面，定制属于实现细节，而好的设计会把接口与实现分离。Herb Sutter在一篇发表于\textit{C/C++} \textit{Users Journal}、讨论虚函数的文章中提出的\textit{非虚接口惯用法}（non-virtual interface idiom），主张把（公有）接口做成非虚的、把虚函数做成私有的，以此分离接口与实现的关注点。公有的虚接口会使类无法对其接口实施前置条件和后置条件。期望得到基类实例的用户无从保证公有虚方法会提供预期的行为，因为它可能在派生类中被重写。这一惯用法有助于落实接口所承诺的契约。
+
+
+%%C100126 h3
+
+\subsection{准备工作}
+
+
+%%C100127 p
+
+读者应当熟悉与虚函数相关的方面，例如定义和重写虚函数、抽象类以及纯说明符。
+
+
+%%C100128 h3
+
+\subsection{具体做法}
+
+
+%%C100129 p
+
+实现这一惯用法需要遵循若干简单的设计准则，它们由Herb Sutter在《C/C++ Users Journal》2001年9月第19卷第9期中提出：
+
+
+%%C100130 p
+
+把（公有）接口设为非虚。
+
+
+%%C100131 p
+
+把虚函数设为私有。
+
+
+%%C100132 p
+
+仅当基类实现需要从派生类调用时，才把虚函数设为\texttt{protected}。
+
+
+%%C100133 p
+
+让基类的析构函数要么为公有且虚，要么为受保护且
+
+
+%%C100134 p
+
+非虚（nonvirtual）。
+
+
+%%C100135 p
+
+下面这个简单的控件层次结构示例遵守了上述全部四条准则：
+
+
+%%C100136 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{paint}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{erasing control background...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{paint}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{o}{\PYGZti{}}\PYG{n}{control}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{button}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{paint}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{painting button...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{control}\PYG{o}{:}\PYG{o}{:}\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{erasing button background...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{checkbox}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{button}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{paint}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{painting checkbox...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{button}\PYG{o}{:}\PYG{o}{:}\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{erasing checkbox background...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100137 h3
+
+\subsection{工作原理}
+
+
+%%C100138 p
+
+NVI惯用法使用了\textit{模板方法}（template method）设计模式，它允许派生类定制基类某项功能（即算法）的各个部分（即步骤）。做法是把整个算法拆成更小的部分，每一部分由一个虚函数实现。基类可以提供也可以不提供默认实现，派生类可以重写它们，同时保持算法的整体结构和语义。
+
+
+%%C100139 p
+
+NVI惯用法的核心原则是：虚函数不应当公有，它们应当私有，或者在基类实现需要被派生类调用的情况下为受保护。类的接口，即对客户可见的公有部分，应当完全由非虚函数组成。这带来若干好处：
+
+
+%%C100140 li
+
+\begin{itemize}
+\item 它把接口与不再向客户暴露的实现细节分离。
+
+
+%%C100141 li
+
+\item 它使得修改实现细节时既不必改动公有接口，也不必改动客户代码，因此使基类更加健壮。
+
+
+%%C100142 li
+
+\item 它让类能够完全掌控自己的接口。如果公有接口中含有虚方法，派生类就可以改变所承诺的功能，类也就无法确保其前置条件和后置条件。当所有虚方法（析构函数除外）都对客户不可访问时，类就能对其接口实施前置条件和后置条件。
+
+\end{itemize}
+
+
+%%C100143 p
+
+这一惯用法还需要特别提到类的析构函数。人们常强调基类的析构函数应当是虚的，这样才能以多态方式（通过基类的指针或引用）删除对象。在析构函数不是虚函数的情况下以多态方式析构对象会造成未定义行为。然而，并非所有基类都打算被多态删除。对于这些特定情形，基类析构函数不应是虚的；不过它同样不应是公有的，而应是受保护的。
+
+
+%%C100144 p
+
+上一节的示例定义了一个表示可视控件的类层次结构：
+
+
+%%C100145 li
+
+\begin{itemize}
+\item \texttt{control}是基类，但也有派生类，例如\texttt{button}和\texttt{checkbox}——后者是按钮的一种，因此也从该类派生。
+
+
+%%C100146 li
+
+\item \texttt{control}类定义的唯一功能就是绘制控件。\texttt{draw()}方法不是虚的，但它调用了两个虚方法\myttbr{erase\_\allowbreak{}background()}和\texttt{paint()}，以完成绘制控件的两个阶段。
+
+
+%%C100147 li
+
+\item \myttbr{erase\_\allowbreak{}background()}是受保护的虚方法，因为派生类需要在自己的实现中调用它。
+
+
+%%C100148 li
+
+\item \texttt{paint()}是私有的纯虚方法。派生类必须实现它，但不应该调用基类的实现。
+
+
+%%C100149 li
+
+\item \texttt{control}类的析构函数是公有且虚的，因为对象预期会以多态方式删除。
+
+\end{itemize}
+
+
+%%C100150 p
+
+使用这些类的示例如下所示。这些类的实例由指向基类的智能指针管理：
+
+
+%%C100151 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{control}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{controls}\PYG{p}{;}
+
+\PYG{n}{controls}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{button}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{controls}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{checkbox}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{controls}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{c}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100152 p
+
+该程序的输出如下：
+
+
+%%C100153 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{erasing}\PYG{+w}{ }\PYG{n}{control}\PYG{+w}{ }\PYG{n}{background}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{erasing}\PYG{+w}{ }\PYG{n}{button}\PYG{+w}{ }\PYG{n}{background}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{painting}\PYG{+w}{ }\PYG{n}{button}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{erasing}\PYG{+w}{ }\PYG{n}{control}\PYG{+w}{ }\PYG{n}{background}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{erasing}\PYG{+w}{ }\PYG{n}{button}\PYG{+w}{ }\PYG{n}{background}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{erasing}\PYG{+w}{ }\PYG{n}{checkbox}\PYG{+w}{ }\PYG{n}{background}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{painting}\PYG{+w}{ }\PYG{n}{checkbox}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{destroying}\PYG{+w}{ }\PYG{n}{button}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{destroying}\PYG{+w}{ }\PYG{n}{control}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{destroying}\PYG{+w}{ }\PYG{n}{checkbox}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{destroying}\PYG{+w}{ }\PYG{n}{button}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\PYG{n}{destroying}\PYG{+w}{ }\PYG{n}{control}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100154 p
+
+NVI惯用法引入了一层间接：公有函数调用一个非公有的虚函数，由后者完成实际实现。在前面的示例中，\texttt{draw()}方法调用了好几个其他函数，但在很多情况下它可能只有一次调用：
+
+
+%%C100155 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{initialize\PYGZus{}impl}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{initializing control...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{initialize}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{initialize\PYGZus{}impl}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{button}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{initialize\PYGZus{}impl}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{control}\PYG{o}{:}\PYG{o}{:}\PYG{n}{initialize\PYGZus{}impl}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{initializing button...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100156 p
+
+在这个示例中，\texttt{control}类多了一个名为\texttt{initialize()}的方法（为保持简单，前面类的内容没有写出），它只调用一个名为\texttt{initialize\_\allowbreak{}impl()}的非公有虚方法，而这个方法在每个派生类中的实现各不相同。这不会带来多少开销——如果有的话——因为这类简单的函数很可能会被编译器内联。
+
+
+%%C100157 h3
+
+\subsection{延伸阅读}
+
+
+%%C100158 li
+
+\begin{itemize}
+\item \textit{对虚函数使用override与final}案例，见第1章《现代C++语言核心特性》
+
+\end{itemize}
+
+
+%%C100159 h2
+
+\section{用律师-当事人惯用法处理友元关系}
+
+
+%%C100160 p
+
+用\texttt{friend}声明授予函数和类访问某个类非公有部分的权限，通常被视为设计不良的信号，因为友元破坏了封装，把类和函数耦合在一起。友元无论是类还是函数，都能访问一个类的全部私有部分，尽管它可能只需要访问其中一部分。律师-当事人惯用法（attorney-client idiom）提供了一种简单机制，把友元的访问权限限制到类中指定的私有部分。
+
+
+%%C100161 h3
+
+\subsection{准备工作}
+
+
+%%C100162 p
+
+你必须熟悉友元是如何声明、如何工作的。
+
+
+%%C100163 p
+
+为了演示如何实现这一惯用法，我们考虑下面这些类：\texttt{Client}，它有一些私有的成员数据和函数（这里的公有接口并不重要）；以及\texttt{Friend}，它只应访问部分私有细节，例如\texttt{data1}和\texttt{action1()}，但实际上能访问全部内容：
+
+
+%%C100164 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Client}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{data\PYGZus{}1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{data\PYGZus{}2}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{action1}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{action2}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{friend}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Friend}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{c+c1}{// 公有接口}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Friend}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{access\PYGZus{}client\PYGZus{}data}\PYG{p}{(}\PYG{n}{Client}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{c}\PYG{p}{.}\PYG{n}{action1}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{c}\PYG{p}{.}\PYG{n}{action2}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{d1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{.}\PYG{n}{data\PYGZus{}1}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{d2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{.}\PYG{n}{data\PYGZus{}1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100165 h3
+
+\subsection{具体做法}
+
+
+%%C100166 p
+
+按以下步骤把友元的访问限制到类的私有部分：
+
+
+%%C100167 p
+
+在向某个友元开放其私有部分的客户类中，把友元关系声明给一个中间类，
+
+
+%%C100168 p
+
+即所谓的\texttt{Attorney}类：
+
+
+%%C100169 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Client}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{data\PYGZus{}1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{data\PYGZus{}2}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{action1}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{action2}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{friend}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Attorney}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{c+c1}{// 公有接口}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100170 p
+
+创建一个只含私有（内联）函数的类，这些函数用来访问客户的私有
+
+
+%%C100171 p
+
+部分。这个中间类允许真正的友元访问它的私有部分：
+
+
+%%C100172 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Attorney}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{run\PYGZus{}action1}\PYG{p}{(}\PYG{n}{Client}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{c}\PYG{p}{.}\PYG{n}{action1}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{get\PYGZus{}data1}\PYG{p}{(}\PYG{n}{Client}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{.}\PYG{n}{data\PYGZus{}1}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{friend}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Friend}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100173 p
+
+在\texttt{Friend}类中，只间接地访问\texttt{Client}类的私有部分，
+
+
+%%C100174 p
+
+具体做法是经由\texttt{Attorney}类：
+
+
+%%C100175 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Friend}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{access\PYGZus{}client\PYGZus{}data}\PYG{p}{(}\PYG{n}{Client}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Attorney}\PYG{o}{:}\PYG{o}{:}\PYG{n}{run\PYGZus{}action1}\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{d1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Attorney}\PYG{o}{:}\PYG{o}{:}\PYG{n}{get\PYGZus{}data1}\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100176 h3
+
+\subsection{工作原理}
+
+
+%%C100177 p
+
+律师-当事人惯用法通过引入一个中间人——律师，给出了一种把访问限制在客户私有部分的简单机制。客户类不直接把友元关系授予那些使用其内部状态的对象，而是把友元关系授予一个律师，再由律师开放客户中一组受限的私有数据或函数。它通过定义私有的静态函数来做到这一点。通常这些函数同时也是内联的，从而避免因律师类引入的间接层而产生任何运行期开销。客户的友元通过实际使用律师的私有部分，获得对客户私有部分的访问。这一惯用法之所以称为\textit{律师-当事人}，是因为它类似于律师与当事人之间的关系：律师知道当事人的全部秘密，却只向其他方透露其中一部分。
+
+
+%%C100178 p
+
+在实践中，如果一个客户类需要让不同的友元类或函数访问不同的私有部分，可能就需要为它创建多个律师。
+
+%%C100179 p
+
+另一方面，友元关系不可继承，也就是说，声明为类\texttt{B}的友元的类或函数，并不是从\texttt{B}派生的类\texttt{D}的友元。不过，在\texttt{D}中重写的虚函数，仍然可以由友元类通过指向\texttt{B}的指针或引用以多态方式访问。下面的例子说明了这一点：调用\texttt{F}的\texttt{run()}方法会分别打印\texttt{base}和\texttt{derived}：
+
+
+%%C100180 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{B}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{execute}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{base}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{friend}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{BAttorney}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{D}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{B}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{execute}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{derived}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{BAttorney}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{execute}\PYG{p}{(}\PYG{n}{B}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{b}\PYG{p}{.}\PYG{n}{execute}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{friend}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{F}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{run}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{B}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{BAttorney}\PYG{o}{:}\PYG{o}{:}\PYG{n}{execute}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 打印 \PYGZsq{}base\PYGZsq{}}
+\PYG{+w}{    }\PYG{n}{D}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{BAttorney}\PYG{o}{:}\PYG{o}{:}\PYG{n}{execute}\PYG{p}{(}\PYG{n}{d}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 打印 \PYGZsq{}derived\PYGZsq{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{F}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}
+\PYG{n}{f}\PYG{p}{.}\PYG{n}{run}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100181 h3
+
+\subsection{更多内容}
+
+
+%%C100182 p
+
+使用任何设计模式都要做权衡，这一模式也不例外。在某些情况下，使用该模式可能会给开发、测试与维护带来过多的开销。不过，对于某些类型的应用，例如可扩展的框架，这一模式可能极有价值。
+
+
+%%C100183 h3
+
+\subsection{延伸阅读}
+
+
+%%C100184 li
+
+\begin{itemize}
+\item \textit{实现pimpl惯用法}
+
+\end{itemize}
+
+
+%%C100185 h2
+
+\section{用奇异递归模板模式实现静态多态}
+
+
+%%C100186 p
+
+多态是指同一接口可以有多种形态的能力。虚函数允许派生类重写基类中的实现。它们构成了所谓\textit{运行期多态}这一多态形式中最常见的要素，因为调用类层次中某个特定虚函数的决定是在运行期做出的。它也被称为\textit{晚绑定}，因为函数调用与函数执行之间的绑定发生得较晚，是在程序执行期间完成的。与之相反的做法称为\textit{早绑定}、\textit{静态多态}或\textit{编译期多态}，因为它是在编译期通过函数重载与运算符重载实现的。另一方面，一种称为\textit{奇异递归模板模式}（\textit{CRTP}）的技术，可以让类从一个以派生类本身为模板参数的基类模板派生，从而在编译期模拟基于虚函数的运行期多态。该技术在一些库中被大量使用，包括\textit{Microsoft}的\textit{Active Template Library}（\textit{ATL}）与\textit{Windows Template} \textit{Library}（\textit{WTL}）。
+
+
+%%C100187 h3
+
+\subsection{准备工作}
+
+
+%%C100188 p
+
+为了演示CRTP如何工作，我们将重看在\textit{用非虚接口惯用法分离接口与实现}案例中实现的那组控件类层次结构。我们将定义一组控件类，它们具有绘制控件之类的功能，也就是说（在我们的例子中）这个操作分两个阶段完成：先擦除背景，再绘制控件。
+
+
+%%C100189 h3
+
+\subsection{具体做法}
+
+
+%%C100190 p
+
+要用奇异递归模板模式实现静态多态，请按以下步骤操作：
+
+
+%%C100191 p
+
+提供一个类模板，作为其他类的基类，这些类
+
+
+%%C100192 p
+
+需要在编译期以多态方式处理。多态函数从该类中调用：
+
+
+%%C100193 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{k}{this}\PYG{p}{)}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{k}{this}\PYG{p}{)}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{paint}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100194 p
+
+派生类以该类模板作为基类；同时派生类本身
+
+
+%%C100195 p
+
+也是基类的模板实参。派生类实现那些从基类调用的函数：
+
+
+%%C100196 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{button}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{control}\PYG{o}{\PYGZlt{}}\PYG{n}{button}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{erasing button background...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{paint}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{painting button...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{checkbox}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{control}\PYG{o}{\PYGZlt{}}\PYG{n}{checkbox}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{erasing checkbox background...}\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{              }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{paint}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{painting checkbox...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100197 p
+
+函数模板可以通过指向基类模板的指针
+
+
+%%C100198 p
+
+或引用来多态地处理派生类：
+
+
+%%C100199 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{draw\PYGZus{}control}\PYG{p}{(}\PYG{n}{control}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{c}\PYG{p}{.}\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{button}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{n}{draw\PYGZus{}control}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{checkbox}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}
+\PYG{n}{draw\PYGZus{}control}\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100200 h3
+
+\subsection{工作原理}
+
+
+%%C100201 p
+
+虚函数可能带来性能问题，尤其是当它们很小、又在循环中被多次调用时。现代硬件已使大多数这类情形变得无关紧要，但仍有一些应用领域对性能要求极高，任何性能提升都很重要。奇异递归模板模式利用元编程在编译期模拟虚函数调用，而这种元编程最终会转化为函数重载。
+
+
+%%C100202 p
+
+这个模式乍看之下可能相当奇怪，但它完全合法。其思路是让一个类从一个模板类基类派生，并把派生类自身作为基类的类型模板实参传入。基类随后调用派生类的函数。在我们的例子中，\myttbr{control<\allowbreak{}button>::\allowbreak{}draw()}的声明早于编译器认识\texttt{button}类。不过，\texttt{control}类是类模板，也就是说，它只在编译器遇到使用它的代码时才被实例化。到那时，本例中的\texttt{button}类已经定义完毕并为编译器所知，因此可以调用\myttbr{button::\allowbreak{}erase\_\allowbreak{}background()}和\texttt{button::\allowbreak{}paint()}。
+
+
+%%C100203 p
+
+要调用派生类的函数，必须先取得指向派生类的指针，这通过\texttt{static\_\allowbreak{}cast}转换完成，如\myttbr{static\_\allowbreak{}cast<\allowbreak{}T*>(\allowbreak{}this)->\allowbreak{}erase\_\allowbreak{}background()}所示。如果这种操作要做很多次，可以提供一个私有函数来完成转换，从而简化代码：
+
+
+%%C100204 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n+nf}{derived}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{k}{this}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{derived}\PYG{p}{(}\PYG{p}{)}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{derived}\PYG{p}{(}\PYG{p}{)}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{paint}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100205 p
+
+使用CRTP时有一些陷阱，你必须留意：
+
+
+%%C100206 li
+
+\begin{itemize}
+\item 派生类中所有被基类模板调用的函数都必须是\texttt{public}的；否则，必须把基类的特化声明为派生类的友元：
+
+
+%%C100207 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{button}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{control}\PYG{o}{\PYGZlt{}}\PYG{n}{button}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{friend}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}\PYG{o}{\PYGZlt{}}\PYG{n}{button}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{erasing button background...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{paint}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{painting button...}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100208 li
+
+\item 无法把CRTP类型的对象存放在同构容器（例如\texttt{vector}或\texttt{list}）中，因为每个基类都是独一无二的类型（例如\texttt{control<\allowbreak{}button>}和\texttt{control<\allowbreak{}checkbox>}）。如果确实需要这样做，可以借助一种变通做法来实现，下一节将讨论并举例说明。
+
+
+%%C100209 li
+
+\item 使用这一技术时，程序体积可能会增大，这是模板的实例化方式所致。
+
+\end{itemize}
+
+
+%%C100210 h3
+
+\subsection{更多内容}
+
+
+%%C100211 p
+
+当实现CRTP的类型的对象需要同构地存放在容器中时，必须再借助一个惯用法。基类模板本身必须从另一个含纯虚函数（以及虚的公有析构函数）的类派生。以\texttt{control}类为例，需要做如下改动：
+
+
+%%C100212 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{controlbase}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{o}{\PYGZti{}}\PYG{n}{controlbase}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{control}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{controlbase}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{k}{this}\PYG{p}{)}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{erase\PYGZus{}background}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{k}{this}\PYG{p}{)}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{paint}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100213 p
+
+派生类（例如\texttt{button}和\texttt{checkbox}）无需任何改动。这样一来，我们就可以把指向抽象类的指针存放在容器（例如\texttt{std::\allowbreak{}vector}）中，如下所示：
+
+
+%%C100214 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{draw\PYGZus{}controls}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{controlbase}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{c}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{draw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{controlbase}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{;}
+\PYG{n}{v}\PYG{p}{.}\PYG{n}{emplace\PYGZus{}back}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{button}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{v}\PYG{p}{.}\PYG{n}{emplace\PYGZus{}back}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{checkbox}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{draw\PYGZus{}controls}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100215 h3
+
+\subsection{延伸阅读}
+
+
+%%C100216 li
+
+\begin{itemize}
+\item \textit{实现pimpl惯用法}
+
+
+%%C100217 li
+
+\item \textit{用非虚接口惯用法分离接口与实现}
+
+\end{itemize}
+
+
+%%C100218 h2
+
+\section{实现线程安全的单例}
+
+
+%%C100219 p
+
+单例大概是最广为人知的设计模式之一。它限制一个类只能实例化出一个对象，这在某些情况下是必要的，不过很多时候使用单例更像是一种反模式，可以用其他设计选择来避免。既然单例意味着整个程序只有一个类实例可用，那么这个唯一实例很可能需要从不同线程访问。因此，在实现单例时，你也应当让它线程安全。在C++11之前，做到这一点并不容易，双重检查锁定（double-checked locking）是当时的典型做法。然而，Scott Meyers与Andrei Alexandrescu在名为\textit{C++ and the Perils of Double-Checked Locking}的论文中指出，使用这种模式并不能保证在可移植的C++中得到线程安全的单例实现。幸运的是，C++11改变了这一局面，本案例将展示如何用现代C++编写单例。
+
+
+%%C100220 h3
+
+\subsection{准备工作}
+
+
+%%C100221 p
+
+本案例要求你了解静态存储期、内部链接，以及删除的函数与默认化的函数是如何工作的。如果你还没有读过上一个案例\textit{用奇异递归模板模式实现静态多态}，也不熟悉该模式，最好先读一读，因为本案例后面会用到它。
+
+
+%%C100222 h3
+
+\subsection{具体做法}
+
+
+%%C100223 p
+
+要实现线程安全的单例，请按以下步骤操作：
+
+
+%%C100224 p
+
+定义单例类：
+
+
+%%C100225 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Singleton}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100226 p
+
+把默认构造函数设为私有：
+
+
+%%C100227 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{Singleton}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100228 p
+
+把复制构造函数与复制赋值运算符声明为\texttt{public}并\texttt{delete}：
+
+
+%%C100229 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{Singleton}\PYG{p}{(}\PYG{n}{Singleton}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{Singleton}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{Singleton}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100230 p
+
+创建并返回唯一实例的函数应当是静态的，
+
+
+%%C100231 p
+
+并且应当返回类类型的引用。它应当声明一个该类型的静态对象，并返回它的引用：
+
+
+%%C100232 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{Singleton}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{instance}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{Singleton}\PYG{+w}{ }\PYG{n}{single}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{single}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100233 h3
+
+\subsection{工作原理}
+
+
+%%C100234 p
+
+既然单例对象不应由用户直接创建，所有构造函数要么是私有的，要么是公有的且已\texttt{deleted}。默认构造函数是私有的，但并未删除，因为必须在类代码中真正创建该类的一个实例。在这个实现中，一个名为\texttt{instance()}的静态函数返回该类的唯一实例。
+
+
+%%C100235 note
+
+\begin{myNote}[tip]
+尽管大多数实现返回指针，但返回引用其实更合理，因为任何情况下这个函数都不会返回空指针（即没有对象）。
+\end{myNote}
+
+
+%%C100236 p
+
+\texttt{instance()}方法的实现乍看之下可能过于简单，而且似乎不是线程安全的，如果你熟悉\textit{双重检查锁定模式}（\textit{DCLP}）就更会这么想。在C++11中，由于静态存储期对象初始化方式的一个关键细节，这实际上已不再必要。初始化只会发生一次，即使多个线程同时尝试初始化同一个静态对象也是如此。DCLP的职责已从用户转移到编译器，不过编译器可能采用其他技术来保证结果。
+
+
+%%C100237 p
+
+下面这段引自C++标准第6.7.4段的文字定义了静态对象初始化的规则（加粗部分是涉及并发初始化的内容）：
+
+
+%%C100238 p
+
+\textit{所有具有静态存储期（3.7.1）的块作用域变量的零初始化（8.5）} \textit{或线程存储期（3.7.2）的块作用域变量的零初始化，都在任何其他初始化之前进行。} \textit{具有静态存储期的块作用域实体的常量初始化（3.6.2），如果} \textit{适用，则在其语句块首次进入之前完成。实现可以} \textit{在其他块作用域变量具有静态或线程存储} \textit{期时提前初始化它们，条件与实现可以在命名空间作用域中静态} \textit{初始化具有静态或线程存储期的变量（3.6.2）的条件相同。} \textit{否则，这类变量在控制流首次经过其} \textit{声明时初始化；这类变量在其} \textit{初始化完成时被视为已初始化。如果初始化因抛出异常而退出，则初始化未} \textit{完成，因此下次控制流进入该声明时会再次尝试。}\textbf{如果控制流在变量正在初始化时} \textbf{并发进入该声明，则} \textbf{并发执行应当等待初始化完成。}\textit{如果控制流在变量正在初始化时递归地再次进入该声明，则行为是} \textit{未定义的。}
+
+
+%%C100239 p
+
+这个静态局部对象具有存储期，但它只在首次使用（第一次调用\texttt{instance()}方法）时才被实例化。程序退出时该对象被释放。顺带一提，返回指针而不是引用，唯一可能的好处是可以在程序退出之前的某个时刻删除这个唯一实例，然后再重新创建它。这同样没有太大意义，因为它与“类只有一个全局实例、在程序的任何位置都可访问”的想法相冲突。
+
+
+%%C100240 h3
+
+\subsection{更多内容}
+
+
+%%C100241 p
+
+在较大的代码库中，可能会出现需要不止一种单例类型的情况。为了避免多次重复编写同样的模式，可以用通用的方式实现它。为此，我们需要用到上一个案例中介绍的\textit{奇异递归模板模式}（\textit{CRTP}）。实际的单例被实现为类模板。\texttt{instance()}方法创建并返回类型模板参数的对象，而该参数就是派生类：
+
+
+%%C100242 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{SingletonBase}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{protected}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{SingletonBase}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{SingletonBase}\PYG{p}{(}\PYG{n}{SingletonBase}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{n}{SingletonBase}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{SingletonBase}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n+nf}{instance}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{single}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{single}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Single}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{SingletonBase}\PYG{o}{\PYGZlt{}}\PYG{n}{Single}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{Single}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{friend}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{SingletonBase}\PYG{o}{\PYGZlt{}}\PYG{n}{Single}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{demo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{demo}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C100243 p
+
+上一节中的\texttt{Singleton}类变成了\texttt{SingletonBase}类模板。默认构造函数不再是私有的，而是受保护的，因为它必须能被派生类访问。在这个例子中，需要只实例化一个对象的类叫作\texttt{Single}。它的构造函数必须是私有的，但默认构造函数又必须对基类模板可用；因此，\myttbr{SingletonBase<\allowbreak{}Single>}是\texttt{Single}类的友元。
+
+
+%%C100244 h3
+
+\subsection{延伸阅读}
+
+
+%%C100245 li
+
+\begin{itemize}
+\item \textit{用奇异递归模板模式实现静态多态}
+
+
+%%C100246 li
+
+\item \textit{默认化与删除的函数}案例，见\texttt{Chapter 3}，\textit{函数探究}
+
+\end{itemize}

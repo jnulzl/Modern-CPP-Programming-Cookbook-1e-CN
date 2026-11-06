@@ -1,0 +1,2944 @@
+%%C060001 p
+
+本章包含以下案例：
+
+
+%%C060002 li
+
+\begin{itemize}
+\item 用chrono::duration表示时间间隔
+
+
+%%C060003 li
+
+\item 用标准时钟测量函数执行时间
+
+
+%%C060004 li
+
+\item 为自定义类型生成哈希值
+
+
+%%C060005 li
+
+\item 用std::any存储任意值
+
+
+%%C060006 li
+
+\item 用std::optional存储可选值
+
+
+%%C060007 li
+
+\item 用std::variant作为类型安全的联合体
+
+
+%%C060008 li
+
+\item 访问std::variant
+
+
+%%C060009 li
+
+\item 注册程序正常退出时要调用的函数
+
+
+%%C060010 li
+
+\item 用类型特征查询类型属性
+
+
+%%C060011 li
+
+\item 编写自己的类型特征
+
+
+%%C060012 li
+
+\item 用std::conditional在类型之间选择
+
+\end{itemize}
+
+
+%%C060013 h2
+
+\section{引言}
+
+
+%%C060014 p
+
+标准库里除了上一章讨论的容器、算法与迭代器之外，还包含许多通用工具与库。本章聚焦于三个方面：处理日期与时间的\texttt{chrono}库、为其他类型提供元信息的类型特征，以及C++17新增的\texttt{std::\allowbreak{}any}、\texttt{std::\allowbreak{}optional}和\texttt{std::\allowbreak{}variant}类型。
+
+
+%%C060015 h2
+
+\section{用chrono::duration表示时间间隔}
+
+
+%%C060016 p
+
+无论在哪种编程语言中，处理时间和日期都是常见操作。C++11为标准库提供了一套灵活的日期时间库，使我们能够定义时间点和时间间隔。这个库名为\texttt{chrono}，是一个通用工具库，设计上与定时器及各种时钟配合工作；不同系统上的时钟可能不同，因此它保持精度中立。该库位于\texttt{<\allowbreak{}chrono>}头文件中，处于\texttt{std::\allowbreak{}chrono}命名空间，定义并实现了以下几个组件：
+
+
+%%C060017 li
+
+\begin{itemize}
+\item \textit{Durations}，表示时间间隔。
+
+
+%%C060018 li
+
+\item \textit{Time points}，表示自某个时钟纪元起的一段时间。
+
+
+%%C060019 li
+
+\item \textit{Clocks}，定义纪元（即时间的起点）与节拍（tick）。
+
+\end{itemize}
+
+
+%%C060020 p
+
+本案例将介绍如何使用duration。
+
+
+%%C060021 h3
+
+\subsection{准备工作}
+
+
+%%C060022 p
+
+本案例并不打算作为duration类的完整参考。若需完整资料，建议查阅其他资源（库参考文档见http://\allowbreak{}en.\allowbreak{}cppreference.\allowbreak{}com/\allowbreak{}w/\allowbreak{}cpp/\allowbreak{}chrono）。
+
+
+%%C060023 p
+
+在\texttt{chrono}库中，时间间隔由\myttbr{std::\allowbreak{}chrono::\allowbreak{}duration}类表示。
+
+
+%%C060024 h3
+
+\subsection{具体做法}
+
+
+%%C060025 p
+
+要处理时间间隔，可以采用以下做法：
+
+
+%%C060026 li
+
+\begin{itemize}
+\item 使用\myttbr{std::\allowbreak{}chrono::\allowbreak{}duration}为小时、分钟、秒、毫秒、微秒和纳秒定义的typedef：
+
+
+%%C060027 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{hours}\PYG{+w}{        }\PYG{n+nf}{half\PYGZus{}day}\PYG{p}{(}\PYG{l+m+mi}{12}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{minutes}\PYG{+w}{      }\PYG{n+nf}{half\PYGZus{}hour}\PYG{p}{(}\PYG{l+m+mi}{30}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{seconds}\PYG{+w}{      }\PYG{n+nf}{half\PYGZus{}minute}\PYG{p}{(}\PYG{l+m+mi}{30}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{milliseconds}\PYG{+w}{ }\PYG{n+nf}{half\PYGZus{}second}\PYG{p}{(}\PYG{l+m+mi}{500}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{microseconds}\PYG{+w}{ }\PYG{n+nf}{half\PYGZus{}millisecond}\PYG{p}{(}\PYG{l+m+mi}{500}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{nanoseconds}\PYG{+w}{  }\PYG{n+nf}{half\PYGZus{}microsecond}\PYG{p}{(}\PYG{l+m+mi}{500}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060028 li
+
+\item 使用C++14引入的标准用户定义字面量运算符，它们位于命名空间\myttbr{std::\allowbreak{}chrono\_\allowbreak{}literals}中，可用于创建小时、分钟、秒、毫秒、微秒和纳秒的duration：
+
+
+%%C060029 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{using}\PYG{+w}{ }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n+nn}{chrono\PYGZus{}literals}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{half\PYGZus{}day}\PYG{+w}{         }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{12}\PYG{n}{h}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{half\PYGZus{}hour}\PYG{+w}{        }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{n}{min}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{half\PYGZus{}minute}\PYG{+w}{      }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{n}{s}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{half\PYGZus{}second}\PYG{+w}{      }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{500}\PYG{n}{ms}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{half\PYGZus{}millisecond}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{500u}\PYG{n}{s}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{half\PYGZus{}microsecond}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{500}\PYG{n}{ns}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060030 li
+
+\item 使用从较低精度的duration到较高精度的duration的直接转换：
+
+
+%%C060031 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{hours}\PYG{+w}{ }\PYG{n+nf}{half\PYGZus{}day\PYGZus{}in\PYGZus{}h}\PYG{p}{(}\PYG{l+m+mi}{12}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{minutes}\PYG{+w}{ }\PYG{n+nf}{half\PYGZus{}day\PYGZus{}in\PYGZus{}min}\PYG{p}{(}\PYG{n}{half\PYGZus{}day\PYGZus{}in\PYGZus{}h}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{half\PYGZus{}day\PYGZus{}in\PYGZus{}h}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{h}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{//12h}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{half\PYGZus{}day\PYGZus{}in\PYGZus{}min}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{min}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{c+c1}{//720min}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060032 li
+
+\item 使用\myttbr{std::\allowbreak{}chrono::\allowbreak{}duration\_\allowbreak{}cast}从较高精度向较低精度转换duration：
+
+
+%%C060033 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{using}\PYG{+w}{ }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n+nn}{chrono\PYGZus{}literals}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{total\PYGZus{}seconds}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{12345}\PYG{n}{s}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{hours}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{   }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{hours}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{      }\PYG{p}{(}\PYG{n}{total\PYGZus{}seconds}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{minutes}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{   }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{minutes}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{      }\PYG{p}{(}\PYG{n}{total\PYGZus{}seconds}\PYG{+w}{ }\PYG{o}{\PYGZpc{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{n}{h}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{seconds}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{   }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{seconds}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{      }\PYG{p}{(}\PYG{n}{total\PYGZus{}seconds}\PYG{+w}{ }\PYG{o}{\PYGZpc{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{n}{min}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{hours}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{:}\PYG{l+s+sc}{\PYGZsq{}}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{minutes}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{:}\PYG{l+s+sc}{\PYGZsq{}}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{seconds}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 3:25:45}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060034 li
+
+\item 需要取整时，使用C++17提供的转换函数\texttt{floor()}、\texttt{round()}与\texttt{ceil()}：
+
+
+%%C060035 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{using}\PYG{+w}{ }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n+nn}{chrono\PYGZus{}literals}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{total\PYGZus{}seconds}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{12345}\PYG{n}{s}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{m1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{floor}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{minutes}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{total\PYGZus{}seconds}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 205 min}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{m2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{round}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{minutes}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{total\PYGZus{}seconds}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 206 min}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{m3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{ceil}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{minutes}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{total\PYGZus{}seconds}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 206 min}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sa}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{abs}\PYG{p}{(}\PYG{n}{total\PYGZus{}seconds}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060036 li
+
+\item 使用算术运算、复合赋值与比较运算来修改并比较时间间隔：
+
+
+%%C060037 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{using}\PYG{+w}{ }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n+nn}{chrono\PYGZus{}literals}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{d1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{n}{h}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{23}\PYG{n}{min}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{45}\PYG{n}{s}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// d1 = 5025s}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{d2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{n}{h}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{12}\PYG{n}{min}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{50}\PYG{n}{s}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// d2 = 11570s}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{d1}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{d2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* 做点什么 */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C060038 h3
+
+\subsection{工作原理}
+
+
+%%C060039 p
+
+\myttbr{std::\allowbreak{}chrono::\allowbreak{}duration}类定义的是某个时间单位上的节拍数（即两个时刻之间的增量）。默认单位是秒；若要表示分钟、毫秒等其他单位，就需要使用比值。对于大于秒的单位，比值大于一，例如分钟为\texttt{ratio<\allowbreak{}60>}。对于小于秒的单位，比值小于一，例如毫秒为\texttt{ratio<\allowbreak{}1, 1000>}。节拍数可以通过\texttt{count()}成员函数获取。
+
+
+%%C060040 p
+
+标准库为纳秒、微秒、毫秒、秒、分钟和小时定义了几个duration类型同义词，上一节的第一个示例用的就是它们。下面的代码展示了这些duration在\texttt{chrono}命名空间中的定义方式：
+
+
+%%C060041 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{std}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{chrono}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{long}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ratio}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1000000000}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{nanoseconds}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{long}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ratio}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1000000}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{microseconds}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{long}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ratio}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1000}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{milliseconds}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{long}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{seconds}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ratio}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{60}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{minutes}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ratio}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{3600}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{hours}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060042 p
+
+然而，有了这种灵活的定义，我们甚至可以表示诸如\textit{1.2个六分之一}\textit{分钟}这样的时间间隔（也就是12秒），其中1.2是该duration的节拍数，\texttt{ratio<\allowbreak{}10>}（即60/6）是时间单位：
+
+
+%%C060043 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{ratio}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{10}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{(}\PYG{l+m+mf}{1.2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 12 sec}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060044 p
+
+C++14在命名空间\myttbr{std::\allowbreak{}chrono\_\allowbreak{}literals}中新增了几个标准用户定义字面量运算符。这让定义duration更容易，但你必须在使用这些字面量运算符的作用域中引入该命名空间。
+
+
+%%C060045 note
+
+\begin{myNote}[tip]
+你只应在需要使用用户定义字面量运算符的作用域中引入其命名空间，而不要放在更大的作用域里，以免与来自其他库和命名空间的同名运算符冲突。
+\end{myNote}
+
+
+%%C060046 p
+
+\texttt{duration}类支持所有算术运算。你可以对duration做加、减，乘以或除以一个值，也可以应用取模（\texttt{modulo}）运算。不过要注意，两个时间单位不同的duration相加或相减时，结果的时间单位是这两个单位的最大公约数。也就是说，如果把一个以秒为单位的duration与一个以分钟为单位的duration相加，结果是以秒为单位的duration。
+
+
+%%C060047 p
+
+从时间单位精度较低的duration向精度较高的duration转换是隐式完成的。反过来，从较高精度向较低精度转换则要求显式转型，这由非成员函数\myttbr{std::\allowbreak{}chrono::\allowbreak{}duration\_\allowbreak{}cast()}完成。在\textit{具体做法}一节中，我们看过一个例子，用于求出一个以秒表示的duration对应多少小时、分钟和秒。
+
+
+%%C060048 p
+
+C++17又增加了几个带取整的duration转换非成员函数：\texttt{floor()}向下取整，\texttt{ceil()}向上取整，\texttt{round()}取最接近的值。此外，C++17还增加了非成员函数\texttt{abs()}，用于取duration的绝对值。
+
+
+%%C060049 h3
+
+\subsection{更多内容}
+
+
+%%C060050 p
+
+chrono是通用库，正因如此，它缺少许多有用的专门功能，例如用年、月、日表示日期，处理时区与日历，等等。第三方库可以实现这些功能，推荐一个是Howard Hinnant的date库，以MIT许可证发布，地址为https://\allowbreak{}github.\allowbreak{}com/\allowbreak{}HowardHinnant/\allowbreak{}date。
+
+
+%%C060051 h3
+
+\subsection{延伸阅读}
+
+
+%%C060052 li
+
+\begin{itemize}
+\item \textit{用标准时钟测量函数执行时间}
+
+\end{itemize}
+
+
+%%C060053 h2
+
+\section{用标准时钟测量函数执行时间}
+
+
+%%C060054 p
+
+上一案例中，我们看到了如何用\texttt{chrono}标准库处理时间间隔。不过，我们经常还需要处理时间点。\texttt{chrono}库提供了这样的组件，表示自某个时钟纪元（即该时钟定义的时间起点）起的一段时间。本案例将介绍如何用\texttt{chrono}库与时间点来测量函数的执行时间。
+
+
+%%C060055 h3
+
+\subsection{准备工作}
+
+
+%%C060056 p
+
+本案例与上一个案例\textit{用}\textit{chrono::duration表示时间间隔}关系密切。如果你还没有看过那个案例，建议先看它再继续。
+
+
+%%C060057 p
+
+本案例的示例将使用下面这个函数，它什么也不做，但执行起来要花一些时间：
+
+
+%%C060058 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{count}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{100000000}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{count}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{i}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060059 h3
+
+\subsection{具体做法}
+
+
+%%C060060 p
+
+要测量函数的执行时间，需要执行以下步骤：
+
+
+%%C060061 p
+
+用标准时钟获取当前时刻：
+
+
+%%C060062 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{start}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{high\PYGZus{}resolution\PYGZus{}clock}\PYG{o}{:}\PYG{o}{:}\PYG{n}{now}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060063 p
+
+调用要测量的函数：
+
+
+%%C060064 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{func}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060065 p
+
+再次获取当前时刻，两者之差就是
+
+
+%%C060066 p
+
+函数的执行时间：
+
+
+%%C060067 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{diff}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{high\PYGZus{}resolution\PYGZus{}clock}\PYG{o}{:}\PYG{o}{:}\PYG{n}{now}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060068 p
+
+把该差值（以纳秒为单位）转换成你实际关心的分辨率
+
+
+%%C060069 p
+
+单位：
+
+
+%%C060070 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{p}{,}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{milli}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{diff}\PYG{p}{)}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ms}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{p}{,}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{nano}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{diff}\PYG{p}{)}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ns}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060071 p
+
+要把这一模式实现为可复用的组件，请执行以下步骤：
+
+
+%%C060072 p
+
+创建一个类模板，以分辨率和时钟作为模板参数。
+
+
+%%C060073 p
+
+创建一个静态可变参数函数模板，它接受一个函数及其参数。
+
+
+%%C060074 p
+
+实现上面展示的模式，用参数调用该函数。
+
+
+%%C060075 p
+
+返回duration，而不是节拍数。
+
+
+%%C060076 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Time}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{microseconds}\PYG{p}{,}
+\PYG{+w}{          }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Clock}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{high\PYGZus{}resolution\PYGZus{}clock}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{perf\PYGZus{}timer}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Args}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{Time}\PYG{+w}{ }\PYG{n}{duration}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Args}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{args}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{start}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Clock}\PYG{o}{:}\PYG{o}{:}\PYG{n}{now}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{Args}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{args}\PYG{p}{)}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{end}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Clock}\PYG{o}{:}\PYG{o}{:}\PYG{n}{now}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{Time}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{end}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060077 h3
+
+\subsection{工作原理}
+
+
+%%C060078 p
+
+时钟是定义了以下两件事的组件：
+
+
+%%C060079 li
+
+\begin{itemize}
+\item 时间的起点，称为\textit{纪元}（epoch）；对纪元究竟是什么没有限制，但典型的实现使用1970年1月1日。
+
+
+%%C060080 li
+
+\item \textit{节拍率}（tick rate），定义两个时间点之间的增量（例如毫秒或纳秒）。
+
+\end{itemize}
+
+
+%%C060081 p
+
+时间点是自某个时钟纪元起的一段时间。有几个时间点特别重要：
+
+
+%%C060082 li
+
+\begin{itemize}
+\item 当前时间，由时钟的静态成员\texttt{now()}返回。
+
+
+%%C060083 li
+
+\item 纪元，即时间的起点；它是某个时钟的\texttt{time\_\allowbreak{}point}默认构造函数创建的时间点。
+
+
+%%C060084 li
+
+\item 时钟能够表示的最小时间，由\texttt{time\_\allowbreak{}point}的静态成员\texttt{min()}返回。
+
+
+%%C060085 li
+
+\item 时钟能够表示的最大时间，由\texttt{time point}的静态成员\texttt{max()}返回。
+
+\end{itemize}
+
+
+%%C060086 p
+
+标准定义了三种时钟：
+
+
+%%C060087 li
+
+\begin{itemize}
+\item \texttt{system\_\allowbreak{}clock}：使用当前系统的实时时钟来表示时间点。
+
+
+%%C060088 li
+
+\item \myttbr{high\_\allowbreak{}resolution\_\allowbreak{}clock}：表示使用当前系统上尽可能短的节拍周期的时钟。
+
+
+%%C060089 li
+
+\item \texttt{steady\_\allowbreak{}clock}：表示永远不会被调整的时钟。这意味着它与其他时钟不同：随着时间推移，两个时间点之差始终为正。
+
+\end{itemize}
+
+
+%%C060090 p
+
+下面的例子打印每个时钟的精度，以及它是否为稳定（或单调）时钟：
+
+
+%%C060091 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{print\PYGZus{}clock}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{precision: }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mf}{1000000.0}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{p}{(}\PYG{n}{T}\PYG{o}{:}\PYG{o}{:}\PYG{n}{period}\PYG{o}{:}\PYG{o}{:}\PYG{n}{num}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{T}\PYG{o}{:}\PYG{o}{:}\PYG{n}{period}\PYG{o}{:}\PYG{o}{:}\PYG{n}{den}\PYG{p}{)}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{steady: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}steady}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{print\PYGZus{}clock}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{system\PYGZus{}clock}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{print\PYGZus{}clock}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{high\PYGZus{}resolution\PYGZus{}clock}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{print\PYGZus{}clock}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{steady\PYGZus{}clock}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060092 p
+
+一种可能的输出如下：
+
+
+%%C060093 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n+nl}{precision}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mf}{0.1}
+\PYG{n+nl}{steady}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mi}{0}
+\PYG{n+nl}{precision}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mf}{0.001}
+\PYG{n+nl}{steady}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mi}{1}
+\PYG{n+nl}{precision}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mf}{0.001}
+\PYG{n+nl}{steady}\PYG{p}{:}\PYG{+w}{ }\PYG{l+m+mi}{1}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060094 p
+
+这说明\texttt{system\_\allowbreak{}clock}的分辨率是0.1毫秒，且不是单调时钟。相反，另外两个时钟\myttbr{high\_\allowbreak{}resolution\_\allowbreak{}clock}与\texttt{steady\_\allowbreak{}clock}的分辨率都是1纳秒，且都是单调时钟。
+
+
+%%C060095 p
+
+测量函数的执行时间时，时钟的稳定性很重要，因为如果时钟在函数运行期间被调整，结果就不能反映真实的执行时间，甚至可能出现负值。你应当依靠稳定时钟来测量函数执行时间。通常的选择是\myttbr{high\_\allowbreak{}resolution\_\allowbreak{}clock}，我们在\textit{具体做法}一节的示例中用的就是它。
+
+
+%%C060096 p
+
+测量执行时间时，需要在调用前获取当前时间，并在调用返回后再获取一次。为此我们使用时钟的\texttt{now()}静态方法。得到的结果是\texttt{time\_\allowbreak{}point}；两个时间点相减，结果是由该时钟的duration类型定义的\texttt{duration}。
+
+
+%%C060097 p
+
+为了创建一个可用于测量任意函数执行时间的可复用组件，我们定义了一个名为\texttt{perf\_\allowbreak{}timer}的类模板。该类模板以我们关心的分辨率作为模板参数（默认为微秒），以要使用的时钟作为另一个模板参数（默认为\myttbr{high\_\allowbreak{}resolution\_\allowbreak{}clock}）。类模板只有一个静态成员\texttt{duration()}——它是一个可变参数函数模板——接受要执行的函数及其数量可变的参数。实现相对简单：先获取当前时间，再用\texttt{std::\allowbreak{}invoke}调用该函数（这样它能处理调用任何可调用对象的各种机制），然后再次获取当前时间。返回值是一个\texttt{duration}（分辨率由模板参数指定）：
+
+
+%%C060098 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{t}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{perf\PYGZus{}timer}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{p}{(}\PYG{n}{func}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{100000000}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{milli}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{t}\PYG{p}{)}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ms}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{nano}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{t}\PYG{p}{)}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ns}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060099 p
+
+要注意，\texttt{duration()}函数返回的不是节拍数，而是实实在在的\texttt{duration}值。原因是：如果返回节拍数，我们就丢失了分辨率，无从知道这些数字究竟代表什么。只有在确实需要节拍计数时，才应调用\texttt{count()}：
+
+
+%%C060100 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{t1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{perf\PYGZus{}timer}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{nanoseconds}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{p}{(}\PYG{n}{func1}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{t2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{perf\PYGZus{}timer}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{microseconds}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{p}{(}\PYG{n}{func2}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{t3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{perf\PYGZus{}timer}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{milliseconds}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{p}{(}\PYG{n}{func3}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{duration}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{micro}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{t1}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{t2}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{t3}\PYG{p}{)}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{us}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060101 h3
+
+\subsection{延伸阅读}
+
+
+%%C060102 li
+
+\begin{itemize}
+\item \textit{用chrono::duration表示时间间隔}
+
+
+%%C060103 li
+
+\item \textit{统一调用任何可调用对象}案例，见\texttt{Chapter 3}《函数探究》
+
+\end{itemize}
+
+
+%%C060104 h2
+
+\section{为自定义类型生成哈希值}
+
+
+%%C060105 p
+
+标准库提供了几个无序关联容器：\myttbr{std::\allowbreak{}unordered\_\allowbreak{}set}、\myttbr{std::\allowbreak{}unordered\_\allowbreak{}multiset}、\myttbr{std::\allowbreak{}unordered\_\allowbreak{}map}和\myttbr{std::\allowbreak{}unordered\_\allowbreak{}map}。这些容器不按特定顺序存储元素，而是把元素分组到桶中。元素属于哪个桶取决于该元素的哈希值。这些标准容器默认使用\texttt{std::\allowbreak{}hash}类模板来计算哈希值。所有基本类型以及部分库类型的特化都已提供。不过对于自定义类型，你必须自己特化该类模板。本案例将展示具体做法，并说明如何计算一个好的哈希值。
+
+
+%%C060106 h3
+
+\subsection{准备工作}
+
+
+%%C060107 p
+
+本案例涉及标准库中的哈希功能。你应当熟悉哈希与哈希函数的概念。
+
+
+%%C060108 p
+
+本案例的示例将使用下面这个类：
+
+%%C060109 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Item}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{id}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{n}{Item}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{id}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{+w}{  }\PYG{o}{:}\PYG{n}{id}\PYG{p}{(}\PYG{n}{id}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{(}\PYG{n}{name}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{o}{=}\PYG{p}{(}\PYG{n}{Item}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{id}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{id}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{name}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{name}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}
+\PYG{+w}{           }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{value}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060110 h3
+
+\subsection{具体做法}
+
+
+%%C060111 p
+
+要把自定义类型用于无序关联容器，你需要执行以下步骤：
+
+
+%%C060112 p
+
+为自定义类型特化\texttt{std::\allowbreak{}hash}类模板；该特化
+
+
+%%C060113 p
+
+必须在\texttt{std}命名空间中完成。为参数类型和结果类型定义同义词。
+
+
+%%C060114 p
+
+实现调用运算符，让它接受你的类型的常量引用，并
+
+
+%%C060115 p
+
+返回一个哈希值。
+
+
+%%C060116 p
+
+要计算出好的哈希值，你应该按以下做法进行：
+
+
+%%C060117 p
+
+从一个应为质数的初始值开始（例如17）。
+
+
+%%C060118 p
+
+对于每个用于判断两个类实例是否
+
+
+%%C060119 p
+
+相等的字段，按下面的公式调整哈希值：
+
+
+%%C060120 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{hashValue}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{hashValue}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{prime}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{hashFunc}\PYG{p}{(}\PYG{n}{field}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060121 p
+
+在上面的公式中，你可以对所有字段使用同一个质数，但
+
+
+%%C060122 p
+
+建议取一个与初始值不同的值（例如31）。用\texttt{std::\allowbreak{}hash}的特化来确定类数据
+
+
+%%C060123 p
+
+成员的哈希值。
+
+
+%%C060124 p
+
+根据前面介绍的步骤，类\texttt{Item}的\texttt{std::\allowbreak{}hash}特化如下：
+
+
+%%C060125 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{std}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{hash}\PYG{o}{\PYGZlt{}}\PYG{n}{Item}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{Item}\PYG{+w}{ }\PYG{n}{argument\PYGZus{}type}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{typedef}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{result\PYGZus{}type}\PYG{p}{;}
+\PYG{n}{result\PYGZus{}type}\PYG{+w}{ }\PYG{n+nf}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{p}{(}\PYG{n}{argument\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{item}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{result\PYGZus{}type}\PYG{+w}{ }\PYG{n}{hashValue}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{17}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hashValue}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{31}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{hashValue}\PYG{+w}{ }\PYG{o}{+}
+\PYG{+w}{              }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{hash}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{(}\PYG{n}{item}\PYG{p}{.}\PYG{n}{id}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hashValue}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{31}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{hashValue}\PYG{+w}{ }\PYG{o}{+}
+\PYG{+w}{              }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{hash}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{(}\PYG{n}{item}\PYG{p}{.}\PYG{n}{name}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hashValue}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{31}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{hashValue}\PYG{+w}{ }\PYG{o}{+}
+\PYG{+w}{              }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{hash}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{(}\PYG{n}{item}\PYG{p}{.}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{      }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{hashValue}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060126 h3
+
+\subsection{工作原理}
+
+
+%%C060127 p
+
+类模板\texttt{std::\allowbreak{}hash}是一个函数对象模板，它的调用运算符定义了一个具有以下性质的哈希函数：
+
+
+%%C060128 li
+
+\begin{itemize}
+\item 接受模板参数类型的实参，并返回一个\texttt{size\_\allowbreak{}t}值。
+
+
+%%C060129 li
+
+\item 不抛出任何异常。
+
+
+%%C060130 li
+
+\item 对于相等的两个实参，返回相同的哈希值。
+
+
+%%C060131 li
+
+\item 对于不相等的两个实参，返回相同值的概率非常小（应接近\myttbr{1.\allowbreak{}0/\allowbreak{}std::\allowbreak{}numeric\_\allowbreak{}limits<\allowbreak{}size\_\allowbreak{}t>::\allowbreak{}max()}）。
+
+\end{itemize}
+
+
+%%C060132 p
+
+标准为所有基本类型提供了特化，例如\texttt{bool}、\texttt{char}、\texttt{int}、\texttt{long}、\texttt{float}、\texttt{double}（以及各种可能的\texttt{unsigned}与\texttt{long}变体），还有指针类型；此外还包括\texttt{basic\_\allowbreak{}string}与\myttbr{basic\_\allowbreak{}string\_\allowbreak{}view}类型、\texttt{unique\_\allowbreak{}ptr}与\texttt{shared\_\allowbreak{}ptr}、\texttt{bitset}与\texttt{vector<\allowbreak{}bool>}、\texttt{optional}与\texttt{variant}（C++17中）等库类型，以及若干其他类型。不过，对于自定义类型，你必须自己提供特化。该特化必须位于\texttt{std}命名空间中（因为类模板\texttt{hash}就定义在该命名空间中），并且必须满足前面列出的要求。
+
+
+%%C060133 p
+
+标准并未规定哈希值应如何计算，你可以使用任何函数，只要它对于相等的对象返回相同的值，并且对于不相等的对象返回相同值的可能性极小即可。本案例介绍的算法出自Joshua Bloch的\textit{Effective Java 2nd Edition}一书。
+
+
+%%C060134 p
+
+计算哈希值时，只应考虑参与判断两个类实例是否相等的字段（换句话说，就是\texttt{operator==}中用到的字段）。不过，\texttt{operator==}用到的这些字段你必须全部使用。在我们的示例中，类\texttt{Item}的三个字段都用于判断两个对象是否相等，因此计算哈希时必须把它们全部用上。初始哈希值不应为零，在我们的示例中选取了质数17。重要的是这些值不应为零，否则一开始（即处理顺序中最先）产生零哈希值的字段不会改变哈希值（哈希值会保持为零，如同\texttt{x}
+
+
+%%C060135 li
+
+\begin{itemize}
+\item \texttt{0 + 0 = 0}）。对于计算哈希时用到的每个字段，我们通过
+
+\end{itemize}
+
+
+%%C060136 p
+
+把它的前一个值乘以一个质数，再加上当前字段的哈希值，来修改当前的哈希值。为此，我们使用类模板\texttt{std::\allowbreak{}hash}的各个特化。使用质数31有利于性能优化，因为\texttt{31 * x}可以被编译器替换为\texttt{(\allowbreak{}x << 5) - x}，后者更快。同样，你可以使用127，因为\texttt{127 * x}等于\texttt{(\allowbreak{}x << 7) - x}；也可以使用8191，因为\texttt{8191 * x}等于\texttt{(\allowbreak{}x << 13) -}
+
+
+%%C060137 p
+
+如果你的自定义类型包含数组，并且该数组用于判断两个对象是否相等，因而需要参与哈希计算，那么就把这个数组当作其元素是类的数据成员来处理。换句话说，对数组的所有元素应用前面介绍的同一算法。
+
+
+%%C060138 p
+
+有了\textit{具体做法}一节给出的\texttt{std::\allowbreak{}hash<\allowbreak{}Item>}特化，我们就可以把类\texttt{Item}用于无序关联容器，例如\myttbr{std::\allowbreak{}unordered\_\allowbreak{}set}：
+
+
+%%C060139 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unordered\PYGZus{}set}\PYG{o}{\PYGZlt{}}\PYG{n}{Item}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{set2}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{one}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1.0}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{2.0}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{three}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{3.0}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060140 h2
+
+\section{用std::any存储任意值}
+
+
+%%C060141 p
+
+C++不像其他语言（例如C\#或Java）那样具有层次化的类型系统，因此无法像.NET和Java中的\texttt{Object}类型或JavaScript原生支持的那样，在单个变量中存放多种类型的值。开发者长期以来为此使用\texttt{void*}，但这只能存放指向任意对象的指针，而且不是类型安全的。根据最终目标的不同，替代方案可以是模板或重载函数。不过，C++17引入了一个标准的类型安全容器，称为\texttt{std::\allowbreak{}any}，它可以存放任意类型的单个值。
+
+
+%%C060142 h3
+
+\subsection{准备工作}
+
+
+%%C060143 p
+
+\texttt{std::\allowbreak{}any}是基于\texttt{boost::\allowbreak{}any}设计的，位于\texttt{<\allowbreak{}any>}头文件中。如果你熟悉\texttt{boost::\allowbreak{}any}并在代码中使用过它，就可以无缝迁移到\texttt{std::\allowbreak{}any}。
+
+
+%%C060144 h3
+
+\subsection{具体做法}
+
+
+%%C060145 p
+
+使用以下操作来处理\texttt{std::\allowbreak{}any}：
+
+
+%%C060146 li
+
+\begin{itemize}
+\item 要存放值，使用构造函数，或直接把值赋给\texttt{std::\allowbreak{}any}变量：
+
+
+%%C060147 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{+w}{ }\PYG{n+nf}{value}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 整数12}
+\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// double 12.0}
+\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// std::string \PYGZdq{}12\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060148 li
+
+\item 要读取值，使用非成员函数\texttt{std::\allowbreak{}any\_\allowbreak{}cast()}：
+
+
+%%C060149 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{;}
+\PYG{k}{try}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bad\PYGZus{}any\PYGZus{}cast}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{.}\PYG{n}{what}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060150 li
+
+\item 要检查所存放值的类型，使用成员函数\texttt{type()}：
+
+
+%%C060151 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n+nf}{is\PYGZus{}integer}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{.}\PYG{n}{type}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typeid}\PYG{p}{(}\PYG{k+kt}{int}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060152 li
+
+\item 要检查容器是否存放了值，使用\texttt{has\_\allowbreak{}value()}成员函数：
+
+
+%%C060153 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{ltest}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{a}\PYG{p}{.}\PYG{n}{has\PYGZus{}value}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{has value}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{else}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{no value}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{n}{ltest}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 无值}
+\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{n}{ltest}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 有值}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060154 li
+
+\item 要修改所存放的值，使用成员函数\texttt{emplace()}、\texttt{reset()}或\texttt{swap()}：
+
+
+%%C060155 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{n}{ltest}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 有值}
+\PYG{n}{value}\PYG{p}{.}\PYG{n}{reset}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{ltest}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 无值}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C060156 h3
+
+\subsection{工作原理}
+
+
+%%C060157 p
+
+\texttt{std::\allowbreak{}any}是一个类型安全的容器，可以存放任何类型（更准确地说，其退化类型）可复制构造的值。把值存入容器非常简单——你可以使用某个可用的构造函数（默认构造函数创建一个不存放任何值的容器），也可以使用赋值运算符。不过，读取值不能直接进行，你需要使用非成员函数\texttt{std::\allowbreak{}any\_\allowbreak{}cast()}，把所存放的值转换为指定类型。如果所存放值的类型与你要转换到的类型不同，该函数会抛出\myttbr{std::\allowbreak{}bad\_\allowbreak{}any\_\allowbreak{}cast}。在可隐式转换的类型之间（例如\texttt{int}与\texttt{long}）同样不能转换。\myttbr{std::\allowbreak{}bad\_\allowbreak{}any\_\allowbreak{}cast}派生自\texttt{std::\allowbreak{}bad\_\allowbreak{}cast}，因此这两种异常类型你捕获任意一种都可以。
+
+
+%%C060158 p
+
+用\texttt{type()}成员函数可以检查所存放值的类型，它返回一个\texttt{type\_\allowbreak{}info}常量引用。如果容器为空，该函数返回\texttt{typeid(\allowbreak{}void)}。要检查容器是否存放了值，可以使用成员函数\texttt{has\_\allowbreak{}value()}：有值时返回\texttt{true}，容器为空时返回\texttt{false}。
+
+
+%%C060159 p
+
+下面的示例演示了如何检查容器是否有值、如何检查所存放值的类型，以及如何从容器中读取值：
+
+
+%%C060160 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{log}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{value}\PYG{p}{.}\PYG{n}{has\PYGZus{}value}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{tv}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{.}\PYG{n}{type}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{tv}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typeid}\PYG{p}{(}\PYG{k+kt}{int}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{tv}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typeid}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{tv}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typeid}\PYG{p}{(}
+\PYG{+w}{       }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{time\PYGZus{}point}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{system\PYGZus{}clock}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{t}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{time\PYGZus{}point}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{                  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{system\PYGZus{}clock}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{      }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{now}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{system\PYGZus{}clock}\PYG{o}{:}\PYG{o}{:}\PYG{n}{to\PYGZus{}time\PYGZus{}t}\PYG{p}{(}\PYG{n}{t}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{put\PYGZus{}time}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{localtime}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{now}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZpc{}F \PYGZpc{}T}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}
+\PYG{+w}{                }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{k}{else}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{unexpected value type}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{else}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{(empty)}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{log}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                       }\PYG{c+c1}{// 空}
+\PYG{n}{log}\PYG{p}{(}\PYG{l+m+mi}{12}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                               }\PYG{c+c1}{// 12}
+\PYG{n}{log}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{12}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                            }\PYG{c+c1}{// 12}
+\PYG{n}{log}\PYG{p}{(}\PYG{l+m+mf}{12.0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                             }\PYG{c+c1}{// 意外的值类型}
+\PYG{n}{log}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{system\PYGZus{}clock}\PYG{o}{:}\PYG{o}{:}\PYG{n}{now}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 2016\PYGZhy{}10\PYGZhy{}30 22:42:57}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060161 p
+
+如果你想存放多个任意类型的值，可以使用标准容器（例如\texttt{std::\allowbreak{}vector}）来存放\texttt{std::\allowbreak{}any}类型的值：
+
+
+%%C060162 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{values}\PYG{p}{;}
+\PYG{n}{values}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{any}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{values}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{l+m+mi}{12}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{values}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{12}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{values}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{l+m+mf}{12.0}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{values}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{system\PYGZus{}clock}\PYG{o}{:}\PYG{o}{:}\PYG{n}{now}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{values}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{log}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060163 h3
+
+\subsection{延伸阅读}
+
+
+%%C060164 li
+
+\begin{itemize}
+\item \textit{用std::optional存储可选值}
+
+
+%%C060165 li
+
+\item \textit{用std::variant作为类型安全的联合体}
+
+\end{itemize}
+
+
+%%C060166 h2
+
+\section{用std::optional存储可选值}
+
+
+%%C060167 p
+
+有时，能够存放一个值，或者在值不可用时存放空值，是很有用的。这类情况的典型例子是可能产生不了返回值、但这种失败并不算错误的函数。例如，设想一个按指定键在字典中查找并返回值的函数。找不到值是很可能发生的情况，因此该函数要么返回一个布尔值（如果需要更多错误码，则返回一个整数值），并用一个引用参数保存返回值，要么返回一个指针（裸指针或智能指针）。在C++17中，\texttt{std::\allowbreak{}optional}是这些方案更好的替代。类模板\texttt{std::\allowbreak{}optional}是一个用于存放可能存在、也可能不存在的值的容器模板。本案例将介绍如何使用这个容器，以及它的典型用例有哪些。
+
+
+%%C060168 h3
+
+\subsection{准备工作}
+
+
+%%C060169 p
+
+类模板\texttt{std::\allowbreak{}optional<\allowbreak{}T>}是基于\texttt{boost::\allowbreak{}optional}设计的，位于\texttt{<\allowbreak{}optional>}头文件中。如果你熟悉\texttt{boost::\allowbreak{}optional}并在代码中使用过它，就可以无缝迁移到\texttt{std::\allowbreak{}optional}。
+
+
+%%C060170 h3
+
+\subsection{具体做法}
+
+
+%%C060171 p
+
+使用以下操作来处理\texttt{std::\allowbreak{}optional}：
+
+
+%%C060172 li
+
+\begin{itemize}
+\item 要存放值，使用构造函数，或直接把值赋给\texttt{std::\allowbreak{}optional}对象：
+
+
+%%C060173 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// v1 为空}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// v2 含 42}
+\PYG{n}{v1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}\PYG{+w}{                    }\PYG{c+c1}{// v1 含 42}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v3 含 42}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060174 li
+
+\item 要读取所存放的值，使用\texttt{operator*}或\texttt{operator->}：
+
+
+%%C060175 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{v1}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// 42}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{10.5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{, }\PYG{l+s}{\PYGZdq{}}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{b}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 42, 10.5}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060176 li
+
+\item 或者，使用成员函数\texttt{value()}与\texttt{value\_\allowbreak{}or()}读取所存放的值：
+
+
+%%C060177 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{text}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{.}\PYG{n}{value}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// text}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{.}\PYG{n}{value\PYGZus{}or}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{default}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// default}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060178 li
+
+\item 要检查容器是否存放了值，使用到\texttt{bool}的转换运算符，或成员函数\texttt{has\_\allowbreak{}value()}：
+
+
+%%C060179 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{v1}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{v1}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{10.5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{v2}\PYG{p}{.}\PYG{n}{has\PYGZus{}value}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{, }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{b}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060180 li
+
+\item 要修改所存放的值，使用成员函数\texttt{emplace()}、\texttt{reset()}或\texttt{swap()}：
+
+
+%%C060181 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v 含 42}
+\PYG{n}{v}\PYG{p}{.}\PYG{n}{reset}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                  }\PYG{c+c1}{// v 为空}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C060182 p
+
+用\texttt{std::\allowbreak{}optional}为以下情形建模：
+
+
+%%C060183 li
+
+\begin{itemize}
+\item 可能产生不了返回值的函数的返回值：
+
+
+%%C060184 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{K}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{V}\PYG{o}{\PYGZgt{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{n}{V}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{find}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{key}\PYG{p}{,}
+\PYG{+w}{                      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{n}{K}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{V}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{pos}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{find}\PYG{p}{(}\PYG{n}{key}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{pos}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{pos}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{\PYGZob{}}
+\PYG{+w}{   }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{one}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{three}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{find}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// two}
+\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{find}\PYG{p}{(}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060185 li
+
+\item 函数的可选参数：
+
+
+%%C060186 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n+nf}{extract}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{,}
+\PYG{+w}{                    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{end}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{.}\PYG{n}{value\PYGZus{}or}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{end}\PYG{p}{.}\PYG{n}{value\PYGZus{}or}\PYG{p}{(}\PYG{n}{text}\PYG{p}{.}\PYG{n}{length}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{.}\PYG{n}{substr}\PYG{p}{(}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{extract}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sample}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v1}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// sample}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{extract}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sample}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v2}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// ample}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{extract}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sample}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v3}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// amp}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060187 li
+
+\item 类的可选数据成员：
+
+
+%%C060188 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{book}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{                }\PYG{n}{title}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{subtitle}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{   }\PYG{n}{authors}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{                }\PYG{n}{publisher}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{                }\PYG{n}{isbn}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{         }\PYG{n}{pages}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{         }\PYG{n}{year}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C060189 h3
+
+\subsection{工作原理}
+
+
+%%C060190 p
+
+类模板\texttt{std::\allowbreak{}optional}是一个表示可选值容器的类模板。如果容器确实有值，该值就作为\texttt{optional}对象的一部分存放，不涉及堆分配和指针。类模板\texttt{std::\allowbreak{}optional}在概念上可以这样实现：
+
+
+%%C060191 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{optional}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{\PYGZus{}initialized}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{aligned\PYGZus{}storage\PYGZus{}t}\PYG{o}{\PYGZlt{}}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{t}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{alignof}\PYG{p}{(}\PYG{n}{T}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{\PYGZus{}storage}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060192 p
+
+\myttbr{std::\allowbreak{}aligned\_\allowbreak{}storage\_\allowbreak{}t}别名模板让我们可以创建未初始化的内存块，用于存放给定类型的对象。类模板\texttt{std::\allowbreak{}optional}在以下情况下不包含值：它是默认构造的，或者它是从另一个空的optional对象或从\texttt{std::\allowbreak{}nullopt\_\allowbreak{}t}值复制构造、复制赋值的。后者是一个辅助类型，实现为空类，用来表示处于未初始化状态的可选对象。
+
+
+%%C060193 p
+
+\texttt{optional}类型的典型用法（在其他编程语言中称为\textit{可空}类型）是作为可能失败的函数的返回类型。针对这种情况，可能的方案包括以下几种：
+
+
+%%C060194 li
+
+\begin{itemize}
+\item 返回\texttt{std::\allowbreak{}pair<\allowbreak{}T, bool>}，其中\texttt{T}是返回值的类型；pair的第二个元素是一个布尔标志，指示第一个元素的值是否有效。
+
+
+%%C060195 li
+
+\item 返回\texttt{bool}，并额外接受一个\texttt{T\&}类型的参数，仅在函数成功时给该参数赋值。
+
+
+%%C060196 li
+
+\item 返回裸指针或智能指针类型，用\texttt{nullptr}表示失败。
+
+\end{itemize}
+
+
+%%C060197 p
+
+类模板\texttt{std::\allowbreak{}optional}是更好的做法：一方面，它不涉及函数的输出参数（用输出参数返回返回值很不自然），也不需要使用指针；另一方面，它更好地封装了\texttt{std::\allowbreak{}pair<\allowbreak{}T, bool>}的细节。不过，optional对象也可以用于类的数据成员，编译器能够优化内存布局以实现高效存储。
+
+
+%%C060198 note
+
+\begin{myNote}
+类模板\texttt{std::\allowbreak{}optional}不能用来返回多态类型。例如，如果你编写的工厂方法需要从某个类型层次中返回不同的类型，就不能依靠\texttt{std::\allowbreak{}optional}，而需要返回指针，最好是\texttt{std::\allowbreak{}shared\_\allowbreak{}ptr}或\texttt{std::\allowbreak{}unique\_\allowbreak{}ptr}（取决于对象的所有权是否需要共享）。
+\end{myNote}
+
+%%C060199 p
+
+当用\texttt{std::\allowbreak{}optional}向函数传递可选参数时，你需要明白这可能会产生复制，如果涉及大对象，就会带来性能问题。来看下面这个函数示例，它的参数是对\texttt{std::\allowbreak{}optional}的常量引用：
+
+
+%%C060200 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{bar}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* 细节 */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{process}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{n}{bar}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+cm}{/* 对 arg 做些什么 */}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{n}{bar}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{b1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{bar}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{bar}\PYG{+w}{ }\PYG{n}{b2}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{process}\PYG{p}{(}\PYG{n}{b1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 无复制}
+\PYG{n}{process}\PYG{p}{(}\PYG{n}{b2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 复制构造}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060201 p
+
+第一次调用\texttt{process()}不涉及任何额外的对象构造，因为我们传入的本来就是一个\texttt{std::\allowbreak{}optional<\allowbreak{}bar>}对象。但第二次调用会涉及\texttt{bar}对象的复制构造，因为\texttt{b2}是一个\texttt{bar}，需要被复制进\texttt{std::\allowbreak{}optional<\allowbreak{}bar>}；即使\texttt{bar}实现了移动语义，这里仍然会发生复制。如果\texttt{bar}是小对象，这不必太在意；但对大对象而言，这确实会造成性能问题。避免这一问题的方案取决于具体场景，可以是再写一个接受\texttt{bar}常量引用的重载，也可以是彻底不用\texttt{std::\allowbreak{}optional}。
+
+
+%%C060202 h3
+
+\subsection{延伸阅读}
+
+
+%%C060203 li
+
+\begin{itemize}
+\item \textit{用std::any存储任意值}
+
+
+%%C060204 li
+
+\item \textit{用std::variant作为类型安全的联合体}
+
+\end{itemize}
+
+
+%%C060205 h2
+
+\section{用std::variant作为类型安全的联合体}
+
+
+%%C060206 p
+
+在C++中，\texttt{union}是一种特殊的类类型，它在任一时刻保存其某个数据成员的值。与普通类不同，\texttt{union}不能有基类，也不能被继承，还不能包含虚函数（那本来也没有意义）。\texttt{union}主要用于定义同一份数据的多种表示形式。不过，\texttt{union}只适用于POD类型。如果\texttt{union}保存的是非POD类型的值，那么这些成员需要用placement \texttt{new}显式构造并显式析构，既繁琐又容易出错。C++17以标准库类模板的形式提供了类型安全的联合体，即\texttt{std::\allowbreak{}variant}。本案例将学习如何用它来表示可选值。
+
+
+%%C060207 h3
+
+\subsection{准备工作}
+
+
+%%C060208 p
+
+虽然本案例不直接讨论可辨识联合（discriminated union），但熟悉它有助于更好地理解\texttt{variant}的设计与工作方式。
+
+
+%%C060209 p
+
+类模板\texttt{std::\allowbreak{}variant}是参照\texttt{boost::\allowbreak{}variant}设计的，定义在\texttt{<\allowbreak{}variant>}头文件中。如果你熟悉\texttt{boost::\allowbreak{}variant}并在自己的代码中用过它，那么只需很少的改动就能迁移到标准库的\texttt{variant}类模板。
+
+
+%%C060210 h3
+
+\subsection{具体做法}
+
+
+%%C060211 p
+
+操作\texttt{std::\allowbreak{}variant}可以使用以下方式：
+
+
+%%C060212 li
+
+\begin{itemize}
+\item 要修改所存放的值，使用成员函数\texttt{emplace()}或\texttt{swap()}：
+
+
+%%C060213 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{variant}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 存放 int}
+\PYG{n}{v}\PYG{p}{.}\PYG{n}{emplace}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                         }\PYG{c+c1}{// 存放 foo}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060214 li
+
+\item 要读取所存放的值，使用非成员函数\texttt{std::\allowbreak{}get}或\texttt{std::\allowbreak{}get\_\allowbreak{}if}：
+
+
+%%C060215 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{variant}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{get}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{get}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{0}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{try}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{f}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{get}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{bad\PYGZus{}variant\PYGZus{}access}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{.}\PYG{n}{what}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 意外的索引}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060216 li
+
+\item 要存放一个值，可以使用构造函数，也可以直接向\texttt{variant}对象赋值：
+
+
+%%C060217 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{variant}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{;}
+\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// v 存放 int 42}
+\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v 存放 double 42.0}
+\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v 存放字符串 \PYGZdq{}42\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060218 li
+
+\item 要检查当前存放的是哪一个候选类型，使用成员函数\texttt{index()}：
+
+
+%%C060219 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{variant}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{variant\PYGZus{}size\PYGZus{}v}\PYG{o}{\PYGZlt{}}\PYG{k}{decltype}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{index = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{index}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{42.0}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{index = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{index}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{index = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{index}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060220 li
+
+\item 要检查\texttt{variant}是否存放了某个候选类型，使用非成员函数\myttbr{std::\allowbreak{}holds\_\allowbreak{}alternative()}：
+
+
+%%C060221 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{variant}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{int? }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{boolalpha}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{holds\PYGZus{}alternative}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// int? true}
+\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{int? }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{boolalpha}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{holds\PYGZus{}alternative}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// int? false}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060222 li
+
+\item 要定义一个第一个候选类型不可默认构造的\texttt{variant}，可以用\texttt{std::\allowbreak{}monostate}作为第一个候选类型（本例中的\texttt{foo}与前面是同一个类）：
+
+
+%%C060223 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{variant}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{monostate}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{;}
+\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// v 存放 int 42}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{get}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v 存放 foo\PYGZob{}42\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{get}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{.}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060224 li
+
+\item 要处理\texttt{variant}存放的值，并根据候选类型执行不同操作，使用\texttt{std::\allowbreak{}visit()}：
+
+
+%%C060225 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{variant}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{visit}\PYG{p}{(}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C060226 h3
+
+\subsection{工作原理}
+
+
+%%C060227 p
+
+\texttt{std::\allowbreak{}variant}是一个类模板，用于表示类型安全的联合体，在任一给定时刻保存其某个候选类型的值。不过在少数情况下，\texttt{variant}对象也可能不保存任何值。\texttt{std::\allowbreak{}variant}有一个成员函数\myttbr{valueless\_\allowbreak{}by\_\allowbreak{}exception()}，当\texttt{variant}不持有值时返回\texttt{true}；这种情况只可能出现在初始化过程中抛出异常时，函数名正源于此。
+
+
+%%C060228 p
+
+\texttt{std::\allowbreak{}variant}对象的大小等于其最大候选类型的大小。\texttt{variant}不额外存储数据，它保存的值就分配在对象自身的内存表示之中。
+
+
+%%C060229 p
+
+一个\texttt{variant}可以持有多个相同类型的候选类型，也可以持有同一类型的\texttt{const}与\texttt{volatile}限定版本。另一方面，它不能持有\texttt{void}类型的候选类型，也不能持有数组和引用类型的候选类型。此外，第一个候选类型必须始终可默认构造。原因在于，与可辨识联合一样，\texttt{variant}会用第一个候选类型的值进行默认初始化。如果第一个候选类型不可默认构造，那么\texttt{variant}就必须用\texttt{std::\allowbreak{}monostate}作为第一个候选类型。这是一个空类型，专门用来让\texttt{variant}可默认构造。
+
+
+%%C060230 p
+
+可以在编译期查询\texttt{variant}的大小（即它定义的候选类型数量），也可以按从0开始的索引查询某个候选类型。反过来，你还可以在运行期用成员函数\texttt{index()}查询当前所存候选类型的索引。
+
+
+%%C060231 h3
+
+\subsection{更多内容}
+
+
+%%C060232 p
+
+操作\texttt{variant}内容的典型方式是通过访问（visitation），这本质上是根据\texttt{variant}当前持有的候选类型执行某个动作。由于这一主题内容较多，将在下一个案例中单独讨论。
+
+
+%%C060233 h3
+
+\subsection{延伸阅读}
+
+
+%%C060234 li
+
+\begin{itemize}
+\item \textit{用std::any存储任意值}
+
+
+%%C060235 li
+
+\item \textit{用std::optional存储可选值}
+
+
+%%C060236 li
+
+\item \textit{访问std::variant}
+
+\end{itemize}
+
+
+%%C060237 h2
+
+\section{访问std::variant}
+
+
+%%C060238 p
+
+\texttt{std::\allowbreak{}variant}是C++17基于\texttt{boost.\allowbreak{}variant}库新增的标准容器。\texttt{variant}是一种类型安全的联合体，保存其某个候选类型的值。虽然上一案例中我们已经见过对\texttt{variant}的各种操作，但那里用到的\texttt{variant}都相当简单，大多只涉及POD类型，而这并不是\texttt{std::\allowbreak{}variant}被创造出来的真正目的。\texttt{variant}的用途是持有一组相似的非多态、非POD类型的候选值。本案例将给出一个更贴近实际的\texttt{variant}用法，并学习如何访问\texttt{variant}。
+
+
+%%C060239 h3
+
+\subsection{准备工作}
+
+
+%%C060240 p
+
+本案例要求你熟悉\texttt{std::\allowbreak{}variant}类型。建议先阅读上一个案例\textit{用std::variant作为类型安全的联合体}。
+
+
+%%C060241 p
+
+为了说明如何对\texttt{variant}做访问，我们考虑用一个\texttt{variant}来表示媒体DVD。假设要为一间存放DVD的商店或图书馆建模，这些DVD的内容可能是音乐、电影或软件。不过这些选项并不建模为带公共数据和虚函数的层次结构，而是建模为彼此无关、但可能具有相似属性（例如标题）的类型。为简单起见，我们考虑以下属性：
+
+
+%%C060242 li
+
+\begin{itemize}
+\item 电影：标题和时长（分钟）
+
+
+%%C060243 li
+
+\item 专辑：标题、艺术家名和曲目列表（每首曲目都有标题和以秒计的时长）
+
+
+%%C060244 li
+
+\item 软件：标题和厂商
+
+\end{itemize}
+
+
+%%C060245 p
+
+下面给出这些类型的简单实现，不包含任何函数，因为这与访问持有这些类型候选值的\texttt{variant}无关：
+
+
+%%C060246 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Genre}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{Drama}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Action}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{SF}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Commedy}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Movie}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{title}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{minutes}\PYG{+w}{ }\PYG{n}{length}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Genre}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{genre}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Track}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{title}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{chrono}\PYG{o}{:}\PYG{o}{:}\PYG{n}{seconds}\PYG{+w}{ }\PYG{n}{length}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Music}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{title}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{artist}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{Track}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{tracks}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Software}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{title}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{vendor}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{dvd}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{variant}\PYG{o}{\PYGZlt{}}\PYG{n}{Movie}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Music}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Software}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060247 h3
+
+\subsection{具体做法}
+
+
+%%C060248 p
+
+要访问一个\texttt{variant}，你必须为它可能的候选类型提供一个或多个动作。按用途划分，访问器有以下几种：
+
+
+%%C060249 li
+
+\begin{itemize}
+\item 不返回任何值、只产生副作用的void访问器。下面的例子把每张DVD的标题打印到控制台：
+
+
+%%C060250 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{dvds}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{visit}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{title}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{             }\PYG{n}{d}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060251 li
+
+\item 返回值的访问器；返回值的类型应当与\texttt{variant}当前持有哪个候选类型无关，或者它本身也可以是一个\texttt{variant}。在下面的例子中，我们访问一个\texttt{variant}，并返回一个同类型的新\texttt{variant}，其中任一候选类型的\texttt{title}属性都被转换成大写字母：
+
+
+%%C060252 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{dvds}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{dvd}\PYG{+w}{ }\PYG{n}{result}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{visit}\PYG{p}{(}
+\PYG{+w}{      }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{dvd}
+\PYG{+w}{      }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{cpy}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{cpy}\PYG{p}{.}\PYG{n}{title}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{to\PYGZus{}upper}\PYG{p}{(}\PYG{n}{cpy}\PYG{p}{.}\PYG{n}{title}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{cpy}\PYG{p}{;}
+\PYG{+w}{      }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{d}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{visit}\PYG{p}{(}
+\PYG{+w}{    }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{       }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{title}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{result}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060253 li
+
+\item 做类型匹配的访问器（既可以是void访问器，也可以是返回值访问器），其实现方式是提供一个函数对象，为\texttt{variant}的每个候选类型都重载调用运算符：
+
+
+%%C060254 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{visitor\PYGZus{}functor}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{p}{(}\PYG{n}{Movie}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Movie}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Title: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{title}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Length: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{length}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{              }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{min}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{p}{(}\PYG{n}{Music}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Music}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Title: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{title}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Artist: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{artist}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{t}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{tracks}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Track: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{.}\PYG{n}{title}
+\PYG{+w}{              }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{, }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{.}\PYG{n}{length}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{              }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sec}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{p}{(}\PYG{n}{Software}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Software}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Title: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{title}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Vendor: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{vendor}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{dvds}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{visit}\PYG{p}{(}\PYG{n}{visitor\PYGZus{}functor}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060255 li
+
+\item 做类型匹配的访问器，其实现方式是提供一个lambda表达式，根据候选类型执行相应动作：
+
+
+%%C060256 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{dvds}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{visit}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{using}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{decay\PYGZus{}t}\PYG{o}{\PYGZlt{}}\PYG{k}{decltype}\PYG{p}{(}\PYG{n}{arg}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}same\PYGZus{}v}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Movie}\PYG{o}{\PYGZgt{}}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Movie}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Title: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{title}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Length: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{length}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{                }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{min}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}same\PYGZus{}v}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Music}\PYG{o}{\PYGZgt{}}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Music}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Title: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{title}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Artist: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{artist}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{      }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{t}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{tracks}\PYG{p}{)}
+\PYG{+w}{        }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Track: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{.}\PYG{n}{title}
+\PYG{+w}{                  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{, }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{.}\PYG{n}{length}\PYG{p}{.}\PYG{n}{count}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{                  }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{sec}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}same\PYGZus{}v}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Software}\PYG{o}{\PYGZgt{}}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Software}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Title: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{title}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ Vendor: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{.}\PYG{n}{vendor}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{d}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C060257 h3
+
+\subsection{工作原理}
+
+
+%%C060258 p
+
+访问器是一个可调用对象（函数、lambda表达式或函数对象），它接受\texttt{variant}的每一种可能候选类型。访问是通过把访问器和一个或多个\texttt{variant}对象传给\texttt{std::\allowbreak{}visit()}来完成的。这些\texttt{variant}不必是同一类型，但访问器必须能够接受它所服务的所有\texttt{variant}的每一种可能候选类型。前面的例子中我们只访问了一个\texttt{variant}对象，而访问多个\texttt{variant}无非是把它们都作为参数传给\texttt{std::\allowbreak{}visit()}。
+
+
+%%C060259 p
+
+访问\texttt{variant}时，会用\texttt{variant}中当前存放的值来调用该可调用对象。如果访问器不接受\texttt{variant}中所存类型的参数，程序就是非良构的（ill-formed）。如果访问器是函数对象，那么它必须为\texttt{variant}的所有可能候选类型重载调用运算符。如果访问器是lambda表达式，它应当是泛型lambda——本质上就是一个调用运算符为模板的函数对象，由编译器用实际调用它的类型进行实例化。
+
+
+%%C060260 p
+
+上一节已经给出了类型匹配访问器的两种实现示例。第一个例子中的函数对象很直观，无需额外解释。而泛型lambda表达式则用\texttt{constexpr} \texttt{if}在编译期根据参数类型选择特定的\texttt{if}分支。结果是，编译器会生成一个函数对象，其调用运算符为模板，函数体中含有\texttt{constexpr if}语句；实例化该函数模板时，它会为\texttt{variant}的每个可能候选类型各产生一个重载，而在每个重载中只选择与调用运算符参数类型匹配的那条\texttt{constexpr if}分支。这在概念上等价于\texttt{visitor\_\allowbreak{}functor}类的实现。
+
+
+%%C060261 h3
+
+\subsection{延伸阅读}
+
+
+%%C060262 li
+
+\begin{itemize}
+\item \textit{用std::any存储任意值}
+
+
+%%C060263 li
+
+\item \textit{用std::optional存储可选值}
+
+
+%%C060264 li
+
+\item \textit{用std::variant作为类型安全的联合体}
+
+\end{itemize}
+
+
+%%C060265 h2
+
+\section{注册程序正常退出时要调用的函数}
+
+
+%%C060266 p
+
+程序在退出时常常需要执行清理代码以释放资源、向日志写入内容，或完成其他收尾操作。标准库提供了两个工具函数，让我们可以注册在程序正常终止时要调用的函数——无论是从\texttt{main()}返回，还是调用\texttt{std::\allowbreak{}exit()}或\texttt{std::\allowbreak{}quick\_\allowbreak{}exit()}。对于需要在程序终止前执行某个动作、又不希望依赖用户显式调用结束函数的库来说，这尤其有用。本案例将学习如何安装退出处理函数，以及它们的工作方式。
+
+
+%%C060267 h3
+
+\subsection{准备工作}
+
+
+%%C060268 p
+
+本案例讨论的所有函数——\texttt{exit()}、\texttt{quick\_\allowbreak{}exit()}、\texttt{atexit()}和\texttt{at\_\allowbreak{}quick\_\allowbreak{}exit()}——都位于\texttt{<\allowbreak{}cstdlib>}头文件的\texttt{std}命名空间中。
+
+
+%%C060269 h3
+
+\subsection{具体做法}
+
+
+%%C060270 p
+
+要把函数注册为程序终止时调用，应当使用以下方式：
+
+
+%%C060271 li
+
+\begin{itemize}
+\item 用\texttt{std::\allowbreak{}atexit()}注册在从\texttt{main()}返回或调用\texttt{std::\allowbreak{}exit()}时被调用的函数：
+
+
+%%C060272 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{exit\PYGZus{}handler\PYGZus{}1}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{exit handler 1}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{exit\PYGZus{}handler\PYGZus{}2}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{exit handler 1}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atexit}\PYG{p}{(}\PYG{n}{exit\PYGZus{}handler\PYGZus{}1}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atexit}\PYG{p}{(}\PYG{n}{exit\PYGZus{}handler\PYGZus{}2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atexit}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{exit handler 3}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060273 li
+
+\item 用\myttbr{std::\allowbreak{}at\_\allowbreak{}quick\_\allowbreak{}exit()}注册在调用\texttt{std::\allowbreak{}quick\_\allowbreak{}exit()}时被调用的函数：
+
+
+%%C060274 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{quick\PYGZus{}exit\PYGZus{}handler\PYGZus{}1}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{quick exit handler 1}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{quick\PYGZus{}exit\PYGZus{}handler\PYGZus{}2}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{quick exit handler 2}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{at\PYGZus{}quick\PYGZus{}exit}\PYG{p}{(}\PYG{n}{quick\PYGZus{}exit\PYGZus{}handler\PYGZus{}1}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{at\PYGZus{}quick\PYGZus{}exit}\PYG{p}{(}\PYG{n}{quick\PYGZus{}exit\PYGZus{}handler\PYGZus{}2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{at\PYGZus{}quick\PYGZus{}exit}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{quick exit handler 3}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C060275 h3
+
+\subsection{工作原理}
+
+
+%%C060276 p
+
+无论以哪种方式注册，退出处理函数都只在程序正常终止或快速终止时被调用。如果程序通过\texttt{std::\allowbreak{}terminate()}或\texttt{std::\allowbreak{}abort()}以异常方式终止，那么这些处理函数一个都不会被调用。如果其中任一处理函数通过异常退出，则会调用\texttt{std::\allowbreak{}terminate()}。退出处理函数不得带任何参数，并且必须返回\texttt{void}。一旦注册，退出处理函数就无法注销。
+
+
+%%C060277 p
+
+一个程序可以安装多个处理函数。标准保证每种方式至少可以注册32个处理函数，而实际实现可以支持更多。\texttt{std::\allowbreak{}atexit()}和\myttbr{std::\allowbreak{}at\_\allowbreak{}quick\_\allowbreak{}exit()}都是线程安全的，因此可以同时从不同线程调用，而不会引发竞态条件。
+
+%%C060278 p
+
+如果注册了多个处理函数，它们会按注册顺序的逆序被调用。下表展示了按上一节那样注册了退出处理函数的程序，在通过\texttt{std::\allowbreak{}exit()}与\texttt{std::\allowbreak{}quick\_\allowbreak{}exit()}调用终止时的输出：
+
+
+%%C060279 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.412\hsize\raggedright\arraybackslash}X>{\hsize=0.588\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\myttbr{std::\allowbreak{}exit(\allowbreak{}0)\allowbreak{};}} & \textcolor{white}{\myttbr{std::\allowbreak{}quick\_\allowbreak{}exit(\allowbreak{}0)\allowbreak{};}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\myttbr{std::\allowbreak{}exit(\allowbreak{}0)\allowbreak{};}} & \textcolor{white}{\myttbr{std::\allowbreak{}quick\_\allowbreak{}exit(\allowbreak{}0)\allowbreak{};}} \\
+\endhead
+exit handler 3 exit handler 2 exit handler 1 & quick exit handler 3 quick exit handler 2 quick exit handler 1 \\
+\end{xltabular}
+\myTableEnd
+
+
+%%C060280 p
+
+另一方面，程序正常终止时，销毁具有局部存储期的对象、销毁具有静态存储期的对象，以及调用已注册的退出处理函数，这三者是并发进行的。不过有一点是有保证的：在某个静态对象构造之前注册的退出处理函数，会在该静态对象销毁之后才被调用；在该静态对象构造之后注册的退出处理函数，则会在该静态对象销毁之前被调用。为了更好地说明这一点，来看下面这个类：
+
+
+%%C060281 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{static\PYGZus{}foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{o}{\PYGZti{}}\PYG{n}{static\PYGZus{}foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{static foo destroyed!}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{static\PYGZus{}foo}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{instance}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{static\PYGZus{}foo}\PYG{+w}{ }\PYG{n}{obj}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{obj}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060282 p
+
+执行下面这段代码时，\texttt{exit\_\allowbreak{}handler\_\allowbreak{}1}是在静态对象\texttt{static\_\allowbreak{}foo}创建之前注册的。而\texttt{exit\_\allowbreak{}handler\_\allowbreak{}2}和那个lambda表达式，则是在静态对象构造完成之后按此顺序先后注册的。因此，正常终止时的调用顺序如下：
+
+
+%%C060283 p
+
+lambda表达式
+
+
+%%C060284 p
+
+\texttt{exit\_\allowbreak{}handler\_\allowbreak{}2}
+
+
+%%C060285 p
+
+\texttt{static\_\allowbreak{}foo}的析构函数
+
+
+%%C060286 p
+
+\texttt{exit\_\allowbreak{}handler\_\allowbreak{}1}
+
+
+%%C060287 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atexit}\PYG{p}{(}\PYG{n}{exit\PYGZus{}handler\PYGZus{}1}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{static\PYGZus{}foo}\PYG{o}{:}\PYG{o}{:}\PYG{n}{instance}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atexit}\PYG{p}{(}\PYG{n}{exit\PYGZus{}handler\PYGZus{}2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atexit}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{exit handler 3}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exit}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060288 p
+
+前面这个程序的输出如下：
+
+
+%%C060289 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{exit}\PYG{+w}{ }\PYG{n}{handler}\PYG{+w}{ }\PYG{l+m+mi}{3}
+\PYG{n}{exit}\PYG{+w}{ }\PYG{n}{handler}\PYG{+w}{ }\PYG{l+m+mi}{2}
+\PYG{k}{static}\PYG{+w}{ }\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{destroyed}\PYG{o}{!}
+\PYG{n}{exit}\PYG{+w}{ }\PYG{n}{handler}\PYG{+w}{ }\PYG{l+m+mi}{1}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060290 h3
+
+\subsection{延伸阅读}
+
+
+%%C060291 li
+
+\begin{itemize}
+\item \textit{把lambda用于标准算法}案例，见\texttt{Chapter 3}，函数探究
+
+\end{itemize}
+
+
+%%C060292 h2
+
+\section{用类型特征查询类型属性}
+
+
+%%C060293 p
+
+模板元编程是语言中一项强大的特性，它让我们能够编写并复用适用于所有类型的通用代码。但在实践中，通用代码常常需要针对不同类型表现出不同的行为，甚至完全不适用——这可能是出于设计意图，也可能是为了语义正确性、性能或其他原因。例如，你可能希望某个通用算法对POD类型与非POD类型有不同实现，或者希望某个函数模板只能用整型实例化。C++11提供了一组类型特征来帮助解决这类问题。
+
+
+%%C060294 p
+
+类型特征本质上是“元类型”，用于提供关于其他类型的信息。类型特征库中有一长串特征，既可用于查询类型属性（例如判断某个类型是否为整型，或判断两个类型是否相同），也可用于做类型变换（例如移除\texttt{const}与\texttt{volatile}限定符，或为某个类型加上指针）。本书前面几个案例中已经用过类型特征；不过本案例要考察的是类型特征究竟是什么，以及它们如何工作。
+
+
+%%C060295 h3
+
+\subsection{准备工作}
+
+
+%%C060296 p
+
+C++11引入的所有类型特征都位于\texttt{<\allowbreak{}type\_\allowbreak{}traits>}头文件的\texttt{std}命名空间中。
+
+
+%%C060297 p
+
+类型特征可用于许多元编程场景，书中各处都能见到它们在不同情形下的用法。本案例将归纳其中一些用例，并说明类型特征是如何工作的。
+
+
+%%C060298 p
+
+本案例会涉及模板的完全特化与偏特化。熟悉这些概念有助于你更好地理解类型特征的运作方式。
+
+
+%%C060299 h3
+
+\subsection{具体做法}
+
+
+%%C060300 p
+
+下面列出的是用类型特征达成各种设计目标的若干情形：
+
+
+%%C060301 li
+
+\begin{itemize}
+\item 配合\texttt{enable\_\allowbreak{}if}，为函数模板可用的实例化类型定义前置条件：
+
+
+%%C060302 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}
+\PYG{+w}{          }\PYG{k}{typename}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{enable\PYGZus{}if}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{                }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}arithmetic}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}\PYG{o}{\PYGZgt{}}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{multiply}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{t1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{t2}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{t1}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{t2}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{multiply}\PYG{p}{(}\PYG{l+m+mf}{42.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1.5}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{     }\PYG{c+c1}{// 正确}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{multiply}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{1.5}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060303 li
+
+\item 配合\texttt{static\_\allowbreak{}assert}，确保不变式得到满足：
+
+
+%%C060304 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{pod\PYGZus{}wrapper}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}pod}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Type is not a POD!}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{pod\PYGZus{}wrapper}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{            }\PYG{c+c1}{// 正确}
+\PYG{n}{pod\PYGZus{}wrapper}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060305 li
+
+\item 配合\texttt{std::\allowbreak{}conditional}，在类型之间做选择：
+
+
+%%C060306 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{const\PYGZus{}wrapper}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{conditional}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}const}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{T}\PYG{p}{,}
+\PYG{+w}{    }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{add\PYGZus{}const}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}\PYG{+w}{ }\PYG{n}{const\PYGZus{}type}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}const}\PYG{o}{\PYGZlt{}}\PYG{n}{const\PYGZus{}wrapper}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{const\PYGZus{}type}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}const}\PYG{o}{\PYGZlt{}}\PYG{n}{const\PYGZus{}wrapper}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{const\PYGZus{}type}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060307 li
+
+\item 配合\texttt{constexpr if}，让编译器根据模板实例化时所用的类型生成不同的代码：
+
+
+%%C060308 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{process}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}same}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{!}\PYG{n}{arg}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}integral}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{arg}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}floating\PYGZus{}point}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{)}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{abs}\PYG{p}{(}\PYG{n}{arg}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{else}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{process}\PYG{p}{(}\PYG{n+nb}{false}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v1 = true}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{process}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// v2 = \PYGZhy{}42}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{process}\PYG{p}{(}\PYG{l+m+mf}{\PYGZhy{}42.0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v3 = 42.0}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v4}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{process}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{42}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v4 = \PYGZdq{}42\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+\end{itemize}
+
+
+%%C060309 h3
+
+\subsection{工作原理}
+
+
+%%C060310 p
+
+类型特征是一些类，它们要么提供关于类型的元信息，要么可用于修改类型。类型特征实际上分为两类：
+
+
+%%C060311 li
+
+\begin{itemize}
+\item 提供类型信息、类型属性或类型之间关系的特征（例如\texttt{is\_\allowbreak{}integer}、\texttt{is\_\allowbreak{}arithmetic}、\texttt{is\_\allowbreak{}array}、\texttt{is\_\allowbreak{}enum}、\texttt{is\_\allowbreak{}class}、\texttt{is\_\allowbreak{}const}、\texttt{is\_\allowbreak{}pod}、\texttt{is\_\allowbreak{}constructible}、\texttt{is\_\allowbreak{}same}等）。这类特征提供一个名为\texttt{value}的\texttt{bool}常量成员。
+
+
+%%C060312 li
+
+\item 修改类型属性的特征（例如\texttt{add\_\allowbreak{}const}、\texttt{remove\_\allowbreak{}const}、\texttt{add\_\allowbreak{}pointer}、\texttt{remove\_\allowbreak{}pointer}、\texttt{make\_\allowbreak{}signed}、\texttt{make\_\allowbreak{}unsigned}等）。这类特征提供一个名为\texttt{type}的\texttt{typedef}成员，表示变换后的类型。
+
+
+\end{itemize}
+
+
+%%C060313 p
+
+这两类类型特征都在\textit{具体做法}一节中出现过；相关示例已在其他案例中详细讨论和解释。为方便起见，这里给出简要总结：
+
+
+%%C060314 li
+
+\begin{itemize}
+\item 第一个例子中，函数模板\texttt{multiply()}只允许用算术类型（即整型或浮点类型）实例化；若用其他类型的参数实例化，\texttt{enable\_\allowbreak{}if}就不会定义名为\texttt{type}的\texttt{typedef}成员，从而产生编译错误。
+
+
+%%C060315 li
+
+\item 第二个例子中，\texttt{pod\_\allowbreak{}wrapper}是一个只应以POD类型实例化的类模板。若使用非POD类型，\texttt{static\_\allowbreak{}assert}声明会产生编译错误。
+
+
+%%C060316 li
+
+\item 第三个例子中，\texttt{const\_\allowbreak{}wrapper}是一个类模板，它提供一个名为\texttt{const\_\allowbreak{}type}的\texttt{typedef}成员，表示带const限定的类型。这个例子用\texttt{std::\allowbreak{}conditional}在编译期于两个类型之间做选择：如果类型参数\texttt{T}本身已经是const类型，就直接选择\texttt{T}；否则用\texttt{add\_\allowbreak{}const}类型特征为该类型加上\texttt{const}限定符。
+
+
+%%C060317 li
+
+\item 第四个例子中，\texttt{process()}是一个函数模板，其中包含一系列\texttt{if constexpr}分支。编译器根据在编译期用各种类型特征（\texttt{is\_\allowbreak{}same}、\texttt{is\_\allowbreak{}integer}、\myttbr{is\_\allowbreak{}floating\_\allowbreak{}point}）查询出的类型类别，只挑选一个分支放进生成的代码，其余分支则被丢弃。因此，像\texttt{process(\allowbreak{}42)}这样的调用会产生如下函数模板实例：
+
+
+%%C060318 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{process}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{arg}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+\end{itemize}
+
+
+%%C060319 p
+
+类型特征的实现方式是提供一个类模板，并为其提供偏特化或完全特化。下面给出的是若干类型特征的概念性实现：
+
+
+%%C060320 li
+
+\begin{itemize}
+\item \texttt{is\_\allowbreak{}void()}用于判断某个类型是否为\texttt{void}，这里用的是完全特化：
+
+
+%%C060321 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{is\PYGZus{}void}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{is\PYGZus{}void}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{void}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060322 li
+
+\item \texttt{is\_\allowbreak{}pointer()}用于判断某个类型是指向对象的指针还是指向函数的指针，这里用的是偏特化：
+
+
+%%C060323 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{is\PYGZus{}pointer}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{is\PYGZus{}pointer}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{*}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+\end{itemize}
+
+
+%%C060324 h3
+
+\subsection{更多内容}
+
+
+%%C060325 p
+
+类型特征并不局限于标准库提供的那些。运用类似的技术，你可以定义自己的类型特征来达成各种目标。下一个案例将展示如何定义并使用自己的类型特征。
+
+
+%%C060326 h3
+
+\subsection{延伸阅读}
+
+
+%%C060327 li
+
+\begin{itemize}
+\item \textit{用constexpr if在编译期选择分支}案例，见\texttt{Chapter 4}\textit{预处理} \textit{与编译}
+
+
+%%C060328 li
+
+\item \textit{用enable\_if条件编译类与函数}案例，见\texttt{Chapter 4}\textit{预处理} \textit{与编译}
+
+
+%%C060329 li
+
+\item \textit{用static\_assert做编译期断言检查}案例，见\texttt{Chapter 4}\textit{预处理} \textit{与编译}
+
+
+%%C060330 li
+
+\item \textit{编写自己的类型特征}
+
+
+%%C060331 li
+
+\item \textit{用std::conditional在类型之间选择}
+
+\end{itemize}
+
+
+%%C060332 h2
+
+\section{编写自己的类型特征}
+
+
+%%C060333 p
+
+上一个案例中，我们了解了什么是类型特征、标准库提供了哪些特征，以及它们可以用于哪些目的。本案例更进一步，看看如何定义自己的定制特征。
+
+
+%%C060334 h3
+
+\subsection{准备工作}
+
+
+%%C060335 p
+
+建议你先阅读\textit{用类型特征查询类型属性}案例，再继续本案例。
+
+
+%%C060336 p
+
+本案例要解决的问题是：我们有若干个支持序列化的类。先不管细节，假设其中一些类提供到字符串的“普通”序列化（不论这具体意味着什么），另一些类则基于指定的编码来做序列化。最终目标是为序列化这些类型的对象提供一套单一、统一的API。为此，来看下面两个类：提供简单序列化的\texttt{foo}，以及提供带编码序列化的\texttt{bar}：
+
+
+%%C060337 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n+nf}{serialize}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{plain}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{bar}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n+nf}{serialize\PYGZus{}with\PYGZus{}encoding}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{encoded}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060338 h3
+
+\subsection{具体做法}
+
+
+%%C060339 p
+
+实现下面这些类模板与函数模板：
+
+
+%%C060340 li
+
+\begin{itemize}
+\item 一个名为\myttbr{is\_\allowbreak{}serializable\_\allowbreak{}with\_\allowbreak{}encoding}的类模板，其中包含一个值为\texttt{false}的\texttt{static} \texttt{const} \texttt{bool}变量：
+
+
+%%C060341 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{is\PYGZus{}serializable\PYGZus{}with\PYGZus{}encoding}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060342 li
+
+\item \myttbr{is\_\allowbreak{}serializable\_\allowbreak{}with\_\allowbreak{}encoding}模板针对类\texttt{bar}的完全特化，其中\texttt{static} \texttt{const} \texttt{bool}变量被设为\texttt{true}：
+
+
+%%C060343 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{is\PYGZus{}serializable\PYGZus{}with\PYGZus{}encoding}\PYG{o}{\PYGZlt{}}\PYG{n}{bar}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060344 li
+
+\item 一个名为\texttt{serializer}的类模板，其中包含一个名为\texttt{serialize}的静态模板方法，该方法接受一个模板类型\texttt{T}的参数，并对该对象调用\texttt{serialize()}：
+
+
+%%C060345 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{b}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{serializer}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{serialize}\PYG{p}{(}\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{serialize}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060346 li
+
+\item 针对\texttt{true}的完全特化类模板，其\texttt{serialize()}静态方法对参数调用\myttbr{serialize\_\allowbreak{}with\_\allowbreak{}encoding()}：
+
+
+%%C060347 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{serializer}\PYG{o}{\PYGZlt{}}\PYG{n+nb}{true}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{serialize}\PYG{p}{(}\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{serialize\PYGZus{}with\PYGZus{}encoding}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060348 li
+
+\item 一个名为\texttt{serialize()}的函数模板，它利用上面定义的\texttt{serializer}类模板和\myttbr{is\_\allowbreak{}serializable\_\allowbreak{}with\_\allowbreak{}encoding}类型特征，来选择该调用哪一种实际的序列化方法（普通方式还是带编码方式）：
+
+
+%%C060349 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{serialize}\PYG{p}{(}\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{serializer}\PYG{o}{\PYGZlt{}}\PYG{n}{is\PYGZus{}serializable\PYGZus{}with\PYGZus{}encoding}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}
+\PYG{+w}{     }\PYG{n}{serialize}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+\end{itemize}
+
+
+%%C060350 h3
+
+\subsection{工作原理}
+
+
+%%C060351 p
+
+\myttbr{is\_\allowbreak{}serializable\_\allowbreak{}with\_\allowbreak{}encoding}是一个类型特征，用于检查类型\texttt{T}是否可以用（指定的）编码序列化。它提供一个类型为\texttt{bool}、名为\texttt{value}的静态成员：若\texttt{T}支持带编码的序列化，该成员等于\texttt{true}，否则为\texttt{false}。它被实现为带单个类型模板参数\texttt{T}的类模板；对于支持编码序列化的类型，这个类模板做了完全特化，在本例中就是类\texttt{bar}：
+
+
+%%C060352 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{  }\PYG{n}{is\PYGZus{}serializable\PYGZus{}with\PYGZus{}encoding}\PYG{o}{\PYGZlt{}}\PYG{n}{foo}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// false}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{  }\PYG{n}{is\PYGZus{}serializable\PYGZus{}with\PYGZus{}encoding}\PYG{o}{\PYGZlt{}}\PYG{n}{bar}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// true}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{  }\PYG{n}{is\PYGZus{}serializable\PYGZus{}with\PYGZus{}encoding}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// false}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{  }\PYG{n}{is\PYGZus{}serializable\PYGZus{}with\PYGZus{}encoding}\PYG{o}{\PYGZlt{}}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// false}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060353 p
+
+\texttt{serialize()}方法是一个函数模板，它代表一套通用API，用于序列化支持这两种序列化方式之一的对象。它接受一个类型为模板参数\texttt{T}的参数，并借助辅助类模板\texttt{serializer}调用该参数的\texttt{serialize()}或\myttbr{serialize\_\allowbreak{}with\_\allowbreak{}encoding()}方法。
+
+
+%%C060354 p
+
+\texttt{serializer}是一个类模板，只有一个类型为\texttt{bool}的非类型模板参数。该类模板包含一个名为\texttt{serialize()}的静态函数模板。这个函数模板接受一个类型为模板参数\texttt{T}的参数，对参数调用\texttt{serialize()}，并返回该调用的结果。\texttt{serializer}类模板对其非类型模板参数的取值\texttt{true}有一个完全特化。在这个特化中，函数模板\texttt{serialize()}的签名不变，但改为调用\myttbr{serialize\_\allowbreak{}with\_\allowbreak{}encoding()}而不是\texttt{serialize()}。
+
+
+%%C060355 p
+
+到底使用通用类模板还是完全特化的类模板，是在\texttt{serialize()}函数模板中借助\myttbr{is\_\allowbreak{}serializable\_\allowbreak{}with\_\allowbreak{}encoding}类型特征完成的。该类型特征的静态成员\texttt{value}被用作\texttt{serializer}非类型模板参数的实参。
+
+
+%%C060356 p
+
+有了以上定义，就可以写出下面的代码：
+
+
+%%C060357 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}
+\PYG{n}{bar}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{serialize}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// plain}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{serialize}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// encoded}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060358 h3
+
+\subsection{延伸阅读}
+
+
+%%C060359 li
+
+\begin{itemize}
+\item \textit{用类型特征查询类型属性}
+
+
+%%C060360 li
+
+\item \textit{用std::conditional在类型之间选择}
+
+\end{itemize}
+
+
+%%C060361 h2
+
+\section{用std::conditional在类型之间选择}
+
+
+%%C060362 p
+
+前面几个案例中，我们看过类型支持库中的一些特性，尤其是类型特征。本书其他部分也讨论过相关话题，例如在\texttt{Chapter 4}\textit{预处理} \textit{与编译}中用\texttt{std::\allowbreak{}enable\_\allowbreak{}if}隐藏函数重载，以及在本章讨论访问variant时用\texttt{std::\allowbreak{}decay}移除\texttt{const}与\texttt{volatile}限定符。还有一个值得更深入讨论的类型变换特性是\texttt{std::\allowbreak{}conditional}，它让我们能基于编译期的布尔表达式，在编译期于两个类型之间做选择。本案例将通过几个例子说明它如何工作、如何使用。
+
+
+%%C060363 h3
+
+\subsection{准备工作}
+
+
+%%C060364 p
+
+建议你先阅读本章的\textit{用类型特征查询类型属性}案例。
+
+
+%%C060365 h3
+
+\subsection{具体做法}
+
+
+%%C060366 p
+
+下面这些例子展示如何用\texttt{std::\allowbreak{}conditional}（以及\myttbr{std::\allowbreak{}conditional\_\allowbreak{}t}）在编译期于两个类型之间做选择：
+
+
+%%C060367 li
+
+\begin{itemize}
+\item 在类型别名或\texttt{typedef}中，根据平台在32位与64位整型之间做选择（指针在32位平台上为4字节，在64位平台上为8字节）：
+
+
+%%C060368 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{long\PYGZus{}type}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{conditional}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{    }\PYG{k}{sizeof}\PYG{p}{(}\PYG{k+kt}{void}\PYG{o}{*}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}
+\PYG{+w}{    }\PYG{k+kt}{long}\PYG{p}{,}
+\PYG{+w}{    }\PYG{k+kt}{long}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{long\PYGZus{}type}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060369 li
+
+\item 在别名模板中，根据用户指定（作为非类型模板参数）在8位、16位、32位或64位整型之间做选择：
+
+%%C060370 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{size}\PYG{o}{\PYGZgt{}}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{number\PYGZus{}type}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{  }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{conditional}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{  }\PYG{n}{size}\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{l+m+mi}{1}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{int8\PYGZus{}t}\PYG{p}{,}
+\PYG{+w}{    }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{conditional}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{    }\PYG{n}{size}\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{l+m+mi}{2}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{int16\PYGZus{}t}\PYG{p}{,}
+\PYG{+w}{      }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{conditional}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{      }\PYG{n}{size}\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{l+m+mi}{4}\PYG{p}{,}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{int32\PYGZus{}t}\PYG{p}{,}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{int64\PYGZus{}t}
+\PYG{+w}{      }\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}
+\PYG{+w}{    }\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}
+\PYG{+w}{  }\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{2}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{1}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{2}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{3}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{4}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{5}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{6}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{7}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{8}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{number\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{l+m+mi}{9}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060371 li
+
+\item 在类型模板参数中，根据该类型模板参数是整型还是浮点类型，在整数均匀分布与实数均匀分布之间做选择：
+
+
+%%C060372 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}
+\PYG{+w}{          }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{D}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{conditional\PYGZus{}t}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{                         }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}integral}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{,}
+\PYG{+w}{                         }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{uniform\PYGZus{}int\PYGZus{}distribution}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{p}{,}
+\PYG{+w}{                         }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{uniform\PYGZus{}real\PYGZus{}distribution}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{,}
+\PYG{+w}{          }\PYG{k}{typename}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{enable\PYGZus{}if}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{                         }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}arithmetic}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}\PYG{o}{\PYGZgt{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{GenerateRandom}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{min}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{max}\PYG{p}{,}
+\PYG{+w}{                              }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{(}\PYG{n}{size}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{random\PYGZus{}device}\PYG{+w}{ }\PYG{n}{rd}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mt19937}\PYG{+w}{ }\PYG{n}{mt}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{rd}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{D}\PYG{+w}{ }\PYG{n}{dist}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{min}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{max}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{generate}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{o}{\PYGZam{}}\PYG{n}{dist}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{mt}\PYG{p}{]}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{dist}\PYG{p}{(}\PYG{n}{mt}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GenerateRandom}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{     }\PYG{c+c1}{// 整数}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GenerateRandom}\PYG{p}{(}\PYG{l+m+mf}{1.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{10.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 双精度浮点数}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C060373 h3
+
+\subsection{工作原理}
+
+
+%%C060374 p
+
+\texttt{std::\allowbreak{}conditional}是一个类模板，它定义一个名为\texttt{type}的成员，取值为其两个类型模板参数之一。选择依据是作为非类型模板参数传入的编译期常量布尔表达式。它的实现大致如下：
+
+
+%%C060375 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{Test}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T2}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{conditional}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{T2}\PYG{+w}{ }\PYG{n}{type}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T2}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{conditional}\PYG{o}{\PYGZlt{}}\PYG{n+nb}{true}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T2}\PYG{o}{\PYGZgt{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{T1}\PYG{+w}{ }\PYG{n}{type}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060376 p
+
+为了简化\texttt{std::\allowbreak{}conditional}的使用，C++14提供了名为\myttbr{std::\allowbreak{}conditional\_\allowbreak{}t}的别名模板，我们在上面的第三个示例中已经见过它，其定义如下：
+
+
+%%C060377 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{Test}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T2}\PYG{o}{\PYGZgt{}}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{conditional\PYGZus{}t}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{conditional}\PYG{o}{\PYGZlt{}}\PYG{n}{Test}\PYG{p}{,}\PYG{n}{T1}\PYG{p}{,}\PYG{n}{T2}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C060378 p
+
+下面总结上一节的几个示例：
+
+
+%%C060379 li
+
+\begin{itemize}
+\item 在第一个示例中，如果平台是32位，那么指针类型的大小为4字节，因此编译期表达式\texttt{sizeof(\allowbreak{}void*) <\allowbreak{}= 4}为\texttt{true}；结果是\texttt{std::\allowbreak{}conditional}把成员类型定义为\texttt{long}。如果平台是64位，条件求值为\texttt{false}，因为指针类型的大小为8字节，所以成员类型定义为\texttt{long long}。
+
+
+%%C060380 li
+
+\item 第二个示例中的情形类似，那里多次使用\texttt{std::\allowbreak{}conditional}，模拟一系列\texttt{if...\allowbreak{}else}语句来选出合适的类型。
+
+
+%%C060381 li
+
+\item 在第三个示例中，我们用别名模板\myttbr{std::\allowbreak{}conditional\_\allowbreak{}t}简化了函数模板\texttt{GenerateRandom}的声明。这里\texttt{std::\allowbreak{}conditional}用于为表示统计分布的类型模板参数定义默认值。根据第一个类型模板参数\texttt{T}是整型还是浮点类型，在\myttbr{std::\allowbreak{}uniform\_\allowbreak{}int\_\allowbreak{}distribution<\allowbreak{}T>}与\myttbr{std::\allowbreak{}uniform\_\allowbreak{}real\_\allowbreak{}distribution<\allowbreak{}T>}之间选择默认的分布类型。通过第三个模板参数配合\texttt{std::\allowbreak{}enable\_\allowbreak{}if}，禁止使用其他类型，这一点我们在前面的其他案例中已经见过。
+
+\end{itemize}
+
+
+%%C060382 h3
+
+\subsection{延伸阅读}
+
+
+%%C060383 li
+
+\begin{itemize}
+\item \textit{用类型特征查询类型属性}
+
+
+%%C060384 li
+
+\item \textit{编写自己的类型特征}
+
+
+%%C060385 li
+
+\item \textit{用enable\_if条件编译类与函数}案例，见\texttt{Chapter 4}预处理与编译
+
+\end{itemize}

@@ -1,0 +1,3523 @@
+%%C010001 p
+
+本章包含以下案例：
+
+
+%%C010002 li
+
+\begin{itemize}
+\item 尽可能使用auto
+
+
+%%C010003 li
+
+\item 创建类型别名与别名模板
+
+
+%%C010004 li
+
+\item 理解统一初始化
+
+
+%%C010005 li
+
+\item 理解非静态成员初始化的各种形式
+
+
+%%C010006 li
+
+\item 控制并查询对象对齐
+
+
+%%C010007 li
+
+\item 使用限定作用域枚举
+
+
+%%C010008 li
+
+\item 对虚函数使用override与final
+
+
+%%C010009 li
+
+\item 用基于范围的for循环遍历范围
+
+
+%%C010010 li
+
+\item 让自定义类型支持基于范围的for循环
+
+
+%%C010011 li
+
+\item 用explicit构造函数与转换运算符避免隐式转换
+
+
+%%C010012 li
+
+\item 用匿名命名空间代替静态全局变量
+
+
+%%C010013 li
+
+\item 用内联命名空间实现符号版本管理
+
+
+%%C010014 li
+
+\item 用结构化绑定处理多返回值
+
+\end{itemize}
+
+
+%%C010015 h2
+
+\section{引言}
+
+
+%%C010016 p
+
+过去十年间，C++语言经历了重大变革：先是C++11的制定与发布，随后又推出了C++14和C++17等更新版本。这些新标准引入了新的概念，简化或扩展了既有的语法和语义，并整体上改变了我们编写代码的方式。C++11看起来就像一门全新的语言，用新标准编写的代码被称为现代C++代码。
+
+
+%%C010017 h2
+
+\section{尽可能使用auto}
+
+
+%%C010018 p
+
+自动类型推导是现代C++中最重要、应用最广泛的功能之一。新的C++标准使\texttt{auto}可以在多种上下文中作为类型的占位符，由编译器推导出实际类型。在C++11中，\texttt{auto}可用于声明局部变量，也可用于带尾置返回类型的函数。在C++14中，\texttt{auto}可用于不指定尾置类型的函数返回类型，还可用于lambda表达式中的参数声明。未来的标准版本很可能把\texttt{auto}的用途扩展到更多场合。在这些上下文中使用\texttt{auto}有多项重要好处，开发者应当了解并尽可能优先使用\texttt{auto}。Andrei Alexandrescu为此创造了\textit{almost always auto}（\textit{AAA}）这一说法，并由Herb Sutter大力推广。
+
+
+%%C010019 h3
+
+\subsection{准备工作}
+
+
+%%C010020 p
+
+在以下情形中，可以考虑用\texttt{auto}作为实际类型的占位符：
+
+
+%%C010021 li
+
+\begin{itemize}
+\item 当你不希望锁定某个具体类型时，用\myttbr{auto name = expression}的形式声明局部变量：
+
+
+%%C010022 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}\PYG{+w}{          }\PYG{c+c1}{// int}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{42.5}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// double}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{text}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// char const *}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// std::initializer\PYGZus{}list\PYGZlt{}int\PYGZgt{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010023 li
+
+\item 当你需要锁定某个具体类型时，用\texttt{auto name = type-id \{ expression \}}的形式声明局部变量：
+
+
+%%C010024 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{  }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{[}\PYG{l+m+mi}{10}\PYG{p}{]}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{            }\PYG{c+c1}{// char*}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{text}\PYG{l+s}{\PYGZdq{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// std::string}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// std::vector\PYGZlt{}int\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{  }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// std::shared\PYGZus{}ptr\PYGZlt{}int\PYGZgt{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010025 li
+
+\item 用\myttbr{auto name = lambda-\allowbreak{}expression}的形式声明具名lambda函数，除非该lambda需要传给函数或作为函数返回值：
+
+
+%%C010026 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{upper}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{char}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{toupper}\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010027 li
+
+\item 声明lambda的参数与返回值：
+
+
+%%C010028 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{add}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010029 li
+
+\item 当你不希望锁定具体类型时，用它声明函数的返回类型：
+
+
+%%C010030 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{apply}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010031 h3
+
+\subsection{工作原理}
+
+
+%%C010032 p
+
+\texttt{auto}说明符实质上就是实际类型的占位符。使用\texttt{auto}时，编译器会从下列来源推导出实际类型：
+
+
+%%C010033 li
+
+\begin{itemize}
+\item 用\texttt{auto}声明变量时，从用于初始化该变量的表达式类型推导。
+
+
+%%C010034 li
+
+\item 用\texttt{auto}作为函数返回类型的占位符时，从函数的尾置返回类型或返回表达式的类型推导。
+
+\end{itemize}
+
+
+%%C010035 p
+
+某些情况下必须锁定具体类型。例如在前面的示例中，编译器把\texttt{s}的类型推导为\texttt{char const *}；如果本意是\texttt{std::\allowbreak{}string}，就必须显式指定类型。同样，\texttt{v}的类型被推导为\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list<\allowbreak{}int>}，而本意可能是\texttt{std::\allowbreak{}vector<\allowbreak{}int>}。遇到这类情况，必须在赋值号右侧显式指定类型。
+
+
+%%C010036 p
+
+用\texttt{auto}说明符代替实际类型有几项重要的好处，下面列出其中可能最重要的几项：
+
+
+%%C010037 li
+
+\begin{itemize}
+\item 变量不可能处于未初始化状态。开发者在显式指定类型声明变量时常犯这个错误，但用\texttt{auto}时不会发生，因为要推导类型就必须初始化变量。
+
+
+%%C010038 li
+
+\item 使用\texttt{auto}能确保你始终使用正确的类型，不会发生隐式转换。考察下面这个把vector的大小存入局部变量的示例。第一种情况下变量类型是\texttt{int}，而\texttt{size()}方法返回的是\texttt{size\_\allowbreak{}t}，这意味着会发生从\texttt{size\_\allowbreak{}t}到\texttt{int}的隐式转换。改用\texttt{auto}则会推导出正确的类型，也就是\texttt{size\_\allowbreak{}t}：
+
+
+%%C010039 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{size1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 隐式转换，可能丢失数据}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{size2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{size3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// 错误：窄化转换}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010040 li
+
+\item 使用\texttt{auto}有助于养成良好的面向对象习惯，例如优先面向接口而不是实现。写出的类型越少，代码就越通用，也越能适应未来的变化，而这正是面向对象编程的基本原则。
+
+
+%%C010041 li
+
+\item 它意味着少打字，也少去操心那些我们本来就不关心的实际类型。很多时候，即便我们显式写出了类型，其实并不关心它。迭代器就是很常见的例子，类似的例子还有很多。当你遍历一个范围时，并不关心迭代器的实际类型，只关心迭代器本身；因此用\texttt{auto}可以省下敲那些可能很长的类型名的时间，让你专注于代码本身而不是类型名。在下面的示例中，第一个\texttt{for}循环显式写出了迭代器类型，要敲的字符很多，冗长的语句反而会降低代码可读性，而且你还得知道那个其实并不关心的类型名。第二个使用\texttt{auto}说明符的循环看起来更简洁，既省去了打字，也不必再关心实际类型。
+
+
+%%C010042 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{const\PYGZus{}iterator}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{it}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/*...*/}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{cbegin}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{it}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{cend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{it}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/*...*/}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010043 li
+
+\item 用\texttt{auto}声明变量能带来一致的编码风格：类型总是出现在右侧。如果动态分配对象，你得在赋值号左右两侧都写出类型，例如\texttt{int} \texttt{p = new int(\allowbreak{}42)}。而用\texttt{auto}时，类型只需在右侧写一次。
+
+\end{itemize}
+
+
+%%C010044 p
+
+不过，使用\texttt{auto}也有几个容易踩的坑：
+
+
+%%C010045 li
+
+\begin{itemize}
+\item \texttt{auto}说明符只是类型的占位符，并不代表\texttt{const}/\texttt{volatile}和引用说明符。如果需要\texttt{const}/\texttt{volatile}和（或）引用类型，就必须显式写出。在下面的示例中，\texttt{foo.\allowbreak{}get()}返回\texttt{int}的引用；用它的返回值初始化变量\texttt{x}时，编译器推导出的类型是\texttt{int}而不是\texttt{int\&}。因此对\texttt{x}的任何修改都不会反映到\texttt{foo.\allowbreak{}x\_}。要做到这一点，应当使用\texttt{auto\&}：
+
+
+%%C010046 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{n}{x\PYGZus{}}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n+nf}{f}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{100}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 输出 42}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010047 li
+
+\item 对于不可移动的类型，不能使用\texttt{auto}：
+
+
+%%C010048 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{ai}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010049 li
+
+\item 也不能把auto用于多词类型，例如\texttt{long long}、\texttt{long} \texttt{double}或\texttt{struct foo}。对第一种情况，可行的变通办法是使用字面量或类型别名；对第二种情况，以那种形式使用\texttt{struct}/\texttt{class}在C++中只是为了兼容C才支持，本来就应当避免：
+
+
+%%C010050 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{l1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 错误}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{l2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{llong}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{     }\PYG{c+c1}{// 正确}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{l3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{42L}\PYG{n}{L}\PYG{p}{;}\PYG{+w}{            }\PYG{c+c1}{// 正确}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010051 li
+
+\item 如果你使用了\texttt{auto}说明符但仍想知道类型，可以在任何IDE里把光标悬停在变量上来查看。可是一旦离开IDE就做不到了，了解实际类型的唯一办法是自己从初始化表达式推导，这很可能意味着要翻遍代码去找函数的返回类型。
+
+\end{itemize}
+
+
+%%C010052 p
+
+\texttt{auto}也可以用来指定函数的返回类型。在C++11中，这要求在函数声明里写尾置返回类型。C++14放宽了这一限制，返回值的类型由编译器从\texttt{return}表达式推导。如果有多个返回值，它们的类型应当相同：
+
+
+%%C010053 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+c1}{// C++11}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{func1}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{int}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{o}{*}\PYG{n}{i}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{c+c1}{// C++14}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{func2}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{o}{*}\PYG{n}{i}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010054 p
+
+前面提到，\texttt{auto}不会保留\texttt{const}/\texttt{volatile}和引用限定符。这给用\texttt{auto}作函数返回类型的占位符带来了问题。为说明这一点，我们来看前面\texttt{foo.\allowbreak{}get()}的例子。这次我们有一个名为\texttt{proxy\_\allowbreak{}get()}的包装函数，它接受\texttt{foo}的引用，调用\texttt{get()}，并返回\texttt{get()}的结果，也就是\texttt{int\&}。然而编译器会把\texttt{proxy\_\allowbreak{}get()}的返回类型推导为\texttt{int}，而不是\texttt{int\&}。试图把该值赋给\texttt{int\&}会报错：
+
+
+%%C010055 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{n}{x\PYGZus{}}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{x\PYGZus{}}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{proxy\PYGZus{}get}\PYG{p}{(}\PYG{n}{foo}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{f}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{proxy\PYGZus{}get}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 无法从 \PYGZsq{}int\PYGZsq{} 转换为 \PYGZsq{}int \PYGZam{}\PYGZsq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010056 p
+
+要修正这个问题，必须真的返回\texttt{auto\&}。但在模板和完美转发中，如果不知道返回的是值还是引用，这就成了问题。C++14中解决该问题的办法是\texttt{decltype(\allowbreak{}auto)}，它能正确地推导类型：
+
+
+%%C010057 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{decltype}\PYG{p}{(}\PYG{k}{auto}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{proxy\PYGZus{}get}\PYG{p}{(}\PYG{n}{foo}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{f}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{decltype}\PYG{p}{(}\PYG{k}{auto}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{proxy\PYGZus{}get}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010058 p
+
+\texttt{auto}最后一个重要用途是lambda。从C++14起，lambda的返回类型和参数类型都可以是\texttt{auto}。这样的lambda称为\textit{泛型} \textit{lambda}，因为该lambda定义的闭包类型拥有模板化的调用运算符。下面的泛型lambda接受两个\texttt{auto}参数，并对实际类型应用\texttt{operator+}返回结果：
+
+
+%%C010059 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{ladd}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{   }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{U}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{   }\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{operator}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{U}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{a}\PYG{o}{+}\PYG{n}{b}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{n}{L}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010060 p
+
+这个lambda可用于任何定义了\texttt{operator+}的类型。下面的示例中，我们用该lambda相加两个整数，并拼接两个\texttt{std::\allowbreak{}string}对象（使用了C++14的用户定义字面量\texttt{operator “”s}）：
+
+
+%%C010061 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ladd}\PYG{p}{(}\PYG{l+m+mi}{40}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{            }\PYG{c+c1}{// 42}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ladd}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{forty}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// \PYGZdq{}fortytwo\PYGZdq{}s}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010062 h3
+
+\subsection{延伸阅读}
+
+
+%%C010063 li
+
+\begin{itemize}
+\item \textit{创建类型别名与别名模板}
+
+
+%%C010064 li
+
+\item \textit{理解统一初始化}
+
+\end{itemize}
+
+
+%%C010065 h2
+
+\section{创建类型别名与别名模板}
+
+
+%%C010066 p
+
+在C++中，可以创建用来代替类型名的同义词，这通过\texttt{typedef}声明实现。它在多种情况下很有用，例如为某个类型起一个更短或更有意义的名字，或者为函数指针起名字。然而\texttt{typedef}声明不能与模板一起用来创建模板类型别名。例如\texttt{std::\allowbreak{}vector<\allowbreak{}T>}并不是一个类型（\texttt{std::\allowbreak{}vector<\allowbreak{}int>}才是类型），而是把占位符\texttt{T}替换为实际类型时所能创建的所有类型构成的“一族”。
+
+
+%%C010067 p
+
+在C++11中，类型别名是另一个已声明类型的名字，别名模板则是另一个已声明模板的名字。这两类别名都用新的\texttt{using}语法引入。
+
+
+%%C010068 h3
+
+\subsection{具体做法}
+
+
+%%C010069 li
+
+\begin{itemize}
+\item 用\myttbr{using identifier = type-\allowbreak{}id}的形式创建类型别名，如下例所示：
+
+
+%%C010070 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{using}\PYG{+w}{ }\PYG{k+kt}{byte}\PYG{+w}{    }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{;}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{pbyte}\PYG{+w}{   }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{o}{*}\PYG{p}{;}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{array\PYGZus{}t}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{[}\PYG{l+m+mi}{10}\PYG{p}{]}\PYG{p}{;}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{fn}\PYG{+w}{      }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{p}{(}\PYG{k+kt}{byte}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{p}{)}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{k+kt}{byte}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/*...*/}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{byte}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{42}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{pbyte}\PYG{+w}{ }\PYG{n}{pb}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{byte}\PYG{p}{[}\PYG{l+m+mi}{10}\PYG{p}{]}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{array\PYGZus{}t}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{l+m+mi}{6}\PYG{p}{,}\PYG{l+m+mi}{7}\PYG{p}{,}\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{l+m+mi}{9}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{fn}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{f}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{func}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010071 li
+
+\item 用\myttbr{template<\allowbreak{}template-\allowbreak{}params-\allowbreak{}list>} \myttbr{identifier = type-\allowbreak{}id}的形式创建别名模板，如下例所示：
+
+
+%%C010072 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{custom\PYGZus{}allocator}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* ... */}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{vec\PYGZus{}t}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{custom\PYGZus{}allocator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\PYG{n}{vec\PYGZus{}t}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{           }\PYG{n}{vi}\PYG{p}{;}
+\PYG{n}{vec\PYGZus{}t}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{   }\PYG{n}{vs}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010073 p
+
+为了一致性和可读性，你应当做到以下几点：
+
+
+%%C010074 li
+
+\begin{itemize}
+\item 不要混用\texttt{typedef}与\texttt{using}声明来创建别名。
+
+
+%%C010075 li
+
+\item 用\texttt{using}语法为函数指针类型命名。
+
+\end{itemize}
+
+
+%%C010076 h3
+
+\subsection{工作原理}
+
+
+%%C010077 p
+
+\texttt{typedef}声明为某个类型引入同义词（换句话说就是别名），它并不引入新的类型（不同于\texttt{class}、\texttt{struct}、\texttt{union}或\texttt{enum}声明）。用\texttt{typedef}声明引入的类型名遵循与标识符名相同的隐藏规则，也可以重复声明，但只能指向同一个类型（因此，只要同义词指向同一个类型，一个翻译单元里可以有多个合法的\texttt{typedef}声明引入同一个类型名同义词）。下面是\texttt{typedef}声明的典型示例：
+
+
+%%C010078 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{typedef}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{   }\PYG{k+kt}{byte}\PYG{p}{;}
+\PYG{k}{typedef}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pbyte}\PYG{p}{;}
+\PYG{k}{typedef}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{             }\PYG{n}{array\PYGZus{}t}\PYG{p}{[}\PYG{l+m+mi}{10}\PYG{p}{]}\PYG{p}{;}
+\PYG{k}{typedef}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{p}{(}\PYG{o}{*}\PYG{n}{fn}\PYG{p}{)}\PYG{p}{(}\PYG{k+kt}{byte}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value\PYGZus{}type}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{typedef}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{vint\PYGZus{}t}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010079 p
+
+类型别名声明等价于\texttt{typedef}声明，可以出现在块作用域、类作用域或命名空间作用域中。按照C++11第7.1.3.2节：
+
+
+%%C010080 p
+
+\textit{typedef名也可以由别名声明引入。跟在} \textit{using关键字之后的标识符成为typedef名，该标识符之后可选出现的} \textit{属性说明符序列归属于这个typedef名。其语义与用} \textit{typedef说明符引入时相同。特别地，它不定义新类型，也不得} \textit{出现在type-id中。}
+
+
+%%C010081 p
+
+不过，在为数组类型和函数指针类型创建别名时，别名声明更易读，对被别名的实际类型表达得更清楚。在\textit{具体做法}一节的示例中，很容易看出\texttt{array\_\allowbreak{}t}是10个整数构成的数组类型的名字，\texttt{fn}是接受\texttt{byte}和\texttt{double}两个参数、返回\texttt{void}的函数类型的名字。这也与声明\texttt{std::\allowbreak{}function}对象的语法一致（例如\myttbr{std::\allowbreak{}function<\allowbreak{}void(\allowbreak{}byte,} \texttt{double)> f}）。
+
+
+%%C010082 p
+
+新语法的核心目的是定义别名模板。别名模板在被特化时，等价于把别名模板的模板实参替换到\texttt{type-\allowbreak{}id}中的模板形参之后所得到的结果。
+
+
+%%C010083 p
+
+有几点需要注意：
+
+
+%%C010084 li
+
+\begin{itemize}
+\item 别名模板不能偏特化，也不能显式特化。
+
+
+%%C010085 li
+
+\item 在推导模板形参时，别名模板永远不会被模板实参推导所推导。
+
+
+%%C010086 li
+
+\item 特化别名模板产生的类型，不允许直接或间接地使用其自身类型。
+
+\end{itemize}
+
+
+%%C010087 h2
+
+\section{理解统一初始化}
+
+
+%%C010088 p
+
+花括号初始化是C++11中统一的数据初始化方式，因此也被称为\textit{统一初始化}。它可以说是开发者最应当理解和使用的C++11特性之一。它消除了以往在初始化基本类型、聚合与非聚合类型、数组与标准容器之间的种种区别。
+
+
+%%C010089 h3
+
+\subsection{准备工作}
+
+
+%%C010090 p
+
+继续本案例之前，你需要熟悉直接初始化（用一组显式的构造函数实参初始化对象）和复制初始化（用另一个对象初始化对象）。下面给出这两类初始化的简单示例，更详细的内容请参阅其他资料：
+
+
+%%C010091 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{s1}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// 直接初始化}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{s2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{test}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// 复制初始化}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010092 h3
+
+\subsection{具体做法}
+
+%%C010093 p
+
+要不受类型限制地统一初始化对象，可以使用花括号初始化形式\texttt{\{\}}，它既适用于直接初始化，也适用于复制初始化。与花括号初始化配合使用时，这两种形式分别称为直接列表初始化和复制列表初始化。
+
+
+%%C010094 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{object}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{other}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// 直接列表初始化}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{object}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{other}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 复制列表初始化}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010095 p
+
+统一初始化的示例如下：
+
+
+%%C010096 li
+
+\begin{itemize}
+\item 标准容器：
+
+
+%%C010097 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{m}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{one}\PYG{l+s}{\PYGZdq{}}\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010098 li
+
+\item 动态分配的数组：
+
+
+%%C010099 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{arr2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010100 li
+
+\item 数组：
+
+
+%%C010101 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arr1}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010102 li
+
+\item 内置类型：
+
+
+%%C010103 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mf}{1.2}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010104 li
+
+\item 用户自定义类型：
+
+
+%%C010105 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{b\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{o}{:}\PYG{n}{a\PYGZus{}}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b\PYGZus{}}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{0.0}\PYG{p}{)}\PYG{o}{:}\PYG{n}{a\PYGZus{}}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b\PYGZus{}}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f1}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f2}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1.2}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f3}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010106 li
+
+\item 用户自定义的POD类型：
+
+
+%%C010107 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{bar}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a\PYGZus{}}\PYG{p}{;}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{b\PYGZus{}}\PYG{p}{;}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{bar}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1.2}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010108 h3
+
+\subsection{工作原理}
+
+
+%%C010109 p
+
+在C++11之前，对象需要根据其类型采用不同的初始化方式：
+
+
+%%C010110 li
+
+\begin{itemize}
+\item 基本类型可以用赋值的方式初始化：
+
+
+%%C010111 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{1.2}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010112 li
+
+\item 如果类定义了转换构造函数，类对象也可以用单个值赋值初始化（在C++11之前，只带一个参数的构造函数称为\textit{转换构造函数}）：
+
+
+%%C010113 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}\PYG{o}{:}\PYG{n}{a\PYGZus{}}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010114 li
+
+\item 非聚合类在有实参时可以用圆括号（函数形式）初始化，而在执行默认初始化（调用默认构造函数）时则不能加任何圆括号。下面的示例中，\texttt{foo}是\textit{具体做法}一节中定义的结构体：
+
+
+%%C010115 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f1}\PYG{p}{;}\PYG{+w}{           }\PYG{c+c1}{// 默认初始化}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n+nf}{f2}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1.2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n+nf}{f3}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n+nf}{f4}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// 函数声明}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010116 li
+
+\item 聚合类型和POD类型可以用花括号初始化。下面的示例中，\texttt{bar}是\textit{具体做法}一节中定义的结构体：
+
+
+%%C010117 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{bar}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1.2}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010118 p
+
+除了数据初始化方式各不相同之外，还存在一些限制。例如，初始化标准容器的唯一办法是先声明一个对象，再向其中插入元素；vector是个例外，因为可以用一个数组给它赋值，而该数组可以事先通过聚合初始化准备好。但另一方面，动态分配的聚合对象却无法直接初始化。
+
+
+%%C010119 p
+
+\textit{具体做法}一节中的所有示例都使用直接初始化，但花括号初始化同样可以用于复制初始化。直接初始化和复制初始化这两种形式在多数情况下是等价的，但复制初始化的限制更严格，因为它的隐式转换序列必须直接从初始化器生成一个对象，不会考虑声明为explicit的构造函数；而直接初始化期望的是从初始化器到构造函数实参的隐式转换。动态分配的数组只能用直接初始化。
+
+
+%%C010120 p
+
+在前面的示例所展示的类中，\texttt{foo}是同时具有默认构造函数和带参数构造函数的那个类。要用默认构造函数执行默认初始化，需要使用空的花括号，即\texttt{\{\}}；要用带参数的构造函数，则需要在花括号\texttt{\{\}}中为所有参数提供值。与非聚合类型不同（对它们来说默认初始化意味着调用默认构造函数），对聚合类型来说，默认初始化意味着以零初始化。
+
+
+%%C010121 p
+
+之所以能这样初始化标准容器（如上面展示的vector和map），是因为在C++11中所有标准容器都有一个额外的构造函数，接受一个\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list<\allowbreak{}T>}类型的实参。它本质上是对\texttt{T const}类型元素数组的轻量级代理。这些构造函数随即用初始化列表中的值来初始化内部数据。
+
+
+%%C010122 p
+
+使用\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list}进行初始化的过程如下：
+
+
+%%C010123 li
+
+\begin{itemize}
+\item 编译器确定初始化列表中各元素的类型（所有元素的类型必须相同）。
+
+
+%%C010124 li
+
+\item 编译器用初始化列表中的元素创建一个数组。
+
+
+%%C010125 li
+
+\item 编译器创建一个\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list<\allowbreak{}T>}对象来包装前面创建的数组。
+
+
+%%C010126 li
+
+\item 该\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list<\allowbreak{}T>}对象作为实参传递给构造函数。
+
+\end{itemize}
+
+
+%%C010127 p
+
+在使用花括号初始化时，初始化列表总是优先于其他构造函数。如果类中存在这样的构造函数，执行花括号初始化时就会调用它：
+
+
+%%C010128 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{b\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{n}{a\PYGZus{}}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b\PYGZus{}}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{n}{a\PYGZus{}}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b\PYGZus{}}\PYG{p}{(}\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{initializer\PYGZus{}list}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 调用接受 initializer\PYGZus{}list\PYGZlt{}int\PYGZgt{} 的构造函数}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010129 p
+
+这条优先级规则适用于任何函数，而不只是构造函数。下面的示例中同一个函数有两个重载，用初始化列表调用该函数时，重载决议会选中接受\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list}的那个重载：
+
+
+%%C010130 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{initializer\PYGZus{}list}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{func}\PYG{p}{(}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{l+m+mi}{3}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 调用第二个重载}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010131 p
+
+不过，这也可能引发缺陷。以vector类型为例。vector的构造函数中，有一个只接受一个表示要分配的元素初始个数的实参，另一个接受\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list}作为实参。如果想创建一个预先分配好大小的vector，用花括号初始化行不通，因为接受\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list}的构造函数会成为被调用的最佳重载：
+
+
+%%C010132 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{5}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010133 p
+
+上面的代码创建的不是含五个元素的vector，而是含一个值为5的元素的vector。要真正创建一个含五个元素的vector，必须使用圆括号形式的初始化：
+
+
+%%C010134 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010135 p
+
+另一点要注意的是，花括号初始化不允许窄化转换（narrowing conversion）。按照C++标准（参见标准第8.5.4节），窄化转换是一种隐式转换：
+
+
+%%C010136 li
+
+\begin{itemize}
+\item \textit{从浮点类型到整数类型}
+
+
+%%C010137 li
+
+\item \textit{从long double到double或float，或从double到float，除非源是}
+
+
+\end{itemize}
+
+
+%%C010138 p
+
+\textit{常量表达式且转换后的实际值处于可表示的值范围内} \textit{（即使无法精确表示）}
+
+
+%%C010139 li
+
+\begin{itemize}
+\item \textit{从整数类型或非限定作用域枚举类型到浮点类型，除非}
+
+
+\end{itemize}
+
+
+%%C010140 p
+
+\textit{源是常量表达式且转换后的实际值能放入目标类型，} \textit{并且在转换回原类型时能得到原值}
+
+
+%%C010141 li
+
+\begin{itemize}
+\item \textit{从整数类型或非限定作用域枚举类型到无法}
+
+
+\end{itemize}
+
+
+%%C010142 p
+
+\textit{表示原类型全部值的整数类型，除非源是常量} \textit{表达式且转换后的实际值能放入目标类型，} \textit{并且在转换回原类型时能得到原值。}
+
+
+%%C010143 p
+
+下面的声明会触发编译器错误，因为它们需要窄化转换：
+
+
+%%C010144 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mf}{1.2}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{           }\PYG{c+c1}{// 错误}
+\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{47}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{;}
+\PYG{k+kt}{float}\PYG{+w}{ }\PYG{n}{f1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{          }\PYG{c+c1}{// 错误}
+\PYG{k+kt}{float}\PYG{+w}{ }\PYG{n}{f2}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{47}\PYG{o}{/}\PYG{l+m+mi}{13}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// 正确}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010145 p
+
+要修正这个错误，必须做显式转换：
+
+
+%%C010146 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mf}{1.2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{47}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{;}
+\PYG{k+kt}{float}\PYG{+w}{ }\PYG{n}{f1}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{float}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{d}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010147 note
+
+\begin{myNote}
+花括号初始化列表不是表达式，也没有类型。因此，\texttt{decltype}不能用于花括号初始化列表，模板类型推导也无法推导出与花括号初始化列表相匹配的类型。
+\end{myNote}
+
+
+%%C010148 h3
+
+\subsection{更多内容}
+
+
+%%C010149 p
+
+下面的示例展示了几种直接列表初始化和复制列表初始化。在C++11中，所有这些表达式推导出的类型都是\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list<\allowbreak{}int>}。
+
+
+%%C010150 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{42}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// std::initializer\PYGZus{}list\PYGZlt{}int\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{42}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{     }\PYG{c+c1}{// std::initializer\PYGZus{}list\PYGZlt{}int\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// std::initializer\PYGZus{}list\PYGZlt{}int\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// std::initializer\PYGZus{}list\PYGZlt{}int\PYGZgt{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010151 p
+
+C++17修改了列表初始化的规则，对直接列表初始化和复制列表初始化做了区分。新的类型推导规则如下：
+
+
+%%C010152 li
+
+\begin{itemize}
+\item 对于复制列表初始化，如果列表中所有元素的类型相同，auto推导结果为\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list<\allowbreak{}T>}，否则程序非良构。
+
+
+%%C010153 li
+
+\item 对于直接列表初始化，如果列表中只有一个元素，auto推导结果为\texttt{T}；如果多于一个元素，则程序非良构。
+
+\end{itemize}
+
+
+%%C010154 p
+
+基于新规则，前面的示例会变成下面这样：\texttt{a}和\texttt{c}推导为\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list<\allowbreak{}int>}；\texttt{b}推导为\texttt{int}；\texttt{d}使用直接初始化且花括号初始化列表中有多个值，会触发编译器错误。
+
+
+%%C010155 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{42}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// std::initializer\PYGZus{}list\PYGZlt{}int\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{42}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{     }\PYG{c+c1}{// int}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// std::initializer\PYGZus{}list\PYGZlt{}int\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// 错误：值过多}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010156 h3
+
+\subsection{延伸阅读}
+
+
+%%C010157 li
+
+\begin{itemize}
+\item \textit{尽可能使用auto}
+
+
+%%C010158 li
+
+\item \textit{理解非静态成员初始化的各种形式}
+
+\end{itemize}
+
+
+%%C010159 h2
+
+\section{理解非静态成员初始化的各种形式}
+
+
+%%C010160 p
+
+构造函数是完成类的非静态成员初始化的地方。许多开发者偏爱在构造函数体内赋值。除了少数确实必须这样做的情况之外，非静态成员的初始化应当在构造函数的初始化列表中进行，或者从C++11起，在类中声明成员时使用默认成员初始化。在C++11之前，类中的常量成员和非常量非静态数据成员都必须在构造函数中初始化；只有静态常量才能在类中声明时初始化。后文会看到，C++11取消了这一限制，允许在类声明中初始化非静态成员。这种初始化称为\textit{默认成员初始化}，将在后续小节中说明。
+
+
+%%C010161 p
+
+本案例将探讨应当如何完成非静态成员的初始化。
+
+
+%%C010162 h3
+
+\subsection{具体做法}
+
+
+%%C010163 p
+
+要初始化类的非静态成员，你应当：
+
+
+%%C010164 li
+
+\begin{itemize}
+\item 当类有多个构造函数、而这些构造函数对这些成员使用相同的初始化方式时，用默认成员初始化来提供成员的默认值（参见下面代码中的\texttt{[3]}和\texttt{[4]}）。
+
+
+%%C010165 li
+
+\item 对常量使用默认成员初始化，无论静态还是非常静态（参见下面代码中的\texttt{[1]}和\texttt{[2]}）。
+
+
+%%C010166 li
+
+\item 对没有默认值、但依赖于构造函数参数的成员，用构造函数初始化列表进行初始化（参见下面代码中的\texttt{[5]}和\texttt{[6]}）。
+
+
+%%C010167 li
+
+\item 当其他做法都不可行时，在构造函数中使用赋值（例子包括：用\texttt{this}指针初始化数据成员、检查构造函数参数值并在用这些值初始化成员之前抛出异常，以及两个非静态数据成员互相引用）。
+
+\end{itemize}
+
+
+%%C010168 p
+
+下面的示例展示了这些初始化形式：
+
+
+%%C010169 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Control}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{DefaultHeigh}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{14}\PYG{p}{;}\PYG{+w}{                  }\PYG{c+c1}{// [1]}
+\PYG{+w}{  }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{DefaultWidth}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{80}\PYG{p}{;}\PYG{+w}{                  }\PYG{c+c1}{// [2]}
+\PYG{n}{TextVAligment}\PYG{+w}{ }\PYG{n}{valign}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TextVAligment}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Middle}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// [3]}
+\PYG{n}{TextHAligment}\PYG{+w}{ }\PYG{n}{halign}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TextHAligment}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Left}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// [4]}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{;}
+\PYG{n}{Control}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{(}\PYG{n}{t}\PYG{p}{)}\PYG{+w}{       }\PYG{c+c1}{// [5]}
+\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{Control}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{TextVerticalAligment}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{va}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{TextHorizontalAligment}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{ha}\PYG{p}{)}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{text}\PYG{p}{(}\PYG{n}{t}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{valign}\PYG{p}{(}\PYG{n}{va}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{halign}\PYG{p}{(}\PYG{n}{ha}\PYG{p}{)}\PYG{+w}{                 }\PYG{c+c1}{// [6]}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010170 h3
+
+\subsection{工作原理}
+
+
+%%C010171 p
+
+非静态数据成员本应在构造函数的初始化列表中初始化，如下例所示：
+
+
+%%C010172 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Point}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{X}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Y}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{Point}\PYG{p}{(}\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{0.0}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{y}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{0.0}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{X}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Y}\PYG{p}{(}\PYG{n}{y}\PYG{p}{)}\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010173 p
+
+然而，许多开发者并不使用初始化列表，而是偏爱在构造函数体内赋值，甚至把赋值与初始化列表混用。原因可能有很多：对于成员众多的大型类，构造函数中的赋值看起来比可能被拆成很多行的冗长初始化列表更易读；也可能是因为他们熟悉的其他编程语言没有初始化列表；或者不幸的是，由于种种原因他们根本不知道有这种写法。
+
+
+%%C010174 note
+
+\begin{myNote}
+要注意，非静态数据成员的初始化顺序是它们在类定义中的声明顺序，而不是它们在构造函数初始化列表中的出现顺序。另一方面，非静态数据成员的析构顺序与构造顺序相反。
+\end{myNote}
+
+
+%%C010175 p
+
+在构造函数中使用赋值并不高效，因为这可能产生随后被丢弃的临时对象。如果不在初始化列表中初始化，非静态成员会先通过默认构造函数初始化，之后在构造函数体内被赋值时又会调用赋值运算符。如果默认构造函数分配了某种资源（例如内存或文件），而该资源必须在赋值运算符中释放再重新分配，这就会造成低效的工作：
+
+
+%%C010176 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{default constructor}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{constructor \PYGZsq{}}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZsq{}}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{copy constructor}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{n}{foo}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{move constructor}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{assignment}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{foo}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{move assignment}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{o}{\PYGZti{}}\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{destructor}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{bar}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{bar}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{f}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}
+\PYG{n}{bar}\PYG{+w}{ }\PYG{n+nf}{b}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010177 p
+
+前面的代码产生如下输出，从中可以看到数据成员\texttt{f}先被默认初始化，然后被赋予新值：
+
+
+%%C010178 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{default}\PYG{+w}{ }\PYG{n}{constructor}
+\PYG{k}{default}\PYG{+w}{ }\PYG{n}{constructor}
+\PYG{n}{assignment}
+\PYG{n}{destructor}
+\PYG{n}{destructor}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010179 p
+
+把初始化从构造函数体内的赋值改为初始化列表，就会用一次复制构造函数的调用取代默认构造函数加赋值运算符的调用：
+
+
+%%C010180 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{bar}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010181 p
+
+加上前面这一行代码后，输出如下：
+
+
+%%C010182 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{default}\PYG{+w}{ }\PYG{n}{constructor}
+\PYG{n}{copy}\PYG{+w}{ }\PYG{n}{constructor}
+\PYG{n}{destructor}
+\PYG{n}{destructor}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010183 p
+
+出于这些原因，至少对于内置类型（如\texttt{bool}、\texttt{char}、\texttt{int}、\texttt{float}、\texttt{double}或指针）之外的类型，你应当优先使用构造函数初始化列表。不过，为了让初始化风格保持一致，只要可行就应当始终优先使用构造函数初始化列表。有几种情况无法使用初始化列表，包括下面这几种（当然还可以补充其他情况）：
+
+
+%%C010184 li
+
+\begin{itemize}
+\item 如果某个成员必须用指向包含它的对象的指针或引用来初始化，那么在初始化列表中使用\texttt{this}指针可能让某些编译器发出警告，说它在对象构造完成之前就被使用了。
+
+
+%%C010185 li
+
+\item 如果有两个数据成员必须互相持有对方的引用。
+
+
+%%C010186 li
+
+\item 如果你想先检查某个输入参数，并在用该参数的值初始化非静态数据成员之前抛出异常。
+
+\end{itemize}
+
+
+%%C010187 p
+
+从C++11开始，非静态数据成员可以在类中声明时初始化。这称为\textit{默认成员初始化}，因为它所表示的是用默认值进行初始化。默认成员初始化适用于常量，以及不依据构造函数参数初始化的成员（换言之，其值不取决于对象构造方式的成员）：
+
+
+%%C010188 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{TextFlow}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{LeftToRight}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{RightToLeft}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Control}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{DefaultHeight}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{20}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{DefaultWidth}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{100}\PYG{p}{;}
+\PYG{n}{TextFlow}\PYG{+w}{ }\PYG{n}{textFlow}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TextFlow}\PYG{o}{:}\PYG{o}{:}\PYG{n}{LeftToRight}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{Control}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{(}\PYG{n}{t}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+%%C010189 p
+
+在上面的例子中，\texttt{DefaultHeight}与\texttt{DefaultWidth}都是常量；因此它们的取值不依赖对象的构造方式，所以在声明时就被初始化。\texttt{textFlow}对象是一个非常量、非静态的数据成员，它的值同样不依赖对象的初始化方式（它可以通过其他成员函数改动），因此也在声明时用默认成员初始化完成初始化。另一方面，\texttt{text}也是非常量、非静态的数据成员，但它的初始值依赖对象的构造方式，因此要在构造函数的初始化列表中使用构造函数参数传入的值来初始化。
+
+
+%%C010190 p
+
+如果某个数据成员既做了默认成员初始化，又在构造函数的初始化列表中初始化，那么后者优先，默认值被丢弃。为说明这一点，我们再看前面的\texttt{foo}类，以及下面使用它的\texttt{bar}类：
+
+
+%%C010191 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{bar}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{default value}\PYG{l+s}{\PYGZdq{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{bar}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{constructor initializer}\PYG{l+s}{\PYGZdq{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{bar}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010192 p
+
+此时输出与前面不同，如下所示，因为默认初始化列表中的值被丢弃，对象不会被初始化两次：
+
+
+%%C010193 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{constructor}
+\PYG{n}{constructor}\PYG{+w}{ }\PYG{n}{initializer}
+\PYG{n}{destructor}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010194 note
+
+\begin{myNote}[tip]
+为每个成员选用合适的初始化方法，不仅能得到更高效的代码，还能让代码组织得更好、更易读。
+\end{myNote}
+
+
+%%C010195 h2
+
+\section{控制并查询对象对齐}
+
+
+%%C010196 p
+
+C++11提供了标准化方法来指定和查询某个类型的对齐要求（以前只能通过编译器相关的手段做到）。控制对齐很重要，它可以提升程序在不同处理器上的性能，并让你能用上某些只对特定对齐的数据才有效的指令。例如，Intel SSE与Intel SSE2要求数据按16字节对齐，而对于Intel高级矢量扩展（Intel AVX），则强烈建议使用32字节对齐。本案例将探讨用于控制对齐要求的\texttt{alignas}说明符，以及用于获取类型对齐要求的\texttt{alignof}运算符。
+
+
+%%C010197 h3
+
+\subsection{准备工作}
+
+
+%%C010198 p
+
+你应当熟悉什么是数据对齐，以及编译器如何进行默认的数据对齐。不过，关于后者的基本信息会在\textit{工作}\textit{原理...}一节中给出。
+
+
+%%C010199 h3
+
+\subsection{具体做法}
+
+
+%%C010200 li
+
+\begin{itemize}
+\item 要控制类型（类级别或数据成员级别）或对象的对齐，可使用\texttt{alignas}说明符：
+
+
+%%C010201 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{alignas}\PYG{p}{(}\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{bar}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{  }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{+w}{   }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{256}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{[}\PYG{l+m+mi}{4}\PYG{p}{]}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010202 li
+
+\item 要查询某个类型的对齐，可使用\texttt{alignof}运算符：
+
+
+%%C010203 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{align}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{alignof}\PYG{p}{(}\PYG{n}{foo}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010204 h3
+
+\subsection{工作原理}
+
+
+%%C010205 p
+
+处理器并不是一次只访问一个字节的内存，而是以2的幂（2、4、8、16、32等）为单位成块访问。正因如此，编译器在内存中把数据按对齐方式安放才显得重要，这样处理器才能方便地访问它们。如果数据没有对齐，编译器访问数据时就得做额外的工作：它必须读取多个数据块，做移位、丢弃无用的字节，再把剩下的部分拼接起来。
+
+
+%%C010206 p
+
+C++编译器按数据类型的大小来对齐变量：\texttt{bool}与\texttt{char}为1字节，\texttt{short}为2字节，\texttt{int}、\texttt{long}与\texttt{float}为4字节，\texttt{double}与\texttt{long long}为8字节，依此类推。对于结构体或联合体，对齐必须与最大成员的尺寸相匹配，以避免性能问题。为说明这一点，我们来看下面的数据结构：
+
+
+%%C010207 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo1}\PYG{+w}{    }\PYG{c+c1}{// 大小 = 1，对齐 = 1}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo2}\PYG{+w}{    }\PYG{c+c1}{// 大小 = 2，对齐 = 1}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo3}\PYG{+w}{    }\PYG{c+c1}{// 大小 = 8，对齐 = 4}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{  }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010208 p
+
+\texttt{foo1}与\texttt{foo2}的大小不同，但对齐相同——都是1——因为所有数据成员都是\texttt{char}类型，大小为1。在结构体\texttt{foo3}中，第二个成员是整型，大小为4。因此，该结构体的成员会被放在4的倍数的地址上。为此，编译器会引入填充字节。结构体\texttt{foo3}实际上会变成下面这样：
+
+
+%%C010209 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo3\PYGZus{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// 1 字节}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{\PYGZus{}pad0}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 3 字节填充，使 b 落在 4 字节边界上}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{  }\PYG{n}{b}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// 4 字节}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010210 p
+
+类似地，下面的结构体大小为32字节、对齐为8；这是因为最大的成员是\texttt{double}，大小为8。不过，这个结构体需要在多处填充，以确保所有成员都能在8的倍数的地址上访问：
+
+
+%%C010211 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo4}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{float}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010212 p
+
+编译器生成的等价结构体如下：
+
+
+%%C010213 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo4\PYGZus{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// 4 字节}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// 1 字节}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{\PYGZus{}pad0}\PYG{p}{[}\PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 3 字节填充，使 c 落在 8 字节边界上}
+\PYG{+w}{  }\PYG{k+kt}{float}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// 4 字节}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{\PYGZus{}pad1}\PYG{p}{[}\PYG{l+m+mi}{4}\PYG{p}{]}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 4 字节填充，使 d 落在 8 字节边界上}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// 8 字节}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// 1 字节}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{\PYGZus{}pad2}\PYG{p}{[}\PYG{l+m+mi}{7}\PYG{p}{]}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 7 字节填充，使结构体的 sizeof 为 8 的倍数}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010214 p
+
+在C++11中，用\texttt{alignas}说明符来指定对象或类型的对齐。它既可以接受一个表达式（求值为0或合法对齐值的整型常量表达式），也可以接受一个type-id或一个参数包。\texttt{alignas}说明符可以用于变量声明、不代表位域的类数据成员声明，也可以用于类、联合体或枚举的声明。应用了\texttt{alignas}说明的类型或对象，其对齐要求等于该声明中所有\texttt{alignas}说明里取值最大的、大于零的那个表达式值。
+
+
+%%C010215 p
+
+使用\texttt{alignas}说明符时有若干限制：
+
+
+%%C010216 li
+
+\begin{itemize}
+\item 合法的对齐只能是2的幂（1、2、4、8、16、32等）。其他值都是非法的，程序被视为非良构（ill-formed）；但这不一定产生错误，因为编译器可以选择忽略该说明。
+
+
+%%C010217 li
+
+\item 对齐值为0时总会被忽略。
+
+
+%%C010218 li
+
+\item 如果某个声明上最大的\texttt{alignas}取值小于不带任何\texttt{alignas}说明符时的自然对齐，那么程序同样被视为非良构。
+
+\end{itemize}
+
+
+%%C010219 p
+
+在下面的例子中，\texttt{alignas}说明符用在类声明上。不带\texttt{alignas}说明符时的自然对齐是1，加上\texttt{alignas(\allowbreak{}4)}之后就变成4：
+
+
+%%C010220 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{alignas}\PYG{p}{(}\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010221 p
+
+换句话说，编译器把前面的类转换成下面这样：
+
+
+%%C010222 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{\PYGZus{}pad0}\PYG{p}{[}\PYG{l+m+mi}{2}\PYG{p}{]}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010223 p
+
+\texttt{alignas}说明符既可以用于类声明，也可以用于成员数据的声明。这种情况下，最严格（即最大）的值生效。在下面的例子中，成员\texttt{a}的自然大小为1，要求按2对齐；成员\texttt{b}的自然大小为4，要求按8对齐，因此最严格的对齐是8。整个类的对齐要求是4，弱于（即小于）最严格的要求，因此会被忽略，不过编译器会产生一条警告：
+
+
+%%C010224 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{alignas}\PYG{p}{(}\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{  }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010225 p
+
+得到的结构体如下所示：
+
+
+%%C010226 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{\PYGZus{}pad0}\PYG{p}{[}\PYG{l+m+mi}{7}\PYG{p}{]}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{\PYGZus{}pad1}\PYG{p}{[}\PYG{l+m+mi}{4}\PYG{p}{]}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010227 p
+
+\texttt{alignas}说明符也可以用在变量上。在下一个例子中，整型变量\texttt{a}要求被放在内存中8的倍数的地址上；接下来的变量是含4个\texttt{long}的数组，要求被放在内存中256的倍数的地址上。因此，编译器会在两个变量之间引入最多244字节的填充（具体取决于变量\texttt{a}落在哪个8的倍数地址上）：
+
+
+%%C010228 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{+w}{   }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{256}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kt}{long}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{[}\PYG{l+m+mi}{4}\PYG{p}{]}\PYG{p}{;}
+\PYG{n}{printf}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZpc{}pn}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{a}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 例如 0000006C0D9EF908}
+\PYG{n}{printf}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZpc{}pn}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 例如 0000006C0D9EFA00}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010229 p
+
+从这些地址可以看出，\texttt{a}的地址确实是8的倍数，\texttt{b}的地址是256（十六进制的100）的倍数。
+
+
+%%C010230 p
+
+要查询某个类型的对齐，我们使用\texttt{alignof}运算符。与\texttt{sizeof}不同，该运算符只能作用于type-id，不能作用于变量或类的数据成员。可作用的类型可以是完整类型、数组类型或引用类型。对于数组，返回的是元素类型的对齐；对于引用，返回的是被引用类型的对齐。以下是几个例子：
+
+
+%%C010231 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.226\hsize\raggedright\arraybackslash}X>{\hsize=0.774\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{求值结果}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{求值结果}} \\
+\endhead
+\myttbr{alignof(\allowbreak{}char)} & 1，因为\myttbr{char}的自然对齐是1 \\
+\myttbr{alignof(\allowbreak{}int)} & 4，因为\myttbr{int}的自然对齐是4 \\
+\myttbr{alignof(\allowbreak{}int*)} & 32位下是4，64位下是8，即指针的对齐\\
+\myttbr{alignof(\allowbreak{}int[4])} & 4，因为元素类型的自然对齐是4 \\
+\myttbr{alignof(\allowbreak{}foo\&)} & 8，因为被引用类型即类\myttbr{foo}所指定的对齐为8（如上一个例子所示）\\
+\end{xltabular}
+\myTableEnd
+
+
+%%C010232 h2
+
+\section{使用限定作用域枚举}
+
+
+%%C010233 p
+
+枚举是C++中的一种基本类型，它定义了一组值，其底层类型始终是整型。其中具名的常量值称为枚举项（enumerator）。用关键字\texttt{enum}声明的枚举称为\textit{非限定作用域枚举}，用\texttt{enum class}或\texttt{enum struct}声明的枚举称为\textit{限定作用域枚举}。后者是C++11引入的，用于解决非限定作用域枚举的若干问题。
+
+
+%%C010234 h3
+
+\subsection{具体做法}
+
+
+%%C010235 li
+
+\begin{itemize}
+\item 优先使用限定作用域枚举，而不是非限定作用域枚举。
+
+
+%%C010236 li
+
+\item 要使用限定作用域枚举，应使用\texttt{enum class}或\texttt{enum struct}来声明枚举：
+
+
+%%C010237 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Status}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{Unknown}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Created}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Connected}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{Status}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Status}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Created}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010238 note
+
+\begin{myNote}
+\texttt{enum class}与\texttt{enum struct}声明是等价的，在本案例以及本书其余部分中，我们将统一使用\texttt{enum class}。
+\end{myNote}
+
+
+%%C010239 h3
+
+\subsection{工作原理}
+
+
+%%C010240 p
+
+非限定作用域枚举有几个问题，给开发者带来麻烦：
+
+
+%%C010241 li
+
+\begin{itemize}
+\item 它们把枚举项导出到外围作用域（这也是它们被称为非限定作用域枚举的原因），这带来两个缺点：如果同一命名空间中的两个枚举含有同名枚举项，就会造成名称冲突；并且无法用完全限定名称来使用枚举项：
+
+
+%%C010242 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{n+nc}{Status}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{Unknown}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Created}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Connected}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{enum}\PYG{+w}{ }\PYG{n+nc}{Codes}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{OK}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Failure}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Unknown}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// 错误}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{status}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Status}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Created}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// 错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010243 li
+
+\item 在C++11之前，它们无法指定底层类型，而底层类型必须是整型。该类型不能大于\texttt{int}，除非枚举项的值无法放入有符号或无符号整型。正因如此，枚举的前向声明在当时无法实现。原因是：在枚举项的值定义之前，底层类型是未知的，编译器无法挑选合适的整数类型，因而枚举的大小也就未知。这个问题在C++11中已经修复。
+
+
+%%C010244 li
+
+\item 枚举项的值会隐式转换为\texttt{int}。这意味着你可以有意或无意地把具有特定含义的枚举与整数混用（那些整数甚至可能与枚举的含义毫无关系），而编译器无法给出警告：
+
+
+%%C010245 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{n+nc}{Codes}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{OK}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Failure}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{include\PYGZus{}offset}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{pixels}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{c+cm}{/*...*/}\PYG{p}{\PYGZcb{}}
+\PYG{n}{include\PYGZus{}offset}\PYG{p}{(}\PYG{n}{Failure}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010246 p
+
+限定作用域枚举本质上是强类型枚举，其行为与非限定作用域枚举不同：
+
+
+%%C010247 li
+
+\begin{itemize}
+\item 它们不会把枚举项导出到外围作用域。前面那两个枚举会变成下面这样，不再产生名称冲突，并且可以用完全限定名来使用枚举项：
+
+
+%%C010248 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Status}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{Unknown}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Created}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Connected}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{enum}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Codes}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{OK}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Failure}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Unknown}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 正确}
+\PYG{n}{Codes}\PYG{+w}{ }\PYG{n}{code}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Codes}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Unknown}\PYG{p}{;}\PYG{+w}{               }\PYG{c+c1}{// 正确}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010249 li
+
+\item 你可以指定底层类型。关于非限定作用域枚举底层类型的规则同样适用于限定作用域枚举，区别在于用户可以显式指定底层类型。这也解决了前向声明的问题，因为在定义可用之前就能知道底层类型：
+
+
+%%C010250 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Codes}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{print\PYGZus{}code}\PYG{p}{(}\PYG{n}{Codes}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{code}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k}{enum}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Codes}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{int}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{   }\PYG{n}{OK}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}
+\PYG{+w}{   }\PYG{n}{Failure}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}
+\PYG{+w}{   }\PYG{n}{Unknown}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mh}{0xFFFF0000U}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010251 li
+
+\item 限定作用域枚举的值不再隐式转换为\texttt{int}。把\texttt{enum class}的值赋给整型变量会触发编译错误，除非显式进行类型转换：
+
+
+%%C010252 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{Codes}\PYG{+w}{ }\PYG{n}{c1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Codes}\PYG{o}{:}\PYG{o}{:}\PYG{n}{OK}\PYG{p}{;}\PYG{+w}{                       }\PYG{c+c1}{// 正确}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{c2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Codes}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Failure}\PYG{p}{;}\PYG{+w}{                    }\PYG{c+c1}{// 错误}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{c3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{Codes}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Failure}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// 正确}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010253 h2
+
+\section{对虚函数使用override与final}
+
+
+%%C010254 p
+
+与其他同类编程语言不同，C++没有专门用于声明接口（基本上就是只含纯虚函数的类）的语法，而且在虚函数的声明方式上也存在一些缺陷。在C++中，虚函数用\texttt{virtual}关键字引入。然而在派生类中声明覆盖时，\texttt{virtual}关键字是可选的，这在处理大型类或大型继承层次时会造成困惑。你可能需要沿着继承层次一路上溯到基类，才能弄清某个函数到底是不是虚函数。另一方面，有时又需要确保某个虚函数、甚至某个派生类不能再被覆盖或进一步派生。本案例将介绍如何用C++11的特殊标识符\texttt{override}与\texttt{final}来声明虚函数或类。
+
+
+%%C010255 h3
+
+\subsection{准备工作}
+
+
+%%C010256 p
+
+你应当熟悉C++中的继承与多态，以及抽象类、纯说明符、虚函数和被覆盖函数等概念。
+
+
+%%C010257 h3
+
+\subsection{具体做法}
+
+
+%%C010258 p
+
+要在基类和派生类中都确保虚函数声明正确，同时提升可读性，请这样做：
+
+
+%%C010259 li
+
+\begin{itemize}
+\item 在派生类中声明打算覆盖基类虚函数的虚函数时，始终使用\texttt{virtual}关键字；并且
+
+
+%%C010260 li
+
+\item 始终在虚函数声明或定义的声明符部分之后使用\texttt{override}特殊标识符。
+
+
+%%C010261 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Base}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{bar}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foobar}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{Base::foobar}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Derived1}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Base}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{bar}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foobar}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Derived2}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Derived1}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010262 note
+
+\begin{myNote}
+声明符（declarator）是函数类型中除去返回类型之后的那部分。
+\end{myNote}
+
+
+%%C010263 p
+
+要确保函数不能再被覆盖、或类不能再被派生，请使用\texttt{final}特殊标识符：
+
+
+%%C010264 li
+
+\begin{itemize}
+\item 放在虚函数声明或定义的声明符部分之后，以阻止派生类中进一步覆盖：
+
+
+%%C010265 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Derived2}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Derived1}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{final}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010266 li
+
+\item 放在类声明中的类名之后，以阻止该类被进一步派生：
+
+
+%%C010267 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Derived4}\PYG{+w}{ }\PYG{k}{final}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Derived1}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010268 h3
+
+\subsection{工作原理}
+
+
+%%C010269 p
+
+\texttt{override}的工作方式很简单：在虚函数的声明或定义中，它确保该函数确实覆盖了基类的某个函数，否则编译器会报错。
+
+
+%%C010270 p
+
+要注意，\texttt{override}与\texttt{final}都是特殊标识符，只在成员函数的声明或定义中才有这层含义。它们不是保留关键字，在程序的其他地方仍可作为用户自定义标识符使用。
+
+
+%%C010271 p
+
+使用\texttt{override}特殊标识符有助于编译器发现某个虚函数其实没有覆盖任何函数的情况，如下例所示：
+
+
+%%C010272 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Base}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{bar}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Derived1}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Base}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+c1}{// 为提高可读性，仍写上 virtual 关键字}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{bar}\PYG{p}{(}\PYG{k+kt}{char}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+c1}{// 错误：Base 中没有 bar(char const)}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+%%C010273 p
+
+另一个特殊标识符\texttt{final}用在成员函数的声明或定义中，表示该函数是虚函数，不能在派生类中被重写。如果派生类试图重写这个虚函数，编译器就会报错：
+
+
+%%C010274 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Derived2}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Derived1}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{final}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Derived3}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Derived2}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{c+c1}{// 错误}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010275 p
+
+\texttt{final}说明符也可以用在类声明中，表示该类不能被继承：
+
+
+%%C010276 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Derived4}\PYG{+w}{ }\PYG{k}{final}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Derived1}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{virtual}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{override}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Derived5}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{Derived4}\PYG{+w}{ }\PYG{c+c1}{// 错误}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010277 p
+
+由于\texttt{override}与\texttt{final}只在上述特定语境中才有这种特殊含义，它们实际上并不是保留关键字，因此你仍然可以在C++代码的其他任何地方使用这两个名字。这就保证了C++11之前编写的既有代码不会因为把这两个名字用作标识符而出错：
+
+
+%%C010278 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{final}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{override}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010279 h2
+
+\section{用基于范围的for循环遍历范围}
+
+
+%%C010280 p
+
+许多编程语言都支持\texttt{for}循环的一种变体，称为\texttt{for each}，也就是对集合中的元素重复执行一组语句。在C++11之前，C++核心语言并不支持这种写法，最接近的特性是标准库中名为\texttt{std::\allowbreak{}for\_\allowbreak{}each}的通用算法，它把一个函数应用到某个范围中的所有元素上。C++11为\texttt{for each}引入了语言层面的支持，实际名称是\textit{基于范围的for循环}。新的C++17标准又对最初的语言特性做了若干改进。
+
+
+%%C010281 h3
+
+\subsection{准备工作}
+
+
+%%C010282 p
+
+在C++11中，基于范围的for循环的一般语法如下：
+
+
+%%C010283 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{+w}{ }\PYG{n}{range\PYGZus{}declaration}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{range\PYGZus{}expression}\PYG{+w}{ }\PYG{p}{)}\PYG{+w}{ }\PYG{n}{loop\PYGZus{}statement}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010284 p
+
+为了演示基于范围的for循环的各种用法，我们将使用下面这几个返回元素序列的函数：
+
+
+%%C010285 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{getRates}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{multimap}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{getRates2}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{multimap}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{13}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010286 h3
+
+\subsection{具体做法}
+
+
+%%C010287 p
+
+基于范围的for循环可以有多种用法：
+
+
+%%C010288 li
+
+\begin{itemize}
+\item 为序列中的元素指定具体类型：
+
+
+%%C010289 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{rates}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{getRates}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{rates}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{rates}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{*}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010290 li
+
+\item 不指定类型，让编译器自行推导：
+
+
+%%C010291 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{getRates}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{rates}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{*}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{rates}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010292 li
+
+\item 在C++17中使用结构化绑定与分解声明：
+
+
+%%C010293 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{rate}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{flag}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{getRates2}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{rate}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C010294 h3
+
+\subsection{工作原理}
+
+
+%%C010295 p
+
+前面在\textit{具体做法}一节中给出的基于范围的for循环写法基本上只是语法糖，编译器会把它转换成别的形式。在C++17之前，编译器生成的代码通常是这样的：
+
+
+%%C010296 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}range}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{range\PYGZus{}expression}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}begin}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{begin\PYGZus{}expr}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}end}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{end\PYGZus{}expr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{\PYGZus{}\PYGZus{}begin}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}end}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{\PYGZus{}\PYGZus{}begin}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{range\PYGZus{}declaration}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{\PYGZus{}\PYGZus{}begin}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{loop\PYGZus{}statement}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010297 p
+
+这段代码中的\texttt{begin\_\allowbreak{}expr}与\texttt{end\_\allowbreak{}expr}具体取什么，取决于范围本身的类型：
+
+
+%%C010298 li
+
+\begin{itemize}
+\item 对于类C数组，\texttt{\_\_\allowbreak{}range}与\texttt{\_\_\allowbreak{}bound}是数组中的元素个数。
+
+
+%%C010299 li
+
+\item 对于带有\texttt{begin()}与\texttt{end()}成员的类类型（无论这些成员是什么类型、是否可访问）：取\texttt{\_\_\allowbreak{}range.\allowbreak{}begin()}与\texttt{\_\_\allowbreak{}range.\allowbreak{}end()}。
+
+
+%%C010300 li
+
+\item 其他情况则取\texttt{begin(\_\_\allowbreak{}range)}与\texttt{end(\_\_\allowbreak{}range)}，它们通过参数依赖查找确定。
+
+\end{itemize}
+
+
+%%C010301 p
+
+要注意，如果某个类含有名为\texttt{begin}或\texttt{end}的成员（函数、数据成员或枚举项），无论其类型与可访问性如何，它们都会被选作\texttt{begin\_\allowbreak{}expr}与\texttt{end\_\allowbreak{}expr}。因此，这样的类类型无法用于基于范围的for循环。
+
+
+%%C010302 p
+
+在C++17中，编译器生成的代码略有不同：
+
+
+%%C010303 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}range}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{range\PYGZus{}expression}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}begin}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{begin\PYGZus{}expr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}end}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{end\PYGZus{}expr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}begin}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}end}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{\PYGZus{}\PYGZus{}begin}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{range\PYGZus{}declaration}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{\PYGZus{}\PYGZus{}begin}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{loop\PYGZus{}statement}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010304 p
+
+新标准取消了起始表达式与结束表达式必须具有相同类型的限制。结束表达式不必是真正的迭代器，但必须能与迭代器做不等比较。这样做的一个好处是，范围可以由一个谓词来界定。
+
+
+%%C010305 h3
+
+\subsection{延伸阅读}
+
+
+%%C010306 li
+
+\begin{itemize}
+\item \textit{让自定义类型支持基于范围的for循环}
+
+\end{itemize}
+
+
+%%C010307 h2
+
+\section{让自定义类型支持基于范围的for循环}
+
+
+%%C010308 p
+
+如上一个案例所述，基于范围的for循环（在其他编程语言中称为\texttt{for each}）让你可以遍历范围中的元素，它的语法比标准的\texttt{for}循环更简洁，在很多场景下也让代码更易读。不过，基于范围的for循环并不能对任何表示范围的类型开箱即用，它要求该类型（非数组类型）存在\texttt{begin()}与\texttt{end()}函数，既可以是成员函数也可以是自由函数。本案例将说明如何让自定义类型也能用于基于范围的for循环。
+
+
+%%C010309 h3
+
+\subsection{准备工作}
+
+
+%%C010310 p
+
+如果你需要理解基于范围的for循环的工作方式，以及编译器为此类循环生成什么代码，建议先阅读\textit{用基于范围的for循环遍历范围}这个案例，再继续本案例。
+
+
+%%C010311 p
+
+为了演示如何让表示序列的自定义类型支持基于范围的for循环，我们将使用下面这个简单数组的实现：
+
+
+%%C010312 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{dummy\PYGZus{}array}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{[}\PYG{n}{Size}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{GetAt}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{Size}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{[}\PYG{n}{index}\PYG{p}{]}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{index out of range}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{SetAt}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{index}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{Size}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{[}\PYG{n}{index}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{out\PYGZus{}of\PYGZus{}range}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{index out of range}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{GetSize}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{Size}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010313 p
+
+本案例的目标是能够写出如下代码：
+
+
+%%C010314 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{;}
+\PYG{n}{arr}\PYG{p}{.}\PYG{n}{SetAt}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{arr}\PYG{p}{.}\PYG{n}{SetAt}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{arr}\PYG{p}{.}\PYG{n}{SetAt}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{for}\PYG{p}{(}\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010315 h3
+
+\subsection{具体做法}
+
+
+%%C010316 p
+
+要让自定义类型能用于基于范围的\texttt{for}循环，你需要做以下几件事：
+
+
+%%C010317 li
+
+\begin{itemize}
+\item 为该类型创建可变的与常量的迭代器，它们必须实现以下运算符：
+
+
+%%C010318 li
+
+\begin{itemize}
+\item \texttt{operator++}，用于递增迭代器。
+
+
+%%C010319 li
+
+\item \texttt{operator*}，用于解引用迭代器并访问它指向的实际元素。
+
+
+%%C010320 li
+
+\item \texttt{operator!=}，用于与另一个迭代器做不等比较。
+
+
+%%C010321 li
+
+\item 为该类型提供自由函数\texttt{begin()}与\texttt{end()}。
+
+\end{itemize}
+
+\end{itemize}
+
+
+%%C010322 p
+
+以前面那个简单范围为例，我们需要提供以下内容：
+
+
+%%C010323 p
+
+下面是一个最小的迭代器类实现：
+
+
+%%C010324 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{C}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{dummy\PYGZus{}array\PYGZus{}iterator\PYGZus{}type}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator\PYGZus{}type}\PYG{p}{(}\PYG{n}{C}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{collection}\PYG{p}{,}
+\PYG{+w}{                            }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{index}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{index}\PYG{p}{(}\PYG{n}{index}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{collection}\PYG{p}{(}\PYG{n}{collection}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{index}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{.}\PYG{n}{index}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{*}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{collection}\PYG{p}{.}\PYG{n}{GetAt}\PYG{p}{(}\PYG{n}{index}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator\PYGZus{}type}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{+}\PYG{o}{+}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{o}{+}\PYG{o}{+}\PYG{n}{index}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{   }\PYG{n}{index}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{C}\PYG{o}{\PYGZam{}}\PYG{+w}{       }\PYG{n}{collection}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010325 p
+
+用于可变迭代器与常量迭代器的别名模板：
+
+
+%%C010326 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{   }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator\PYGZus{}type}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{     }\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}const\PYGZus{}iterator}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{   }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator\PYGZus{}type}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{     }\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010327 p
+
+返回相应起始与结束
+
+
+%%C010328 p
+
+迭代器的自由函数\texttt{begin()}与\texttt{end()}，并为两种别名模板各提供重载：
+
+
+%%C010329 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{begin}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{collection}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{collection}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{end}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{collection}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{collection}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{collection}\PYG{p}{.}\PYG{n}{GetSize}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}const\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{begin}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{collection}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}const\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{collection}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}const\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{end}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{collection}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{dummy\PYGZus{}array\PYGZus{}const\PYGZus{}iterator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{collection}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{collection}\PYG{p}{.}\PYG{n}{GetSize}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010330 h3
+
+\subsection{工作原理}
+
+
+%%C010331 p
+
+有了这套实现，前面那个基于范围的for循环就能按预期编译并执行。在进行参数依赖查找时，编译器会找到我们写的两个\texttt{begin()}与\texttt{end()}函数（它们接受\texttt{dummy\_\allowbreak{}array}的引用），因此生成的代码是合法的。
+
+
+%%C010332 p
+
+在上面的示例中，我们定义了一个迭代器类模板和两个别名模板，分别名为\myttbr{dummy\_\allowbreak{}array\_\allowbreak{}iterator}与\myttbr{dummy\_\allowbreak{}array\_\allowbreak{}const\_\allowbreak{}iterator}。\texttt{begin()}与\texttt{end()}函数各有两个重载，分别对应这两种迭代器。这是必要的，只有如此，前面考虑的容器才能同时用于常量实例与非 常量实例的基于范围的for循环：
+
+
+%%C010333 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{print\PYGZus{}dummy\PYGZus{}array}\PYG{p}{(}\PYG{n}{dummy\PYGZus{}array}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010334 p
+
+让本案例中这个简单范围类支持基于范围的for循环，还有一种可行的替代方案：提供成员\texttt{begin()}与\texttt{end()}函数。一般而言，只有在你拥有并可以修改源代码时这么做才合理。另一方面，本案例给出的方案在所有情况下都适用，应当优先于其他替代方案。
+
+
+%%C010335 h3
+
+\subsection{延伸阅读}
+
+
+%%C010336 li
+
+\begin{itemize}
+\item \textit{创建类型别名与别名模板}
+
+\end{itemize}
+
+
+%%C010337 h2
+
+\section{用explicit构造函数与转换运算符避免隐式转换}
+
+
+%%C010338 p
+
+在C++11之前，只有一个参数的构造函数被视为转换构造函数。从C++11起，所有未加\texttt{explicit}说明符的构造函数都算作转换构造函数。这样的构造函数定义了从其参数类型到类类型的隐式转换。类还可以定义转换运算符，把类类型转换成另一个指定的类型。这些特性在某些场合很有用，但在另一些场合会带来问题。本案例将说明如何使用explicit构造函数与转换运算符。
+
+
+%%C010339 h3
+
+\subsection{准备工作}
+
+
+%%C010340 p
+
+本案例要求你熟悉转换构造函数与转换运算符。在本案例中，你将学会如何编写explicit构造函数与转换运算符，以避免在类型之间发生隐式转换。使用explicit构造函数与转换运算符（称为\textit{用户定义转换函数}）能让编译器报出错误——其中有些是编码错误——并让开发者快速发现并修正这些错误。
+
+
+%%C010341 h3
+
+\subsection{具体做法}
+
+
+%%C010342 p
+
+要声明explicit构造函数与转换运算符（无论它们是函数还是函数模板），只需在声明中使用\texttt{explicit}说明符。
+
+
+%%C010343 p
+
+下面的示例同时展示了一个explicit构造函数和一个转换运算符：
+
+
+%%C010344 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{handle\PYGZus{}t}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{handle\PYGZus{}t}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{handle}\PYG{p}{(}\PYG{n}{h}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{explicit}\PYG{+w}{ }\PYG{k}{operator}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{handle}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{handle}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010345 h3
+
+\subsection{工作原理}
+
+
+%%C010346 p
+
+为了理解为什么需要explicit构造函数以及它们如何工作，我们先看看转换构造函数。下面的类有三个构造函数：一个默认构造函数（无参数）、一个接受\texttt{int}的构造函数，以及一个接受两个参数（\texttt{int}与\texttt{double}）的构造函数。它们除打印一条消息外什么也不做。从C++11起，它们都被视为转换构造函数。这个类还有一个转换运算符，把类型转换为\texttt{bool}：
+
+
+%%C010347 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{foo}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{foo(a)}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{foo(a, b)}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{operator}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010348 p
+
+基于此，可以写出下面这些对象定义（注意注释表示控制台输出）：
+
+
+%%C010349 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f1}\PYG{p}{;}\PYG{+w}{              }\PYG{c+c1}{// foo}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f2}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{           }\PYG{c+c1}{// foo}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n+nf}{f3}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{           }\PYG{c+c1}{// foo(a)}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f4}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}\PYG{+w}{          }\PYG{c+c1}{// foo(a)}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f5}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// foo(a)}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f6}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// foo(a)}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n+nf}{f7}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{2.0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// foo(a, b)}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f8}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{2.0}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// foo(a, b)}
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f9}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{2.0}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// foo(a, b)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010350 p
+
+\texttt{f1}与\texttt{f2}调用默认构造函数。\texttt{f3}、\texttt{f4}、\texttt{f5}与\texttt{f6}调用接受\texttt{int}的构造函数。要注意，这些对象定义虽然写法不同，但彼此等价（\texttt{f3}用函数形式初始化，\texttt{f4}与\texttt{f6}是复制初始化，\texttt{f5}用花括号初始化列表直接初始化）。同样，\texttt{f7}、\texttt{f8}与\texttt{f9}调用带两个参数的构造函数。
+
+
+%%C010351 p
+
+要注意，如果\texttt{foo}定义了一个接受\myttbr{std::\allowbreak{}initializer\_\allowbreak{}list}的构造函数，那么所有使用\texttt{\{\}}的初始化都会解析到该构造函数：
+
+
+%%C010352 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{foo}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{initializer\PYGZus{}list}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{l}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{foo(l)}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010353 p
+
+在这种情况下，\texttt{f5}与\texttt{f6}会打印\texttt{foo(\allowbreak{}l)}，而\texttt{f8}与\texttt{f9}会产生编译错误，因为初始化列表中的所有元素都必须是整数。
+
+
+%%C010354 p
+
+这些看起来都没问题，但隐式转换构造函数会带来一些隐式转换并非我们本意的场景：
+
+
+%%C010355 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{bar}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{bar}\PYG{p}{(}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{             }\PYG{c+c1}{// foo()}
+\PYG{n}{bar}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{              }\PYG{c+c1}{// foo(a)}
+\PYG{n}{bar}\PYG{p}{(}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{2.0}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{     }\PYG{c+c1}{// foo(a, b)}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010356 p
+
+上面示例中到\texttt{bool}的转换运算符，也让我们可以在期望布尔值的地方使用\texttt{foo}对象：
+
+
+%%C010357 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{flag}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{f1}\PYG{p}{;}
+\PYG{k}{if}\PYG{p}{(}\PYG{n}{f2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{f3}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{f4}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{k}{if}\PYG{p}{(}\PYG{n}{f5}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{f6}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010358 p
+
+前两个例子是把\texttt{foo}当作布尔值使用的例子，而后两个做加法与相等判断的例子很可能是错误的，因为我们最可能想要的是对\texttt{foo}对象做加法、对\texttt{foo}对象做相等比较，而不是对它们隐式转换出的布尔值做这些操作。
+
+
+%%C010359 p
+
+或许更能说明问题出在哪里的现实例子是字符串缓冲区实现。这个类内部包含一个字符缓冲区。它可能提供若干转换构造函数：一个默认构造函数、一个接受表示预分配缓冲区大小的\texttt{size\_\allowbreak{}t}参数的构造函数，以及一个接受\texttt{char}指针、用来分配并初始化内部缓冲区的构造函数。简而言之，这样的字符串缓冲区可能长这样：
+
+
+%%C010360 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{string\PYGZus{}buffer}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{string\PYGZus{}buffer}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{n}{string\PYGZus{}buffer}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{n}{string\PYGZus{}buffer}\PYG{p}{(}\PYG{k+kt}{char}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{operator}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{operator}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010361 p
+
+基于这个定义，我们可以构造以下对象：
+
+
+%%C010362 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{shared\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{char}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{str}\PYG{p}{;}
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n}{sb1}\PYG{p}{;}\PYG{+w}{             }\PYG{c+c1}{// 空缓冲区}
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n+nf}{sb2}\PYG{p}{(}\PYG{l+m+mi}{20}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// 20 个字符的缓冲区}
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n+nf}{sb3}\PYG{p}{(}\PYG{n}{str}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// 由输入参数初始化缓冲区}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010363 p
+
+\texttt{sb1}用默认构造函数创建，因此缓冲区为空；\texttt{sb2}用单参数构造函数初始化，参数值表示内部缓冲区的字符数；\texttt{sb3}用一个已有缓冲区初始化，该缓冲区用于确定内部缓冲区的大小，并把它的内容复制到内部缓冲区中。不过，同一个定义也允许下面这些对象定义：
+
+
+%%C010364 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{n+nc}{ItemSizes}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{DefaultHeight}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Large}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{MaxSize}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n}{b4}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{a}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{;}
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n}{b5}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{MaxSize}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010365 p
+
+在这个例子里，\texttt{b4}用一个\texttt{char}初始化。由于存在到\texttt{size\_\allowbreak{}t}的隐式转换，会调用单参数构造函数。这里的意图并不明确；也许本意是\texttt{“a”}而不是\texttt{‘a’}，那样就会调用第三个构造函数。而\texttt{b5}很可能是个错误，因为\texttt{MaxSize}是表示\texttt{ItemSizes}的枚举项，与字符串缓冲区的大小毫无关系。编译器完全不会指出这些错误情形。
+
+%%C010366 p
+
+在构造函数声明中使用\texttt{explicit}说明符，该构造函数就成为显式构造函数，不再允许对类类型的对象做隐式构造。为说明这一点，我们稍微修改前面出现的\texttt{string\_\allowbreak{}buffer}类，把全部构造函数都声明为explicit：
+
+
+%%C010367 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{string\PYGZus{}buffer}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{string\PYGZus{}buffer}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{string\PYGZus{}buffer}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{string\PYGZus{}buffer}\PYG{p}{(}\PYG{k+kt}{char}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{explicit}\PYG{+w}{ }\PYG{k}{operator}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{explicit}\PYG{+w}{ }\PYG{k}{operator}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010368 p
+
+这一改动很小，但前一个例子中\texttt{b4}和\texttt{b5}的定义不再有效，而且本身就是错误的，因为在重载决议期间，从\texttt{char}或\texttt{int}到\texttt{size\_\allowbreak{}t}的隐式转换不再可用，编译器无法判断应该调用哪个构造函数。结果是\texttt{b4}和\texttt{b5}都会产生编译错误。要注意，即使构造函数是explicit的，\texttt{b1}、\texttt{b2}和\texttt{b3}仍然是有效的定义。
+
+
+%%C010369 p
+
+在这种情况下，解决问题的唯一办法是提供从\texttt{char}或\texttt{int}到\texttt{string\_\allowbreak{}buffer}的显式转换：
+
+
+%%C010370 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n}{b4}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{string\PYGZus{}buffer}\PYG{p}{(}\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{a}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n}{b5}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{string\PYGZus{}buffer}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{MaxSize}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n}{b6}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{string\PYGZus{}buffer}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{a}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010371 p
+
+有了显式构造函数，编译器就能立刻指出错误的情形，开发者可以据此做出反应：要么用正确的值修正初始化，要么提供显式转换。
+
+
+%%C010372 note
+
+\begin{myNote}[tip]
+只有在使用复制初始化时才会如此，使用函数式初始化或统一初始化时不会出现这种情况。
+\end{myNote}
+
+
+%%C010373 p
+
+在使用显式构造函数的情况下，下面的定义仍然可以成立（但仍是错误的）：
+
+
+%%C010374 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n}{b7}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{a}\PYG{l+s+sc}{\PYGZsq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{n}{string\PYGZus{}buffer}\PYG{+w}{ }\PYG{n}{b8}\PYG{p}{(}\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{a}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010375 p
+
+与构造函数类似，转换运算符也可以声明为explicit（如前所示）。此时，从对象类型到转换运算符所指明类型的隐式转换不再可行，必须使用显式转换。仍以前面定义的\texttt{string\_\allowbreak{}buffer}对象\texttt{b1}和\texttt{b2}为例，转换运算符\texttt{operator bool}为explicit后，下面的写法都不再可行：
+
+
+%%C010376 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{b1}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{b2}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{k}{if}\PYG{p}{(}\PYG{n}{b1}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{b2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010377 p
+
+而要改为显式转换为\texttt{bool}：
+
+
+%%C010378 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{b1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{b2}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{p}{(}\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{b1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{bool}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{b2}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010379 h3
+
+\subsection{延伸阅读}
+
+
+%%C010380 li
+
+\begin{itemize}
+\item \textit{理解统一初始化}
+
+\end{itemize}
+
+
+%%C010381 h2
+
+\section{用匿名命名空间代替静态全局变量}
+
+
+%%C010382 p
+
+程序越大，链接时遇到与文件局部名称冲突的可能性就越高。在某个源文件中声明、本应只属于该翻译单元的函数或变量，可能与另一个翻译单元中声明的同类函数或变量冲突。这是因为所有未声明为static的符号都具有外部链接性，其名称必须在整个程序中唯一。C语言中针对这一问题的典型做法是把这些符号声明为static，把链接性从外部改为内部，从而使它们成为翻译单元局部的。本案例将介绍该问题的C++解法。
+
+
+%%C010383 h3
+
+\subsection{准备工作}
+
+
+%%C010384 p
+
+本案例将讨论全局函数、静态函数与变量、命名空间以及翻译单元等概念。除此之外，你还需要理解内部链接与外部链接的区别，这一点是本案例的关键。
+
+
+%%C010385 h3
+
+\subsection{具体做法}
+
+
+%%C010386 p
+
+当你遇到需要把全局符号声明为static以避免链接问题的情况时，优先使用匿名命名空间：
+
+
+%%C010387 p
+
+在源文件中声明一个没有名字的命名空间。
+
+
+%%C010388 p
+
+把全局函数或变量的定义放进这个匿名命名空间
+
+
+%%C010389 p
+
+而不要把它们声明为\texttt{static}。
+
+
+%%C010390 p
+
+下面的例子在两个不同的翻译单元中各定义了一个名为\texttt{print()}的函数，它们都位于匿名命名空间中：
+
+
+%%C010391 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+c1}{// file1.cpp}
+\PYG{k}{namespace}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{print}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{message}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{[file1] }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{message}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{file1\PYGZus{}run}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{print}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{run}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{c+c1}{// file2.cpp}
+\PYG{k}{namespace}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{print}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{message}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{[file2] }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{message}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{file2\PYGZus{}run}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{print}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{run}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010392 h3
+
+\subsection{工作原理}
+
+
+%%C010393 p
+
+函数在翻译单元中声明时就具有外部链接性。这意味着来自两个不同翻译单元的两个同名函数会产生链接错误，因为不可能存在两个同名符号。C语言中解决该问题的方式（一些C++代码也这样做）是把函数或变量声明为static，把它的链接性从外部改为内部。这样，它的名字不再导出到翻译单元之外，链接问题也就避免了。
+
+
+%%C010394 p
+
+C++中正确的解法是使用匿名命名空间。当你像上面那样定义命名空间时，编译器会把它转换为下面这样：
+
+
+%%C010395 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+c1}{// file1.cpp}
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{\PYGZus{}unique\PYGZus{}name\PYGZus{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{k}{using}\PYG{+w}{ }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{\PYGZus{}unique\PYGZus{}name\PYGZus{}}\PYG{p}{;}
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{\PYGZus{}unique\PYGZus{}name\PYGZus{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{print}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{message}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{[file1] }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{message}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{file1\PYGZus{}run}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{print}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{run}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010396 p
+
+首先，它声明一个具有唯一名字的命名空间（名字具体是什么、如何生成这个名字属于编译器的实现细节，不必关心）。此时该命名空间是空的，这一行的作用基本上只是把这个命名空间建立起来。其次，一条using指令把\texttt{\_\allowbreak{}unique\_\allowbreak{}name\_}命名空间中的所有内容引入当前命名空间。第三，以编译器生成的名字按它在原始源代码中（当时还没有名字）的写法来定义这个命名空间。
+
+
+%%C010397 p
+
+把翻译单元局部的\texttt{print()}函数定义在匿名命名空间中后，它们只具有局部可见性，但由于现在拥有唯一的外部名字，其外部链接性不再产生链接错误。
+
+
+%%C010398 p
+
+匿名命名空间在涉及模板的一种更隐蔽的情形中也同样有效。模板实参不能使用具有内部链接性的名字，因此无法使用static变量。另一方面，匿名命名空间中的符号具有外部链接性，可以用作模板实参。下面的例子展示了这个问题：声明\texttt{t1}会产生编译错误，因为非类型实参表达式具有内部链接性；而\texttt{t2}是正确的，因为\texttt{Size2}具有外部链接性：
+
+
+%%C010399 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{Size}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{test}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{Size1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{;}
+\PYG{k}{namespace}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{Size2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{test}\PYG{o}{\PYGZlt{}}\PYG{n}{Size1}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{t1}\PYG{p}{;}
+\PYG{n}{test}\PYG{o}{\PYGZlt{}}\PYG{n}{Size2}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{t2}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010400 h3
+
+\subsection{延伸阅读}
+
+
+%%C010401 li
+
+\begin{itemize}
+\item \textit{用内联命名空间实现符号版本管理}
+
+\end{itemize}
+
+
+%%C010402 h2
+
+\section{用内联命名空间实现符号版本管理}
+
+
+%%C010403 p
+
+C++11标准引入了一种新的命名空间，称为\textit{内联命名空间}（inline namespace），它基本上是一种机制，使嵌套命名空间中的声明看起来、用起来都像是外围命名空间的一部分。内联命名空间通过在命名空间声明中使用\texttt{inline}关键字来声明（匿名命名空间也可以内联）。这一特性对库的版本管理很有帮助，本案例将展示如何用内联命名空间为符号做版本管理。通过本案例，你将学会用内联命名空间和条件编译为自己的源代码做版本管理。
+
+
+%%C010404 h3
+
+\subsection{准备工作}
+
+
+%%C010405 p
+
+本案例将讨论命名空间与嵌套命名空间、模板与模板特化，以及使用预处理宏的条件编译。要继续本案例，你需要熟悉这些概念。
+
+
+%%C010406 h3
+
+\subsection{具体做法}
+
+
+%%C010407 p
+
+要提供库的多个版本并让用户决定使用哪一个，可以这样做：
+
+
+%%C010408 li
+
+\begin{itemize}
+\item 把库的内容定义在一个命名空间中。
+
+
+%%C010409 li
+
+\item 把库的每个版本或其中的一部分定义在内层的内联命名空间中。
+
+
+%%C010410 li
+
+\item 使用预处理宏和\texttt{\#if}指令启用库的某个特定版本。
+
+\end{itemize}
+
+
+%%C010411 p
+
+下面的例子展示了一个有两个版本可供客户端使用的库：
+
+
+%%C010412 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{modernlib}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{ifndef LIB\PYGZus{}VERSION\PYGZus{}2}
+\PYG{+w}{  }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{version\PYGZus{}1}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{test}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{endif}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{ifdef LIB\PYGZus{}VERSION\PYGZus{}2}
+\PYG{+w}{  }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{version\PYGZus{}2}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{test}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{endif}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010413 h3
+
+\subsection{工作原理}
+
+
+%%C010414 p
+
+内联命名空间的成员被当作外围命名空间的成员来对待。这样的成员可以被偏特化、显式实例化或显式特化。这是一条传递性质，也就是说，如果命名空间A包含内联命名空间B，而B又包含内联命名空间C，那么C的成员看起来既是B的成员也是A的成员，而B的成员看起来也像是……
+
+
+%%C010415 p
+
+为了更好地理解内联命名空间为什么有用，我们来看一个库随时间从第一版演进到第二版（以及更后面版本）的情形。这个库把全部类型和函数定义在名为\texttt{modernlib}的命名空间下。在第一版中，这个库可能长这样：
+
+
+%%C010416 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{modernlib}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{test}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010417 p
+
+库的客户端可以像下面这样调用，并得到返回值1：
+
+
+%%C010418 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{modernlib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{test}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010419 p
+
+然而，客户端可能会决定对模板函数\texttt{test()}做如下特化：
+
+
+%%C010420 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{modernlib}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{test}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{.}\PYG{n}{a}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{y}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{modernlib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{test}\PYG{p}{(}\PYG{n}{foo}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010421 p
+
+在这种情况下，\texttt{y}的值不再是1，而是42，因为调用的是用户特化的函数。
+
+
+%%C010422 p
+
+到目前为止一切正常，但作为库的开发者，你决定创建库的第二版，同时仍然同时发布第一版和第二版，并让用户通过宏来控制使用哪一个。在第二版中，你提供了\texttt{test()}函数的新实现，它不再返回1，而是返回2。为了能同时提供第一版和第二版的实现，你把它们分别放进名为\texttt{version\_\allowbreak{}1}和\texttt{version\_\allowbreak{}2}的嵌套命名空间，并用预处理宏对库做条件编译：
+
+
+%%C010423 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{modernlib}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{version\PYGZus{}1}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{test}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{ifndef LIB\PYGZus{}VERSION\PYGZus{}2}
+\PYG{k}{using}\PYG{+w}{ }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{version\PYGZus{}1}\PYG{p}{;}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{endif}
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{version\PYGZus{}2}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{test}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{ifdef LIB\PYGZus{}VERSION\PYGZus{}2}
+\PYG{+w}{  }\PYG{k}{using}\PYG{+w}{ }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{version\PYGZus{}2}\PYG{p}{;}
+\PYG{+w}{  }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{endif}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010424 p
+
+突然之间，无论客户端使用的是库的第一版还是第二版，它的代码都会出错。这是因为test函数现在位于嵌套命名空间中，而对\texttt{foo}的特化却写在\texttt{modernlib}命名空间里，实际上应该写在\myttbr{modernlib::\allowbreak{}version\_\allowbreak{}1}或\myttbr{modernlib::\allowbreak{}version\_\allowbreak{}2}中。这是因为模板的特化必须与模板的声明位于同一个命名空间。本例中，客户端需要把代码改成这样：
+
+
+%%C010425 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define LIB\PYGZus{}VERSION\PYGZus{}2}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}modernlib.h\PYGZdq{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{modernlib}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{version\PYGZus{}2}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{test}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{.}\PYG{n}{a}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010426 p
+
+这是个问题，因为库泄漏了实现细节，客户端为了做模板特化必须了解这些细节。采用本案例\textit{具体做法}一节所示的方式，这些内部细节被内联命名空间隐藏起来。使用那种\texttt{modernlib}库的定义后，在\texttt{modernlib}命名空间中特化\texttt{test()}函数的客户端代码不会再出错，因为做模板特化时，\texttt{version\_\allowbreak{}1::\allowbreak{}test()}或\texttt{version\_\allowbreak{}2::\allowbreak{}test()}（取决于客户端实际使用的是哪个版本）表现得就像是外围\texttt{modernlib}命名空间的一部分。实现细节现在对客户端隐藏起来，客户端只看到外围的\texttt{modernlib}命名空间。
+
+
+%%C010427 p
+
+不过，你应该记住以下几点：
+
+
+%%C010428 li
+
+\begin{itemize}
+\item 命名空间\texttt{std}是标准库保留的，永远不应内联。
+
+
+%%C010429 li
+
+\item 如果一个命名空间在首次定义时不是内联的，那么之后不应把它定义为内联。
+
+\end{itemize}
+
+
+%%C010430 h3
+
+\subsection{延伸阅读}
+
+
+%%C010431 li
+
+\begin{itemize}
+\item \textit{用匿名命名空间代替静态全局变量}
+
+
+%%C010432 li
+
+\item \textit{条件编译源代码}案例，出自第4章\textit{预处理与编译}
+
+\end{itemize}
+
+
+%%C010433 h2
+
+\section{用结构化绑定处理多返回值}
+
+
+%%C010434 p
+
+从函数返回多个值是非常常见的需求，但C++一直没有可以直接支持它的第一类方案。开发者只能在几种做法中选择：通过函数的引用参数返回多个值；定义一个结构体来容纳多个值；或者返回\texttt{std::\allowbreak{}pair}或\texttt{std::\allowbreak{}tuple}。前两种做法使用具名变量，优点是能清楚表明返回值的含义，缺点是必须显式定义。\texttt{std::\allowbreak{}pair}的成员名为\texttt{first}和\texttt{second}，\texttt{std::\allowbreak{}tuple}的成员没有名字，只能通过函数调用取得，但可以借助\texttt{std::\allowbreak{}tie().}复制到具名变量中。这些方案都不理想。
+
+
+%%C010435 p
+
+C++17把\texttt{std::\allowbreak{}tie()}的语义用途扩展为第一类核心语言特性，支持把元组的值解包到具名变量中。这一特性称为\textit{结构化绑定}（structured bindings）。
+
+
+%%C010436 h3
+
+\subsection{准备工作}
+
+
+%%C010437 p
+
+本案例要求你熟悉标准工具类型\texttt{std::\allowbreak{}pair}和\texttt{std::\allowbreak{}tuple}，以及工具函数\texttt{std::\allowbreak{}tie()}。
+
+
+%%C010438 h3
+
+\subsection{具体做法}
+
+
+%%C010439 p
+
+要用支持C++17的编译器从函数返回多个值，你应该这样做：
+
+
+%%C010440 p
+
+用\texttt{std::\allowbreak{}tuple}作为返回类型。
+
+
+%%C010441 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{tuple}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{find}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}tuple}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{marius}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1234.5}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010442 p
+
+用结构化绑定把元组的值解包到具名对象中。
+
+
+%%C010443 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{id}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{score}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{find}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010444 p
+
+使用分解声明，在
+
+
+%%C010445 p
+
+\texttt{if}语句或\texttt{switch}语句内部把返回值绑定到变量上。
+
+
+%%C010446 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{id}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{name}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{score}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{find}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{score}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{1000}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{name}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010447 h3
+
+\subsection{工作原理}
+
+
+%%C010448 p
+
+结构化绑定这一语言特性的用法与\texttt{std::\allowbreak{}tie()}完全相同，只是不必为每个需要用\texttt{std::\allowbreak{}tie()}显式解包的值预先定义具名变量。使用结构化绑定时，我们在一条定义语句中用\texttt{auto}说明符定义所有具名变量，由编译器推导每个变量的正确类型。
+
+
+%%C010449 p
+
+为说明这一点，我们来看向\texttt{std::\allowbreak{}map}插入元素的情形。insert方法返回一个\texttt{std::\allowbreak{}pair}，其中包含指向已插入元素（或阻止插入的元素）的迭代器，以及一个表示插入是否成功的布尔值。下面的代码非常直白，但使用\texttt{second}或\texttt{first->\allowbreak{}second}让代码更难阅读，因为你得不断回想它们代表什么：
+
+
+%%C010450 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{result}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{insert}\PYG{p}{(}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{one}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{inserted = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{result}\PYG{p}{.}\PYG{n}{second}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{value = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{result}\PYG{p}{.}\PYG{n}{first}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010451 p
+
+前面的代码可以用\texttt{std::\allowbreak{}tie}变得更易读，它把元组解包到各个对象中（也能用于\texttt{std::\allowbreak{}pair}，因为\texttt{std::\allowbreak{}tuple}提供了从\texttt{std::\allowbreak{}pair}的转换赋值）：
+
+
+%%C010452 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{iterator}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{;}
+\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{inserted}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{tie}\PYG{p}{(}\PYG{n}{it}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{inserted}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{insert}\PYG{p}{(}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{one}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{inserted = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{inserted}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{value = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{tie}\PYG{p}{(}\PYG{n}{it}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{inserted}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{insert}\PYG{p}{(}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{inserted = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{inserted}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{          }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{value = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C010453 p
+
+代码不一定更简单，因为它需要预先定义pair被解包到的那些对象。类似地，元组元素越多，需要定义的对象就越多，但使用具名对象让代码更易读。
+
+
+%%C010454 p
+
+C++17的结构化绑定把“将元组元素解包到具名对象”提升为一种语言特性；它不需要使用\texttt{std::\allowbreak{}tie()}，而且对象在声明时就完成初始化：
+
+
+%%C010455 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{;}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{p}{[}\PYG{n}{it}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{inserted}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{insert}\PYG{p}{(}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{one}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{inserted = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{inserted}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{value = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{p}{[}\PYG{n}{it}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{inserted}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{insert}\PYG{p}{(}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{inserted = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{inserted}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}
+\PYG{+w}{            }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{value = }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+%%C010456 p
+
+上面的示例中之所以必须使用多个块，是因为同一个块内不能重复声明变量，而结构化绑定本身就意味着一次使用\texttt{auto}说明符的声明。因此，如果你需要像上例那样多次调用并使用结构化绑定，就必须换用不同的变量名，或者像上面那样分成多个块。另一种做法是避开结构化绑定，改用\texttt{std::\allowbreak{}tie()}，因为它可以在同一组变量上多次调用，所以这些变量只需声明一次。
+
+
+%%C010457 p
+
+在C++17中，还可以在\texttt{if}和\texttt{switch}语句中以\myttbr{if(\allowbreak{}init; condition)}与\myttbr{switch(\allowbreak{}init; condition)}的形式声明变量。这种写法可以与结构化绑定结合，从而得到更简洁的代码。下面的示例尝试向map中插入一个新值。调用的结果被解包到两个变量\texttt{it}与\texttt{inserted}，它们在\texttt{if}语句的初始化部分中定义，作用域属于该\texttt{if}语句。\texttt{if}语句的条件由插入结果对象的值求值：
+
+
+%%C010458 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{if}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{it}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{inserted}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{.}\PYG{n}{insert}\PYG{p}{(}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{inserted}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{it}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{endl}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}

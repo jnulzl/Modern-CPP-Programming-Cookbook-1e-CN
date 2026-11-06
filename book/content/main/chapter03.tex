@@ -1,0 +1,2565 @@
+%%C030001 p
+
+本章包含以下案例：
+
+
+%%C030002 li
+
+\begin{itemize}
+\item 默认化与删除的函数
+
+
+%%C030003 li
+
+\item 把lambda用于标准算法
+
+
+%%C030004 li
+
+\item 使用泛型lambda
+
+
+%%C030005 li
+
+\item 编写递归lambda
+
+
+%%C030006 li
+
+\item 编写参数个数可变的函数模板
+
+
+%%C030007 li
+
+\item 用折叠表达式简化可变参数函数模板
+
+
+%%C030008 li
+
+\item 实现高阶函数map与fold
+
+
+%%C030009 li
+
+\item 把函数组合成高阶函数
+
+
+%%C030010 li
+
+\item 统一调用任何可调用对象
+
+\end{itemize}
+
+
+%%C030011 h2
+
+\section{引言}
+
+
+%%C030012 p
+
+函数是编程中的基础概念；无论讨论什么主题，我们最后都要写函数。想用一章的篇幅把函数讲完，不仅困难，也不够合理。本书其他各章也都有与函数相关的案例。不过本章覆盖的是与函数和可调用对象相关的现代语言特性，重点是lambda表达式、高阶函数这类来自函数式语言的概念，以及参数个数可变且类型安全的函数。
+
+
+%%C030013 h2
+
+\section{默认化与删除的函数}
+
+
+%%C030014 p
+
+C++中，类有一些特殊成员（构造函数、析构函数和运算符），它们既可以由编译器默认实现，也可以由开发者提供。可是，哪些成员可以被默认实现的规则有些复杂，容易引出问题。另一方面，开发者有时希望阻止对象被复制、被移动或以某种特定方式构造，用这些特殊成员配合各种技巧就能做到。C++11标准允许函数被删除或默认化，从而简化了其中许多做法，具体方式将在下一节介绍。
+
+
+%%C030015 h3
+
+\subsection{准备工作}
+
+
+%%C030016 p
+
+本案例要求你了解什么是特殊成员函数，以及可复制与可移动分别意味着什么。
+
+
+%%C030017 h3
+
+\subsection{具体做法}
+
+
+%%C030018 p
+
+使用下面的语法来指定函数应如何处理：
+
+
+%%C030019 li
+
+\begin{itemize}
+\item 要把函数默认化，就用\texttt{=default}代替函数体。只有带默认实现的类特殊成员函数才能被默认化：
+
+
+%%C030020 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030021 li
+
+\item 要删除函数，就用\texttt{=delete}代替函数体。任何函数都可以被删除，包括非成员函数：
+
+
+%%C030022 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{k+kt}{int}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C030023 p
+
+使用默认化和删除的函数可以实现多种设计目标，例如下面这些例子：
+
+
+%%C030024 li
+
+\begin{itemize}
+\item 要实现一个不可复制、并且隐式地不可移动的类，就把复制操作声明为删除：
+
+
+%%C030025 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo\PYGZus{}not\PYGZus{}copyable}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{foo\PYGZus{}not\PYGZus{}copyable}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{foo\PYGZus{}not\PYGZus{}copyable}\PYG{p}{(}\PYG{n}{foo\PYGZus{}not\PYGZus{}copyable}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{foo\PYGZus{}not\PYGZus{}copyable}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{foo\PYGZus{}not\PYGZus{}copyable}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030026 li
+
+\item 要实现一个不可复制但可移动的类，就把复制操作声明为删除，并显式实现移动操作（同时提供所需的任何其他构造函数）：
+
+
+%%C030027 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{data\PYGZus{}wrapper}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{Data}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{data\PYGZus{}wrapper}\PYG{p}{(}\PYG{n}{Data}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{(}\PYG{n}{d}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{o}{\PYGZti{}}\PYG{n}{data\PYGZus{}wrapper}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{n}{data\PYGZus{}wrapper}\PYG{p}{(}\PYG{n}{data\PYGZus{}wrapper}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{n}{data\PYGZus{}wrapper}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{data\PYGZus{}wrapper}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{n}{data\PYGZus{}wrapper}\PYG{p}{(}\PYG{n}{data\PYGZus{}wrapper}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{o}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{n}{data}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{o}\PYG{p}{.}\PYG{n}{data}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{o}\PYG{p}{.}\PYG{n}{data}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{n}{data\PYGZus{}wrapper}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{data\PYGZus{}wrapper}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{o}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{this}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{o}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{data}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{o}\PYG{p}{.}\PYG{n}{data}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{o}\PYG{p}{.}\PYG{n}{data}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{nullptr}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030028 li
+
+\item 要确保函数只能用特定类型的对象调用，或许还想阻止类型提升，就为该函数提供被删除的重载（下面这个自由函数的例子同样适用于任何类的成员函数）：
+
+
+%%C030029 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{run}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{val}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{run}\PYG{p}{(}\PYG{k+kt}{long}\PYG{+w}{ }\PYG{n}{val}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{c+c1}{// can only be called with long integers}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C030030 h3
+
+\subsection{工作原理}
+
+
+%%C030031 p
+
+类有一些可以由编译器默认实现的特殊成员：默认构造函数、复制构造函数、移动构造函数、复制赋值、移动赋值和析构函数（关于移动语义的讨论，参见\texttt{Chapter 9}（\textit{健壮性与性能}）中的\textit{实现移动语义}案例）。如果你不实现它们，编译器就会实现，从而让类的实例可以被创建、移动、复制和析构。不过，如果你显式提供了其中一个或多个特殊成员函数，编译器就不会按下面的规则生成其余的：
+
+
+%%C030032 li
+
+\begin{itemize}
+\item 如果存在用户定义的构造函数，则默认构造函数不会被默认生成。
+
+
+%%C030033 li
+
+\item 如果存在用户定义的虚析构函数，则默认构造函数不会被默认生成。
+
+
+%%C030034 li
+
+\item 如果存在用户定义的移动构造函数或移动赋值运算符，则复制构造函数和复制赋值运算符不会被默认生成。
+
+
+%%C030035 li
+
+\item 如果存在用户定义的复制构造函数、移动构造函数、复制赋值运算符、移动赋值运算符或析构函数，则移动构造函数和移动赋值运算符不会被默认生成。
+
+
+%%C030036 li
+
+\item 如果存在用户定义的复制构造函数或析构函数，则复制赋值运算符会被默认生成。
+
+
+%%C030037 li
+
+\item 如果存在用户定义的复制赋值运算符或析构函数，则复制构造函数会被默认生成。
+
+\end{itemize}
+
+
+%%C030038 note
+
+\begin{myNote}
+要注意，上面列表中的最后两条规则已被弃用，你的编译器可能不再支持它们。
+\end{myNote}
+
+
+%%C030039 p
+
+有时开发者需要为这些特殊成员提供空实现，或者把它们隐藏起来，以阻止类的实例以某种特定方式构造。一个典型的例子是不应被复制的类。经典做法是提供一个默认构造函数，并隐藏复制构造函数和复制赋值运算符。这样做虽然可行，但显式定义的默认构造函数会使该类不再被视为平凡类型，因而也不再是POD类型（可以用\texttt{reinterpret\_\allowbreak{}cast}构造）。现代的做法是使用上一节所示的删除函数。
+
+
+%%C030040 p
+
+当编译器在函数定义中遇到\texttt{=default}时，它会给出默认实现。前面提到的特殊成员函数规则依然适用。函数可以在类体之外声明为\texttt{=default}，当且仅当它为内联时：
+
+
+%%C030041 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{n}{foo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{foo}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k+kr}{inline}\PYG{+w}{ }\PYG{n}{foo}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{foo}\PYG{o}{:}\PYG{o}{:}\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{foo}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030042 p
+
+当编译器在函数定义中遇到\texttt{=delete}时，它会阻止对该函数的调用。不过，该函数仍然参与重载决议，只有当被删除的函数是最佳匹配时，编译器才会报错。例如，给定前面为\texttt{run()}函数定义的这些重载，就只有用长整型调用才可行。用任何其他类型的实参调用——包括\texttt{int}，而\texttt{int}存在到\texttt{long}的自动类型提升——都会使某个被删除的重载被视为最佳匹配，于是编译器报错：
+
+
+%%C030043 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{run}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// 错误，匹配到被删除的重载}
+\PYG{n}{run}\PYG{p}{(}\PYG{l+m+mf}{42L}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 正确，允许长整型实参}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030044 p
+
+要注意，已经声明过的函数不能被删除，因为\texttt{=delete}定义必须是翻译单元中的首次声明：
+
+
+%%C030045 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{forward\PYGZus{}declared\PYGZus{}function}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// ...}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{forward\PYGZus{}declared\PYGZus{}function}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 错误}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030046 note
+
+\begin{myNote}
+关于类特殊成员函数的经验法则（也称为\textit{五项法则}）是：如果你显式定义了复制构造函数、移动构造函数、复制赋值运算符、移动赋值运算符或析构函数中的任何一个，就必须显式定义或默认化它们全部。
+\end{myNote}
+
+
+%%C030047 h2
+
+\section{把lambda用于标准算法}
+
+
+%%C030048 p
+
+C++最重要的现代特性之一是lambda表达式，它也被称为lambda函数或简称lambda。lambda表达式让我们能够定义匿名函数对象，这些对象可以捕获当前作用域中的变量，可以被调用，也可以作为实参传给函数。lambda的用途很多，本案例将介绍如何把它与标准算法配合使用。
+
+
+%%C030049 h3
+
+\subsection{准备工作}
+
+
+%%C030050 p
+
+本案例讨论的标准算法都接受一个实参，该实参是施加于算法所遍历元素之上的函数或谓词。你需要了解什么是一元函数和二元函数，什么是谓词和比较函数。你还要熟悉函数对象，因为lambda表达式本质上是函数对象的语法糖。
+
+
+%%C030051 h3
+
+\subsection{具体做法}
+
+
+%%C030052 p
+
+向标准算法传递回调时，应当优先使用lambda表达式，而不是函数或函数对象：
+
+
+%%C030053 li
+
+\begin{itemize}
+\item 如果某个lambda只需在一处使用，就在调用处定义匿名lambda表达式：
+
+
+%%C030054 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{numbers}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{9}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{positives}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{count\PYGZus{}if}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030055 li
+
+\item 如果需要在多处调用该lambda，就定义具名lambda，即把它赋给一个变量（通常用\texttt{auto}说明符来指定类型）：
+
+
+%%C030056 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{ispositive}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{positives}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{count\PYGZus{}if}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ispositive}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030057 li
+
+\item 如果需要的几个lambda只有实参类型不同，就使用泛型lambda表达式（C++14起可用）：
+
+
+%%C030058 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{positives}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{count\PYGZus{}if}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C030059 h3
+
+\subsection{工作原理}
+
+
+%%C030060 p
+
+前面第二个列表项中给出的非泛型lambda表达式接受一个常量整数，若它大于\texttt{0}就返回\texttt{true}，否则返回\texttt{false}。编译器会定义一个未命名函数对象，其调用运算符的签名与lambda表达式相同：
+
+
+%%C030061 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}\PYGZus{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n+nf}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030062 p
+
+编译器定义这个未命名函数对象的方式取决于我们如何定义lambda表达式，例如是否捕获变量、是否使用\texttt{mutable}说明符或异常说明，或者是否带有尾置返回类型。前面所示的\myttbr{\_\_\allowbreak{}lambda\_\allowbreak{}name\_\_}函数对象其实是对编译器所生成内容的简化，因为编译器还会定义默认的复制构造函数和移动构造函数、默认的析构函数，以及被删除的赋值运算符。
+
+
+%%C030063 note
+
+\begin{myNote}
+必须清楚地认识到，lambda表达式实际上是一个类。要调用它，编译器需要实例化该类的对象。由lambda表达式实例化出的对象称为\textit{lambda闭包}。
+\end{myNote}
+
+
+%%C030064 p
+
+下一个例子要统计一个范围中大于等于5且小于等于10的元素个数。这种情况下，lambda表达式如下所示：
+
+
+%%C030065 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{numbers}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{9}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{end}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{inrange}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{count\PYGZus{}if}\PYG{p}{(}
+\PYG{+w}{         }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{         }\PYG{p}{[}\PYG{n}{start}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{end}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{start}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{end}\PYG{p}{;}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030066 p
+
+这个lambda以复制（即按值）方式捕获了两个变量\texttt{start}和\texttt{end}。编译器生成的未命名函数对象与我们前面定义的非常相似。加上前面提到的默认和被删除的特殊成员后，这个类看起来像这样：
+
+
+%%C030067 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}2\PYGZus{}\PYGZus{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{start\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{end\PYGZus{}}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{  }\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}2\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{end}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{start\PYGZus{}}\PYG{p}{(}\PYG{n}{start}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{end\PYGZus{}}\PYG{p}{(}\PYG{n}{end}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}2\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}2\PYGZus{}\PYGZus{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}2\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}2\PYGZus{}\PYGZus{}}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}2\PYGZus{}\PYGZus{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}2\PYGZus{}\PYGZus{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}
+\PYG{+w}{   }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{o}{\PYGZti{}}\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}2\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n+nf}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{start\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{end\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030068 p
+
+lambda表达式可以按复制（或按值）捕获变量，也可以按引用捕获，两者还有多种组合方式。不过，不能多次捕获同一个变量，并且捕获列表的开头只能出现\texttt{\&}或\texttt{=}。
+
+
+%%C030069 note
+
+\begin{myNote}
+lambda只能捕获外层函数作用域中的变量。它不能捕获具有静态存储期的变量（即在命名空间作用域中声明的变量，或用\texttt{static}、\texttt{external}说明符声明的变量）。
+\end{myNote}
+
+
+%%C030070 p
+
+下表列出了lambda捕获语义的各种组合。
+
+
+%%C030071 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.198\hsize\raggedright\arraybackslash}X>{\hsize=0.802\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\textbf{Lambda表达式}} & \textcolor{white}{\textbf{说明}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\textbf{Lambda表达式}} & \textcolor{white}{\textbf{说明}} \\
+\endhead
+\myttbr{[]()\{\}} & 不捕获任何东西\\
+\myttbr{[\&]()\{\}} & 按引用捕获一切\\
+\myttbr{[=]()\{\}} & 按复制捕获一切\\
+\myttbr{[\&x]()\{\}} & 仅按引用捕获\myttbr{x} \\
+\myttbr{[x]()\{\}} & 仅按复制捕获\myttbr{x} \\
+\myttbr{[\&x...]()\{\}} & 按引用捕获参数包展开\myttbr{x} \\
+\myttbr{[x...]()\{\}} & 按复制捕获参数包展开\myttbr{x} \\
+\myttbr{[\&, x]()\{\}} & 除\myttbr{x}按复制捕获外，其余全部按引用捕获\\
+\myttbr{[=, \&x]()\{\}} & 除\myttbr{x}按引用捕获外，其余全部按复制捕获\\
+\myttbr{[\&, this]()\{\}} & 除指针\myttbr{this}按复制捕获外（\myttbr{this}总是按复制捕获），其余全部按引用捕获\\
+\myttbr{[x, x]()\{\}} & 错误，\myttbr{x}被捕获了两次\\
+\myttbr{[\&, \&x]()\{\}} & 错误，已按引用捕获一切，不能再指定按引用捕获\myttbr{x} \\
+\myttbr{[=, =x]()\{\}} & 错误，已按复制捕获一切，不能再指定按复制捕获\myttbr{x} \\
+\myttbr{[\&this]()\{\}} & 错误，指针\myttbr{this}总是按复制捕获\\
+\myttbr{[\&, =]()\{\}} & 错误，不能同时按复制和按引用捕获一切\\
+\end{xltabular}
+\myTableEnd
+
+
+%%C030072 p
+
+截至C++17，lambda表达式的一般形式如下所示：
+
+
+%%C030073 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{p}{[}\PYG{n}{capture}\PYG{o}{\PYGZhy{}}\PYG{n}{list}\PYG{p}{]}\PYG{p}{(}\PYG{n}{params}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{mutable}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{exception}\PYG{+w}{ }\PYG{n}{attr}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{ret}
+\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{body}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030074 p
+
+这个语法中列出的所有部分实际上都是可选的，只有捕获列表和函数体例外——不过它们也可以为空。如果不需要参数，参数列表可以省略。返回类型不必指定，因为编译器可以从返回表达式的类型推导出来。\texttt{mutable}说明符（告诉编译器lambda可以修改按复制捕获的变量）、\texttt{constexpr}说明符（告诉编译器生成\texttt{constexpr}调用运算符）、异常说明和属性都是可选的。
+
+
+%%C030075 note
+
+\begin{myNote}
+最简单的lambda表达式是\texttt{[]\{\}}，不过它通常写作\texttt{[]()\{\}}。
+\end{myNote}
+
+
+%%C030076 h3
+
+\subsection{更多内容}
+
+
+%%C030077 p
+
+有些情况下，几个lambda表达式只有实参类型不同。这时可以用泛型的方式写lambda，就像写模板一样，只是类型参数改用\texttt{auto}说明符（不涉及模板语法）。下一个案例会讨论这一点，它列在\textit{延伸阅读}一节中。
+
+
+%%C030078 h3
+
+\subsection{延伸阅读}
+
+
+%%C030079 li
+
+\begin{itemize}
+\item \textit{使用泛型lambda}
+
+
+%%C030080 li
+
+\item \textit{编写递归lambda}
+
+\end{itemize}
+
+
+%%C030081 h2
+
+\section{使用泛型lambda}
+
+
+%%C030082 p
+
+上一个案例中，我们了解了如何编写lambda表达式并将它与标准算法配合使用。C++中，lambda本质上就是未命名函数对象的语法糖，而函数对象是实现了调用运算符的类。不过，和任何其他函数一样，这也可以用模板以泛型方式实现。C++14利用这一点引入了泛型lambda，它不必为参数指定实际类型，而是改用\texttt{auto}说明符。泛型lambda虽然不叫这个名字，但本质上就是lambda模板。当我们需要用同一个lambda处理不同参数类型时，它很有用。
+
+
+%%C030083 h3
+
+\subsection{准备工作}
+
+
+%%C030084 p
+
+建议你先阅读上一个案例\textit{把lambda用于标准}\textit{算法}，再继续本案例。
+
+
+%%C030085 h3
+
+\subsection{具体做法}
+
+
+%%C030086 p
+
+编写泛型lambda：
+
+
+%%C030087 li
+
+\begin{itemize}
+\item 用\texttt{auto}说明符代替实际类型来写lambda表达式的参数。
+
+
+%%C030088 li
+
+\item 当你需要使用多个仅参数类型不同的lambda时。
+
+\end{itemize}
+
+
+%%C030089 p
+
+下面的例子先对整数vector、再对字符串vector使用同一个泛型lambda调用\texttt{std::\allowbreak{}accumulate()}算法。
+
+
+%%C030090 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{numbers}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{9}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{texts}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{hello}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ }\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{world}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{!}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{lsum}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sum}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{accumulate}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{numbers}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{lsum}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{c+c1}{// sum = 22}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{text}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{accumulate}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{texts}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{texts}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{lsum}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{c+c1}{// sum = \PYGZdq{}hello world!\PYGZdq{}s}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030091 h3
+
+\subsection{工作原理}
+
+%%C030092 p
+
+上一节的示例中，我们定义了一个具名lambda表达式，也就是把闭包赋给变量的lambda表达式。这个变量随后作为实参传给\texttt{std::\allowbreak{}accumulate()}函数。这个通用算法接收定义范围的起始与结束迭代器、一个用于累加的初始值，以及一个负责把范围内的每个值累加到总和上的函数。该函数的第一个参数表示当前已累加的值，第二个参数表示当前要累加到总和上的值，并返回新的累加值。注意我没有使用\texttt{add}这个词，因为这一操作并不只是相加，它还可以用来求乘积、拼接字符串，或者做其他把值聚合到一起的运算。
+
+
+%%C030093 p
+
+本示例中对\texttt{std::\allowbreak{}accumulate()}的两次调用几乎相同，只是实参的类型不同：
+
+
+%%C030094 li
+
+\begin{itemize}
+\item 第一次调用传入的是整数范围（来自\texttt{vector<\allowbreak{}int>}）的迭代器、作为初始和的0，以及一个把两个整数相加并返回其和的lambda。这会得到范围内所有整数之和；在本例中为22。
+
+
+%%C030095 li
+
+\item 第二次调用传入的是字符串范围（来自\texttt{vector<\allowbreak{}string>}）的迭代器、作为初始值的空字符串，以及一个把两个字符串相加并返回结果的lambda。这会得到一个字符串，其中包含范围内所有字符串依次拼接后的内容；在本例中，结果是\textit{“hello world!”}。
+
+\end{itemize}
+
+
+%%C030096 p
+
+尽管泛型lambda可以在调用处匿名定义，但这样做其实没有什么意义，因为泛型lambda（如前所述，它基本上就是一个lambda表达式模板）的用途正是复用，正如\textit{具体做法}一节中的示例所示。
+
+
+%%C030097 p
+
+在定义这个用于多次调用\texttt{std::\allowbreak{}accumulate()}的lambda表达式时，我们没有为lambda参数指定具体类型（例如\texttt{int}或\texttt{std::\allowbreak{}string}），而是使用\texttt{auto}说明符让编译器推导类型。当编译器遇到参数类型用\texttt{auto}说明符的lambda表达式时，它会生成一个带调用运算符模板的匿名函数对象。本例中的泛型lambda表达式对应的函数对象大致如下：
+
+
+%%C030098 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}\PYGZus{}}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T2}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{p}{(}\PYG{n}{T1}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T2}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{   }\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}\PYGZus{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{+w}{   }\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}\PYGZus{}}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{+w}{   }\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}\PYGZus{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}\PYGZus{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{+w}{   }\PYG{o}{\PYGZti{}}\PYG{n}{\PYGZus{}\PYGZus{}lambda\PYGZus{}name\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030099 p
+
+调用运算符是一个模板，lambda中每个用\texttt{auto}指定的参数都对应一个类型参数。调用运算符的返回类型也是\texttt{auto}，这意味着编译器会从返回值的类型推导出它。这个运算符模板会用编译器在使用该泛型lambda的上下文中识别出的实际类型来实例化。
+
+
+%%C030100 h3
+
+\subsection{延伸阅读}
+
+
+%%C030101 li
+
+\begin{itemize}
+\item \textit{把lambda用于标准算法}
+
+
+%%C030102 li
+
+\item \textit{尽可能使用auto}案例，见\texttt{Chapter 1}\textit{现代C++语言核心特性}
+
+\end{itemize}
+
+
+%%C030103 h2
+
+\section{编写递归lambda}
+
+
+%%C030104 p
+
+lambda基本上就是匿名函数对象，这意味着它应当可以被递归调用。确实，lambda可以被递归调用；不过实现机制并不直观，需要把lambda赋给函数包装器，并按引用捕获该包装器。虽然可以认为递归lambda并没有太大意义、写成函数可能是更好的设计选择，但本案例还是来看看如何编写递归lambda。
+
+
+%%C030105 h3
+
+\subsection{准备工作}
+
+
+%%C030106 p
+
+为了演示如何编写递归lambda，我们来看众所周知的斐波那契（Fibonacci）函数示例。在C++中通常按如下方式递归实现：
+
+
+%%C030107 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{fib}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{?}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{fib}\PYG{p}{(}\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{fib}\PYG{p}{(}\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030108 h3
+
+\subsection{具体做法}
+
+
+%%C030109 p
+
+要编写递归lambda函数，必须完成以下步骤：
+
+
+%%C030110 li
+
+\begin{itemize}
+\item 在函数作用域中定义lambda。
+
+
+%%C030111 li
+
+\item 把lambda赋给\texttt{std::\allowbreak{}function}包装器。
+
+
+%%C030112 li
+
+\item 在lambda中按引用捕获该\texttt{std::\allowbreak{}function}对象，以便递归调用它。
+
+\end{itemize}
+
+
+%%C030113 p
+
+下面是递归lambda的几个示例：
+
+
+%%C030114 li
+
+\begin{itemize}
+\item 函数作用域中的递归斐波那契lambda表达式，从定义它的作用域中调用：
+
+
+%%C030115 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{sample}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{lfib}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{    }\PYG{p}{[}\PYG{o}{\PYGZam{}}\PYG{n}{lfib}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{?}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{f10}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030116 li
+
+\item 由函数返回的递归斐波那契lambda表达式，可以从任意作用域调用：
+
+
+%%C030117 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{fib\PYGZus{}create}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{f}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{lfib}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{o}{\PYGZam{}}\PYG{n}{lfib}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{?}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{n}{n}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{sample}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{lfib}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{fib\PYGZus{}create}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{f10}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C030118 h3
+
+\subsection{工作原理}
+
+
+%%C030119 p
+
+编写递归lambda时首先要考虑的是：lambda表达式是一个函数对象，要从lambda函数体内部递归调用它，lambda就必须捕获自己的闭包（也就是该lambda的实例化）。换句话说，lambda必须捕获自身，这会带来几点影响：
+
+
+%%C030120 li
+
+\begin{itemize}
+\item 首先，lambda必须有名字；匿名lambda无法被捕获，也就无法再次调用。
+
+
+%%C030121 li
+
+\item 其次，lambda只能定义在函数作用域中。原因是lambda只能捕获函数作用域中的变量，不能捕获具有静态存储期的变量。定义在命名空间作用域中的对象，以及用static或extern说明符定义的对象，都具有静态存储期。如果lambda定义在命名空间作用域中，它的闭包就具有静态存储期，因此lambda无法捕获它。
+
+
+%%C030122 li
+
+\item 第三点影响是，lambda闭包的类型不能保持未指定状态，也就是不能用\texttt{auto}说明符声明。用\texttt{auto}类型说明符声明的变量不可能出现在自己的初始化表达式中，因为处理初始化表达式时该变量的类型还未知。因此，你必须写出lambda闭包的类型。做法是使用通用函数包装器\texttt{std::\allowbreak{}function}。
+
+
+%%C030123 li
+
+\item 最后一点同样重要：必须按引用捕获lambda闭包。如果按拷贝（或按值）捕获，就会复制一份函数包装器，而在捕获时这个包装器还没有初始化，结果我们得到一个无法调用的对象。尽管编译器不会对按值捕获报错，但调用该闭包时会抛出\myttbr{std::\allowbreak{}bad\_\allowbreak{}function\_\allowbreak{}call}。
+
+\end{itemize}
+
+
+%%C030124 p
+
+在\textit{具体做法}一节的第一个示例中，递归lambda定义在另一个名为\texttt{sample()}的函数内部。该lambda表达式的签名和函数体与引言部分定义的一般递归函数\texttt{fib()}相同。lambda闭包被赋给名为\texttt{lfib}的函数包装器，随后lambda按引用捕获它，并从自己的函数体中递归调用它。由于闭包是按引用捕获的，它会在lambda函数体需要调用它时才完成初始化。
+
+
+%%C030125 p
+
+在第二个示例中，我们定义了一个函数，它返回某个lambda表达式的闭包，而这个lambda又用自己收到的实参定义并调用一个递归lambda。当需要从函数返回递归lambda时，必须采用这种模式。之所以必须这样，是因为递归lambda被调用时闭包仍然必须有效。如果闭包在此之前就被销毁，我们就会持有悬空引用，调用它会导致程序异常终止。下面的示例演示了这种错误情形：
+
+
+%%C030126 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+c1}{// 这个 fib\PYGZus{}create 实现有错误}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{fib\PYGZus{}create}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{lfib}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{o}{\PYGZam{}}\PYG{n}{lfib}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{?}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{n}{n}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{sample}\PYG{p}{(}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{lfib}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{fib\PYGZus{}create}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{f10}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{lfib}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// 崩溃}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030127 p
+
+解决办法是像\textit{具体做法}一节那样创建两个嵌套的lambda表达式。\texttt{fib\_\allowbreak{}create()}方法返回一个函数包装器，调用它时会创建捕获自身的递归lambda。这与前面示例中的实现看似只有细微差别，实则根本不同。外层的\texttt{f} lambda不捕获任何东西，尤其不按引用捕获；因此我们不会遇到悬空引用的问题。不过，它在被调用时会创建嵌套lambda（也就是我们真正想调用的那个lambda）的闭包，并返回把该递归\texttt{lfib} lambda应用于其参数的结果。
+
+
+%%C030128 h2
+
+\section{编写参数个数可变的函数模板}
+
+
+%%C030129 p
+
+有时编写参数个数可变的函数，或者成员个数可变的类，是很有用的。典型例子包括\texttt{printf}这类接收一个格式串和可变数量实参的函数，以及\texttt{tuple}这类类。在C++11之前，前者只能借助可变参数宏实现（而它只能写出类型不安全的函数），后者则完全无法实现。C++11引入了可变参数模板，也就是参数个数可变的模板，它使得既能编写类型安全的可变参数函数模板，也能编写成员个数可变的类模板。本案例将介绍如何编写函数模板。
+
+
+%%C030130 h3
+
+\subsection{准备工作}
+
+
+%%C030131 p
+
+参数个数可变的函数称为\textit{可变参数函数}（variadic function）；参数个数可变的函数模板称为\textit{可变参数函数模板}（variadic function template）。学习编写可变参数函数模板并不需要了解C++的可变参数宏（\texttt{va\_\allowbreak{}start}、\texttt{va\_\allowbreak{}end}、\texttt{va\_\allowbreak{}arg}、\texttt{va\_\allowbreak{}copy}、\texttt{va\_\allowbreak{}list}），但它是一个不错的起点。
+
+
+%%C030132 p
+
+我们在前面的案例中已经用过可变参数模板，不过本案例会给出详细说明。
+
+
+%%C030133 h3
+
+\subsection{具体做法}
+
+
+%%C030134 p
+
+要编写可变参数函数模板，必须完成以下步骤：
+
+
+%%C030135 p
+
+定义一个参数个数固定的重载，用来结束编译期
+
+
+%%C030136 p
+
+递归——如果可变参数函数模板的语义需要这样做（参见下面代码中的\texttt{[1]}）。定义一个模板参数包，引入一个可以
+
+
+%%C030137 p
+
+持有任意数量实参（包括零个）的模板参数；这些实参可以是类型、非类型或模板（参见\texttt{[2]}）。定义一个函数参数包，用来持有任意数量的函数实参，
+
+
+%%C030138 p
+
+包括零个；模板参数包与对应函数参数包的大小相同，可以用\texttt{sizeof...}运算符确定（参见\texttt{[3]}）。
+
+
+%%C030139 p
+
+展开参数包，用实际提供的实参替换它
+
+
+%%C030140 p
+
+（参见\texttt{[4]}）。
+
+
+%%C030141 p
+
+下面的示例说明了前面各点，它是一个用\texttt{operator+}把可变数量实参相加的可变参数函数模板：
+
+
+%%C030142 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{                 }\PYG{c+c1}{// [1] 参数个数固定}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{                        }\PYG{c+c1}{//     的重载}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{c+c1}{// [2] typename... Ts}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{rest}\PYG{p}{)}\PYG{+w}{             }\PYG{c+c1}{// [3] Ts... rest}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{rest}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// [4] rest...}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030143 h3
+
+\subsection{工作原理}
+
+
+%%C030144 p
+
+乍一看，前面的实现像是递归，因为函数\texttt{add()}调用了自己；某种程度上确实如此，但这是编译期递归，不会带来任何运行期递归与开销。编译器实际上会根据可变参数函数模板的使用情况，生成若干个参数个数不同的函数，所以这里只涉及函数重载，而不涉及任何递归。不过，实现方式仍像是按递归方式处理参数，并带有终止条件。
+
+
+%%C030145 p
+
+在前面的代码中，可以识别出以下几个关键部分：
+
+
+%%C030146 li
+
+\begin{itemize}
+\item \texttt{Typename... Ts}是一个模板参数包，表示数量可变的模板类型实参。
+
+
+%%C030147 li
+
+\item \texttt{Ts... rest}是一个函数参数包，表示数量可变的函数实参。
+
+
+%%C030148 li
+
+\item \texttt{Rest...}是函数参数包的展开。
+
+\end{itemize}
+
+
+%%C030149 note
+
+\begin{myNote}
+省略号的位置在语法上无关紧要。\texttt{typename... Ts}、\texttt{typename ... Ts}和\texttt{typename ...\allowbreak{}Ts}三者等价。
+\end{myNote}
+
+
+%%C030150 p
+
+在\myttbr{add(\allowbreak{}T head, Ts... rest)}参数中，\texttt{head}是实参列表的第一个元素，\texttt{...\allowbreak{}rest}是包含列表中其余参数（可以为零个或多个）的参数包。在函数体中，\texttt{rest...}是函数参数包的展开，这意味着编译器按其元素顺序用它们替换参数包。在\texttt{add()}函数中，我们基本上是把第一个实参加到其余实参之和上，给人一种递归处理的印象。当只剩一个实参时递归结束，此时会调用第一个\texttt{add()}重载（只有一个参数的那个）并返回其实参的值。
+
+
+%%C030151 p
+
+这种\texttt{add()}函数模板的实现让我们可以这样写代码：
+
+
+%%C030152 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// s1 = 15}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{hello}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ }\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{world}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{!}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// s2 = \PYGZdq{}hello world!\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030153 p
+
+当编译器遇到\texttt{add(\allowbreak{}1, 2, 3, 4, 5)}时，会生成如下几个函数（\texttt{arg1}、\texttt{arg2}等并不是编译器生成的实际名字），从中可以看出这实际上只是对重载函数的调用，而不是递归：
+
+
+%%C030154 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg3}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg4}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg3}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg4}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg3}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg3}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg1}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{arg1}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030155 note
+
+\begin{myNote}[tip]
+在GCC和Clang上，可以用\myttbr{\_\_\allowbreak{}PRETTY\_\allowbreak{}FUNCTION\_\_}宏打印函数的名称和签名。
+\end{myNote}
+
+
+%%C030156 p
+
+在我们写的这两个函数开头加上\myttbr{std::\allowbreak{}cout << \_\_\allowbreak{}PRETTY\_\allowbreak{}FUNCTION\_\_ << std::\allowbreak{}endl}，运行代码就会得到下面的输出：
+
+
+%%C030157 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{T}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{with}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{\PYGZcb{}}\PYG{p}{]}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{with}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{\PYGZcb{}}\PYG{p}{]}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{with}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{\PYGZcb{}}\PYG{p}{]}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{with}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k+kt}{int}\PYG{p}{\PYGZcb{}}\PYG{p}{]}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{with}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030158 p
+
+由于这是函数模板，凡是支持\texttt{operator+}的类型都可以使用它。另一个例子\myttbr{add(\allowbreak{}“hello”s, “ ”s, “world”s, “!”s)}会得到\textit{“hello} \textit{world!“}字符串。不过\texttt{std::\allowbreak{}basic\_\allowbreak{}string}类型对\texttt{operator+}有不同的重载，其中包括把字符串与字符拼接的重载，所以按理我们也应该能写出下面的代码：
+
+
+%%C030159 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{hello}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{world}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{!}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// s3 = \PYGZdq{}hello world!\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030160 p
+
+然而，这样会产生如下的编译错误（为了简洁，我实际上把\myttbr{std::\allowbreak{}basic\_\allowbreak{}string<\allowbreak{}char, std::\allowbreak{}char\_\allowbreak{}traits<\allowbreak{}char>\allowbreak{}, std::\allowbreak{}allocator<\allowbreak{}char> >}换成了string \textit{“hello world”}）：
+
+
+%%C030161 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{In}\PYG{+w}{ }\PYG{n}{instantiation}\PYG{+w}{ }\PYG{n}{of}\PYG{+w}{ }\PYG{err}{\PYGZsq{}}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{with}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{string}\PYG{p}{,}
+\PYG{k+kt}{char}\PYG{p}{\PYGZcb{}}\PYG{p}{]}\PYG{err}{\PYGZsq{}}\PYG{o}{:}
+\PYG{l+m+mi}{16}\PYG{o}{:}\PYG{l+m+mi}{29}\PYG{o}{:}\PYG{+w}{   }\PYG{n}{required}\PYG{+w}{ }\PYG{n}{from}\PYG{+w}{ }\PYG{err}{\PYGZsq{}}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{with}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{string}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k+kt}{char}\PYG{p}{,}
+\PYG{n}{string}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{\PYGZcb{}}\PYG{p}{]}\PYG{err}{\PYGZsq{}}
+\PYG{l+m+mi}{22}\PYG{o}{:}\PYG{l+m+mi}{46}\PYG{o}{:}\PYG{+w}{   }\PYG{n}{required}\PYG{+w}{ }\PYG{n}{from}\PYG{+w}{ }\PYG{n}{here}
+\PYG{l+m+mi}{16}\PYG{o}{:}\PYG{l+m+mi}{29}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{error}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{cannot}\PYG{+w}{ }\PYG{n}{convert}\PYG{+w}{ }\PYG{err}{\PYGZsq{}}\PYG{n}{string}\PYG{err}{\PYGZsq{}}\PYG{+w}{ }\PYG{n}{to}\PYG{+w}{ }\PYG{err}{\PYGZsq{}}\PYG{k+kt}{char}\PYG{err}{\PYGZsq{}}\PYG{+w}{ }\PYG{n}{in}\PYG{+w}{ }\PYG{k}{return}
+\PYG{+w}{ }\PYG{n}{In}\PYG{+w}{ }\PYG{n}{function}\PYG{+w}{ }\PYG{err}{\PYGZsq{}}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{[}\PYG{n}{with}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{Ts}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{n}{string}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{\PYGZcb{}}\PYG{p}{]}\PYG{err}{\PYGZsq{}}\PYG{o}{:}
+\PYG{l+m+mi}{17}\PYG{o}{:}\PYG{l+m+mi}{1}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{warning}\PYG{o}{:}\PYG{+w}{ }\PYG{n}{control}\PYG{+w}{ }\PYG{n}{reaches}\PYG{+w}{ }\PYG{n}{end}\PYG{+w}{ }\PYG{n}{of}\PYG{+w}{ }\PYG{n}{non}\PYG{o}{\PYGZhy{}}\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{function}\PYG{+w}{ }\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{n}{Wreturn}\PYG{o}{\PYGZhy{}}\PYG{n}{type}\PYG{p}{]}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030162 p
+
+实际情况是，编译器会生成下面所示的代码，其中返回类型与第一个实参的类型相同。但第一个实参要么是\texttt{std::\allowbreak{}string}，要么是\texttt{char}（同样为了简洁，\myttbr{std::\allowbreak{}basic\_\allowbreak{}string<\allowbreak{}char,} \myttbr{std::\allowbreak{}char\_\allowbreak{}traits<\allowbreak{}char>\allowbreak{}, std::\allowbreak{}allocator<\allowbreak{}char> >}被替换成了\texttt{string}）。当第一个实参的类型是\texttt{char}时，返回值\texttt{head+add(...)}的类型是\texttt{std::\allowbreak{}string}，与函数返回类型不匹配，也不能隐式转换为该类型：
+
+
+%%C030163 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{string}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{string}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{arg3}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg3}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{string}\PYG{+w}{ }\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{n}{string}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{arg1}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{arg1}\PYG{p}{)}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030164 p
+
+把可变参数函数模板的返回类型从\texttt{T}改成\texttt{auto}即可修复这个问题。这样返回类型总是从返回表达式推导，在本例中所有情况下都会是\texttt{std::\allowbreak{}string}：
+
+
+%%C030165 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{rest}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{rest}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+%%C030166 p
+
+还需要补充的是，参数包可以出现在花括号初始化中，其大小可用\texttt{sizeof...}运算符确定。另外，可变参数函数模板并不一定像本案例中演示的那样意味着编译期递归。下面的示例展示了上述全部内容，其中我们定义一个函数，用于创建成员个数为偶数的tuple。我们先用\texttt{sizeof...(\allowbreak{}a)}确保参数个数为偶数，否则通过产生编译错误来断言。\texttt{sizeof...}运算符既可用于模板参数包，也可用于函数参数包，\texttt{sizeof...(\allowbreak{}a)}与\texttt{sizeof...(\allowbreak{}T)}产生的值相同。然后我们创建并返回一个tuple。模板参数包\texttt{T}以\texttt{T...}的形式展开为\texttt{std::\allowbreak{}tuple}类模板的类型实参，函数参数包\texttt{a}则以\texttt{a...}的形式通过花括号初始化展开为tuple成员的值：
+
+
+%%C030167 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{make\PYGZus{}even\PYGZus{}tuple}\PYG{p}{(}\PYG{n}{T}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{(}\PYG{n}{a}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZpc{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}
+\PYG{+w}{                }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{expected an even number of arguments}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{tuple}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{t}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{t1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{make\PYGZus{}even\PYGZus{}tuple}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 正确}
+\PYG{c+c1}{// 错误：参数个数必须为偶数}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{t2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{make\PYGZus{}even\PYGZus{}tuple}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030168 h3
+
+\subsection{延伸阅读}
+
+
+%%C030169 li
+
+\begin{itemize}
+\item \textit{用折叠表达式简化可变参数函数模板}
+
+
+%%C030170 li
+
+\item \textit{创建raw用户定义字面量}案例，见\texttt{Chapter 2}\textit{数字与}\textit{字符串}
+
+\end{itemize}
+
+
+%%C030171 h2
+
+\section{用折叠表达式简化可变参数函数模板}
+
+
+%%C030172 p
+
+本章中我们已多次讨论折叠；这个操作把二元函数作用到一组值上，产生单个值。我们在讨论可变参数函数模板时见过它，在讨论高阶函数时还会再见到。事实证明，在很多情况下，可变参数函数模板中参数包的展开本质上就是折叠操作。为了简化这类可变参数函数模板的编写，C++17引入了折叠表达式，它把参数包的展开在一个二元运算符上折叠。本案例将介绍如何用折叠表达式简化可变参数函数模板的编写。
+
+
+%%C030173 h3
+
+\subsection{准备工作}
+
+
+%%C030174 p
+
+本案例的示例基于上一个案例\textit{编写参数个数可变的函数模板}中编写的可变参数函数模板\texttt{add()}。该实现是一种左折叠操作。为简单起见，这里再次给出该函数：
+
+
+%%C030175 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}
+\PYG{n}{T}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{rest}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{rest}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030176 h3
+
+\subsection{具体做法}
+
+
+%%C030177 p
+
+要在一个二元运算符上折叠参数包，可以使用下列形式之一：
+
+
+%%C030178 li
+
+\begin{itemize}
+\item 一元形式的左折叠\texttt{(... op pack)}：
+
+
+%%C030179 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{Ts}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{args}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{args}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030180 li
+
+\item 二元形式的左折叠\myttbr{(\allowbreak{}init op ... op pack)}：
+
+
+%%C030181 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{add\PYGZus{}to\PYGZus{}one}\PYG{p}{(}\PYG{n}{Ts}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{args}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{args}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030182 li
+
+\item 一元形式的右折叠\texttt{(\allowbreak{}pack op ...)}：
+
+
+%%C030183 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{n}{Ts}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{args}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{args}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030184 li
+
+\item 二元形式的右折叠\myttbr{(\allowbreak{}pack op ... op init)}：
+
+
+%%C030185 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{add\PYGZus{}to\PYGZus{}one}\PYG{p}{(}\PYG{n}{Ts}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{args}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{args}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+\end{itemize}
+
+
+%%C030186 note
+
+\begin{myNote}
+上面显示的圆括号是折叠表达式的一部分，不能省略。
+\end{myNote}
+
+
+%%C030187 h3
+
+\subsection{工作原理}
+
+
+%%C030188 p
+
+编译器遇到折叠表达式时，会把它展开为下列表达式之一：
+
+
+%%C030189 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.378\hsize\raggedright\arraybackslash}X>{\hsize=0.622\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{展开形式}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{展开形式}} \\
+\endhead
+\myttbr{(... op pack)} & ((pack\$1 op pack\$2) op ...) op pack\$n \\
+\myttbr{(\allowbreak{}init op ... op pack)} & (((init op pack\$1) op pack\$2) op ...) op pack\$n \\
+\myttbr{(\allowbreak{}pack op ...)} & pack\$1 op (... op (pack\$n-1 op pack\$n)) \\
+\myttbr{(\allowbreak{}pack op ... op init)} & pack\$1 op (... op (pack\$n-1 op (pack\$n op init))) \\
+\end{xltabular}
+\myTableEnd
+
+
+%%C030190 p
+
+使用二元形式时，省略号左侧和右侧的运算符必须相同，并且初始值不能包含未展开的参数包。
+
+
+%%C030191 p
+
+折叠表达式支持下列二元运算符：
+
+
+%%C030192 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.081\hsize\raggedright\arraybackslash}X>{\hsize=0.068\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X>{\hsize=0.100\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X>{\hsize=0.090\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X>{\hsize=0.096\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X>{\hsize=0.097\hsize\raggedright\arraybackslash}X>{\hsize=0.097\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\textbf{+}} & \textcolor{white}{\textbf{-}} & \textcolor{white}{\textbf{*}} & \textcolor{white}{\textbf{/}} & \textcolor{white}{\textbf{\%}} & \textcolor{white}{\textbf{\textasciicircum{}}} & \textcolor{white}{\textbf{\&}} & \textcolor{white}{\textbf{|}} & \textcolor{white}{\textbf{=}} & \textcolor{white}{\textbf{<}} & \textcolor{white}{\textbf{>}} & \textcolor{white}{\textbf{<<}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\textbf{+}} & \textcolor{white}{\textbf{-}} & \textcolor{white}{\textbf{*}} & \textcolor{white}{\textbf{/}} & \textcolor{white}{\textbf{\%}} & \textcolor{white}{\textbf{\textasciicircum{}}} & \textcolor{white}{\textbf{\&}} & \textcolor{white}{\textbf{|}} & \textcolor{white}{\textbf{=}} & \textcolor{white}{\textbf{<}} & \textcolor{white}{\textbf{>}} & \textcolor{white}{\textbf{<<}} \\
+\endhead
+>> & += & -= & *= & /= & \%= & \textasciicircum{}= & \&= & |= & <<= & >>= & == \\
+!= & <= & >= & \&\& & || & , & .* & ->*. &  &  &  &  \\
+\end{xltabular}
+\myTableEnd
+
+
+%%C030193 p
+
+使用一元形式时，只有\texttt{*}、\texttt{+}、\texttt{\&}、\texttt{|}、\texttt{\&\&}、\texttt{||}和\texttt{,}（逗号）等运算符允许用于空参数包。此时，空参数包的值如下：
+
+
+%%C030194 table
+
+\myTableBegin
+\begin{xltabular}{\textwidth}{@{}>{\hsize=0.294\hsize\raggedright\arraybackslash}X>{\hsize=0.706\hsize\raggedright\arraybackslash}X@{}}
+\rowcolor{tabhead} \textcolor{white}{\myttbr{+}} & \textcolor{white}{\myttbr{0}} \\
+\endfirsthead
+\rowcolor{tabhead} \textcolor{white}{\myttbr{+}} & \textcolor{white}{\myttbr{0}} \\
+\endhead
+\myttbr{*} & \myttbr{1} \\
+\myttbr{\&} & \myttbr{-\allowbreak{}1} \\
+\myttbr{|} & \myttbr{0} \\
+\myttbr{\&\&} & \myttbr{true} \\
+\myttbr{||} & \myttbr{false} \\
+\myttbr{,} & \myttbr{void()} \\
+\end{xltabular}
+\myTableEnd
+
+
+%%C030195 p
+
+既然前面已经实现了这些函数模板（这里考虑左折叠版本），就可以编写如下代码：
+
+
+%%C030196 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sum}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// sum = 15}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{sum1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{add\PYGZus{}to\PYGZus{}one}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// sum = 16}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030197 p
+
+对于\texttt{add(\allowbreak{}1, 2, 3, 4, 5)}调用，它将生成如下函数：
+
+
+%%C030198 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg3}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg4}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{arg5}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{(}\PYG{p}{(}\PYG{p}{(}\PYG{n}{arg1}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{arg3}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{arg4}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{arg5}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030199 note
+
+\begin{myNote}[tip]
+由于现代编译器会积极地进行优化，该函数可以被内联，最终化简为类似\texttt{auto sum=1+2+3+4+5}的表达式。
+\end{myNote}
+
+
+%%C030200 h3
+
+\subsection{更多内容}
+
+
+%%C030201 p
+
+折叠表达式适用于受支持二元运算符的所有重载，但不适用于任意的二元函数。可以通过提供一个用于存放值的包装类型，并为该包装类型重载运算符来实现变通：
+
+
+%%C030202 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{wrapper}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{T}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{n}{wrapper}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{,}
+\PYG{+w}{                         }\PYG{n}{wrapper}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{wrapper}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{lhs}\PYG{p}{.}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{.}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{?}\PYG{+w}{ }\PYG{n}{lhs}\PYG{p}{.}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{rhs}\PYG{p}{.}\PYG{n}{value}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{min}\PYG{p}{(}\PYG{n}{Ts}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{args}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{wrapper}\PYG{o}{\PYGZlt{}}\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{n}{args}\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{.}\PYG{n}{value}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030203 p
+
+在上面的代码中，\texttt{wrapper}是一个简单的类模板，它持有对\texttt{T}类型值的常量引用。我们为该类模板提供了重载的\texttt{operator<}；这个重载并不返回表示第一个参数小于第二个参数的布尔值，而是返回一个\texttt{wrapper}类类型的实例，用于保存两个参数中的最小值。可变参数函数模板\texttt{min()}使用这个重载的\texttt{operator<}，对展开为wrapper类模板实例的参数包进行折叠：
+
+
+%%C030204 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{m}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{min}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// m = 1}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030205 h3
+
+\subsection{延伸阅读}
+
+
+%%C030206 li
+
+\begin{itemize}
+\item \textit{实现高阶函数map与fold}
+
+\end{itemize}
+
+
+%%C030207 h2
+
+\section{实现高阶函数map与fold}
+
+
+%%C030208 p
+
+在本书前面的多个案例中，我们在若干示例里使用了通用算法\texttt{std::\allowbreak{}transform()}和\texttt{std::\allowbreak{}accumulate()}，例如实现字符串工具库以创建字符串的大写或小写副本，或者对某个范围的值求和。这些实际上就是高阶函数\texttt{map}与\texttt{fold}的实现。高阶函数是指接受一个或多个其他函数作为参数，并把它们应用到某个范围（列表、vector、map、树等）上，从而产生新范围或单个值的函数。本案例将介绍如何实现可与C++标准容器配合使用的\texttt{map}与\texttt{fold}函数。
+
+
+%%C030209 h3
+
+\subsection{准备工作}
+
+
+%%C030210 p
+
+\textit{Map}是一种高阶函数，它把函数应用到范围中的各元素上，并按相同顺序返回一个新范围。
+
+
+%%C030211 p
+
+\textit{Fold}是一种高阶函数，它把合并函数应用到范围中的各元素上，产生单个结果。由于处理顺序可能很重要，这个函数通常有两个版本——\texttt{foldleft}从左到右处理元素，\texttt{foldright}从右到左合并元素。
+
+
+%%C030212 note
+
+\begin{myNote}
+大多数对map函数的描述都指出它作用于\texttt{list}，但list只是一个通用术语，可以指不同的顺序类型，如list、vector和array，也可以指字典（即map）、队列等。因此，在描述这些高阶函数时，我倾向于使用“范围”这个说法。
+\end{myNote}
+
+
+%%C030213 h3
+
+\subsection{具体做法}
+
+
+%%C030214 p
+
+实现\texttt{map}函数应遵循以下步骤：
+
+
+%%C030215 li
+
+\begin{itemize}
+\item 对支持迭代并支持给元素赋值的容器（如\texttt{std::\allowbreak{}vector}或\texttt{std::\allowbreak{}list}）使用\texttt{std::\allowbreak{}transform}：
+
+
+%%C030216 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{R}\PYG{o}{\PYGZgt{}}
+\PYG{n}{R}\PYG{+w}{ }\PYG{n}{mapf}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{R}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{transform}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{r}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{r}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{r}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030217 li
+
+\item 对不支持给元素赋值的容器（如\texttt{std::\allowbreak{}map}），改用显式迭代与插入等其他方式：
+
+
+%%C030218 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{U}\PYG{o}{\PYGZgt{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{U}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{mapf}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{U}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{U}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{kvp}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n}{r}\PYG{p}{.}\PYG{n}{insert}\PYG{p}{(}\PYG{n}{f}\PYG{p}{(}\PYG{n}{kvp}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{queue}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{mapf}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{queue}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{q}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{queue}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{q}\PYG{p}{.}\PYG{n}{empty}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{r}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{n}{f}\PYG{p}{(}\PYG{n}{q}\PYG{p}{.}\PYG{n}{front}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{q}\PYG{p}{.}\PYG{n}{pop}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+\end{itemize}
+
+
+%%C030219 p
+
+实现\texttt{fold}函数应遵循以下步骤：
+
+
+%%C030220 li
+
+\begin{itemize}
+\item 对支持迭代的容器使用\texttt{std::\allowbreak{}accumulate()}：
+
+
+%%C030221 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{R}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{R}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{accumulate}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{begin}\PYG{p}{(}\PYG{n}{r}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{end}\PYG{p}{(}\PYG{n}{r}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{R}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{foldr}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{R}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{accumulate}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{rbegin}\PYG{p}{(}\PYG{n}{r}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{rend}\PYG{p}{(}\PYG{n}{r}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030222 li
+
+\item 对不支持迭代的容器（如\texttt{std::\allowbreak{}queue}），改用其他方式显式处理：
+
+
+%%C030223 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{queue}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{q}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{q}\PYG{p}{.}\PYG{n}{empty}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{(}\PYG{n}{i}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{q}\PYG{p}{.}\PYG{n}{front}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{q}\PYG{p}{.}\PYG{n}{pop}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+\end{itemize}
+
+
+%%C030224 h3
+
+\subsection{工作原理}
+
+
+%%C030225 p
+
+在前面的示例中，我们以函数式的方式实现了map，没有副作用。这意味着它保留原来的范围并返回一个新范围。该函数的参数是要应用的函数和范围。为避免与\texttt{std::\allowbreak{}map}容器混淆，我们把这个函数命名为\texttt{mapf}。如前面所示，\texttt{mapf}有若干个重载：
+
+
+%%C030226 li
+
+\begin{itemize}
+\item 第一个重载针对支持迭代并支持给元素赋值的容器，包括\texttt{std::\allowbreak{}vector}、\texttt{std::\allowbreak{}list}和\texttt{std::\allowbreak{}array}，也包括C风格的数组。该函数接受一个函数的\texttt{rvalue}引用，以及一个定义了\texttt{std::\allowbreak{}begin()}和\texttt{std::\allowbreak{}end()}的范围。范围按值传入，因此修改局部副本不会影响原来的范围。范围通过标准算法\texttt{std::\allowbreak{}transform()}把给定函数应用到每个元素上进行变换，然后返回变换后的范围。
+
+
+%%C030227 li
+
+\item 第二个重载专门针对\texttt{std::\allowbreak{}map}，它不支持直接给元素（\texttt{std::\allowbreak{}pair<\allowbreak{}T, U>}）赋值。因此，该重载创建一个新的map，然后用基于范围的for循环遍历其元素，并把输入函数作用于原map每个元素的结果插入新map。
+
+
+%%C030228 li
+
+\item 第三个重载专门针对\texttt{std::\allowbreak{}queue}，它是不支持迭代的容器。可以说队列并不是典型的可映射结构，但为了演示不同的可能实现，我们还是考虑它。要遍历队列的元素，必须改动队列——需要不断从队首弹出元素，直到队列为空。第三个重载正是这么做的：它处理输入队列（按值传入）的每个元素，并把给定函数作用于剩余队列队首元素的结果压入结果队列。
+
+\end{itemize}
+
+
+%%C030229 p
+
+这些重载实现好之后，就可以把它们应用到许多容器上，如下面的示例所示：
+
+
+%%C030230 li
+
+\begin{itemize}
+\item 保留vector中的绝对值。这个示例中的vector同时包含负值和正值。应用映射之后，结果是一个只含正值的vector。
+
+
+%%C030231 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{vnums}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{9}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{r}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mapf}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{abs}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{vnums}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// r = \PYGZob{}0, 2, 3, 5, 1, 6, 8, 4, 9\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030232 li
+
+\item 对list中的数值求平方。这个示例中的list包含整数值。应用映射之后，结果是一个包含各初始值平方的list。
+
+
+%%C030233 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{lnums}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{list}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{l}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mapf}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{i}\PYG{o}{*}\PYG{n}{i}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{lnums}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// l = \PYGZob{}1, 4, 9, 16, 25\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030234 li
+
+\item 对浮点数金额取整。这个示例需要用到\texttt{std::\allowbreak{}round()}；但它对所有浮点类型都有重载，这使编译器无法挑出正确的那个。于是，我们要么写一个接受特定浮点类型参数、返回对该值应用\texttt{std::\allowbreak{}round()}结果的lambda，要么创建一个包装\texttt{std::\allowbreak{}round()}、且只对浮点类型启用其调用运算符的函数对象模板。下面的示例采用了后一种技术：
+
+
+%%C030235 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fround}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{enable\PYGZus{}if}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}floating\PYGZus{}point}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{type}
+\PYG{+w}{  }\PYG{k}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{round}\PYG{p}{(}\PYG{n}{value}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{amounts}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{array}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{double}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mf}{10.42}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{2.50}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{100.0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{23.75}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{12.99}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mapf}\PYG{p}{(}\PYG{n}{fround}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{amounts}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// a = \PYGZob{}10.0, 3.0, 100.0, 24.0, 13.0\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030236 li
+
+\item 把单词map的字符串键转成大写（其中键是单词，值是它在文本中出现的次数）。要注意，创建字符串的大写副本本身就是一次映射操作。因此，这个示例用\texttt{mapf}把\texttt{toupper()}应用到表示键的字符串的各个元素上，以生成大写副本：
+
+
+%%C030237 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{words}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{one}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{three}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{m}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mapf}\PYG{p}{(}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{pair}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{kvp}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}pair}\PYG{p}{(}
+\PYG{+w}{      }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mapf}\PYG{p}{(}\PYG{n}{toupper}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{kvp}\PYG{p}{.}\PYG{n}{first}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{      }\PYG{n}{kvp}\PYG{p}{.}\PYG{n}{second}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{words}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// m = \PYGZob{}\PYGZob{}\PYGZdq{}ONE\PYGZdq{}, 1\PYGZcb{}, \PYGZob{}\PYGZdq{}TWO\PYGZdq{}, 2\PYGZcb{}, \PYGZob{}\PYGZdq{}THREE\PYGZdq{}, 3\PYGZcb{}\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030238 li
+
+\item 归一化优先级队列中的值——初始值从1到100，我们想把它们归一化为两个值：1表示高，2表示普通。所有值不超过30的初始优先级都变成高优先级，其余的变成普通优先级：
+
+
+%%C030239 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{priorities}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{queue}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{priorities}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{priorities}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{l+m+mi}{20}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{priorities}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{l+m+mi}{30}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{priorities}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{l+m+mi}{40}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{priorities}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{l+m+mi}{50}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mapf}\PYG{p}{(}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{30}\PYG{+w}{ }\PYG{o}{?}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{priorities}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// p = \PYGZob{}1, 1, 1, 2, 2\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+\end{itemize}
+
+%%C030240 p
+
+要实现\texttt{fold}，其实必须考虑两种可能的折叠方向，即从左到右和从右到左。因此我们提供了两个函数，分别叫\texttt{foldl}（表示左折叠）和\texttt{foldr}（表示右折叠）。上一节给出的实现非常相似——它们都接受一个函数、一个范围和一个初始值，并调用\texttt{std::\allowbreak{}algorithm()}把范围内的值折叠成单个值。不过\texttt{foldl}使用正向迭代器，而\texttt{foldr}使用反向迭代器来遍历和处理范围。第二个重载是针对\texttt{std::\allowbreak{}queue}类型的特化，因为该类型没有迭代器。
+
+
+%%C030241 p
+
+基于这些折叠实现，可以做下面这些示例：
+
+
+%%C030242 li
+
+\begin{itemize}
+\item 把整数向量中的值相加。本例中左折叠与右折叠会得到相同的结果。在下面的示例中，我们传入的要么是一个接收当前和与一个数并返回新和的lambda，要么是标准库中把\texttt{operator+}应用于两个同类型操作数的函数对象\texttt{std::\allowbreak{}plus<>}（基本上相当于该lambda的闭包）：
+
+
+%%C030243 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{vnums}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{   }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{9}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldl}\PYG{p}{(}
+\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{   }\PYG{n}{vnums}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                }\PYG{c+c1}{// s1 = 22}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldl}\PYG{p}{(}
+\PYG{+w}{   }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{vnums}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// s2 = 22}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldr}\PYG{p}{(}
+\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{   }\PYG{n}{vnums}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{                }\PYG{c+c1}{// s3 = 22}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s4}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldr}\PYG{p}{(}
+\PYG{+w}{   }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{vnums}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// s4 = 22}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030244 li
+
+\item 把向量中的若干字符串拼接成单个字符串：
+
+
+%%C030245 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{texts}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{   }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{hello}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ }\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{world}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{!}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{txt1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldl}\PYG{p}{(}
+\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{   }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{   }\PYG{n}{texts}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// txt1 = \PYGZdq{}hello world!\PYGZdq{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{txt2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldr}\PYG{p}{(}
+\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{   }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{   }\PYG{n}{texts}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// txt2 = \PYGZdq{}!world hello\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030246 li
+
+\item 把字符数组拼接成一个字符串：
+
+
+%%C030247 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{chars}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{c}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{,}\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{i}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{,}\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{v}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{,}\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{i}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{,}\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{c}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{str1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{chars}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// str1 = \PYGZdq{}civic\PYGZdq{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{str2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldr}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{chars}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// str2 = \PYGZdq{}civic\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030248 li
+
+\item 统计一段文本中的单词数量，依据是\texttt{map<\allowbreak{}string, int>}中已经算好的各单词出现次数：
+
+
+%%C030249 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{words}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{map}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}
+\PYG{+w}{   }\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{one}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{two}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{three}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{count}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldl}\PYG{p}{(}
+\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{pair}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{kvp}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{kvp}\PYG{p}{.}\PYG{n}{second}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{   }\PYG{n}{words}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// count = 6}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C030250 h3
+
+\subsection{更多内容}
+
+
+%%C030251 p
+
+这些函数可以串成流水线，也就是用一个函数的结果去调用另一个函数。下面的示例对整数范围内的元素应用\texttt{std::\allowbreak{}abs()}，把该范围映射为正值范围；结果再映射为另一个平方值范围；最后对该范围做左折叠，把它们相加：
+
+
+%%C030252 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{vnums}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{6}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{9}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{foldl}\PYG{p}{(}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mapf}\PYG{p}{(}
+\PYG{+w}{    }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{i}\PYG{o}{*}\PYG{n}{i}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{funclib}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mapf}\PYG{p}{(}
+\PYG{+w}{      }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{abs}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{      }\PYG{n}{vnums}\PYG{p}{)}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// s = 236}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030253 p
+
+作为练习，你可以仿照前面某个案例中的做法，把折叠函数实现为可变参数函数模板。真正执行折叠的函数通过参数传入：
+
+
+%%C030254 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T2}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T1}\PYG{+w}{ }\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T2}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{(}\PYG{n}{arg1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{arg2}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{Ts}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ts}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{rest}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{(}\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{rest}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030255 p
+
+把它与我们在\textit{编写参数个数可变的函数模板}案例中写的\texttt{add()}函数模板相比，可以发现几处不同：
+
+
+%%C030256 li
+
+\begin{itemize}
+\item 第一个参数是函数，递归调用\texttt{foldl}时会对它做完美转发。
+
+
+%%C030257 li
+
+\item 终止情形是一个需要两个参数的函数，因为我们用于折叠的函数是二元函数（接受两个参数）。
+
+
+%%C030258 li
+
+\item 我们写的这两个函数的返回类型声明为\texttt{auto}，因为它必须与传入的二元函数\texttt{f}的返回类型一致，而后者的类型要到调用\texttt{foldl}时才能确定：
+
+
+%%C030259 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// s1 = 15}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{hello}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{world}\PYG{l+s}{\PYGZdq{}}\PYG{n}{s}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{!}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// s2 = \PYGZdq{}hello world!\PYGZdq{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 错误：参数太少}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C030260 h3
+
+\subsection{延伸阅读}
+
+
+%%C030261 li
+
+\begin{itemize}
+\item \textit{构建字符串工具库}案例，见\texttt{Chapter 2}\textit{数字与字符串}
+
+
+%%C030262 li
+
+\item \textit{编写参数个数可变的函数模板}
+
+
+%%C030263 li
+
+\item \textit{把函数组合成高阶函数}
+
+\end{itemize}
+
+
+%%C030264 h2
+
+\section{把函数组合成高阶函数}
+
+
+%%C030265 p
+
+在上一案例中，我们实现了两个高阶函数map和fold，并看到了使用它们的各种示例。在该案例末尾，我们看到了如何把它们串成流水线，在对原始数据做若干次变换之后产生最终值。流水线是组合（composition）的一种形式，也就是由两个或更多已有函数创建出一个新函数。在上面提到的示例中，我们并没有真正组合函数，只是用一个函数的结果去调用另一个函数；而在本案例中，我们将看到如何真正把若干函数组合成一个新函数。为简单起见，这里只考虑一元函数（只接受一个参数的函数）。
+
+
+%%C030266 h3
+
+\subsection{准备工作}
+
+
+%%C030267 p
+
+在继续之前，建议你先读上一案例\textit{实现高阶函数map与fold}。这不是理解本案例的必需前提，但我们会引用那里实现的map与fold函数。
+
+
+%%C030268 h3
+
+\subsection{具体做法}
+
+
+%%C030269 p
+
+要把一元函数组合成高阶函数，应当：
+
+
+%%C030270 li
+
+\begin{itemize}
+\item 组合两个函数时，提供一个接受两个函数\texttt{f}和\texttt{g}作为参数、并返回新函数（一个lambda）的函数，新函数返回\texttt{f(\allowbreak{}g(\allowbreak{}x))}，其中\texttt{x}是组合函数的参数：
+
+
+%%C030271 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{G}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{compose}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{G}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{g}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{[}\PYG{o}{=}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{(}\PYG{n}{g}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{v}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{compose}\PYG{p}{(}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{to\PYGZus{}string}\PYG{p}{(}\PYG{n}{n}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{(}\PYG{l+m+mi}{\PYGZhy{}3}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// v = \PYGZdq{}9\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030272 li
+
+\item 要组合数量可变的函数时，为前面描述的函数提供一个可变参数模板重载：
+
+
+%%C030273 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{R}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{compose}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{R}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{[}\PYG{o}{=}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{(}\PYG{n}{compose}\PYG{p}{(}\PYG{n}{r}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{compose}\PYG{p}{(}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{to\PYGZus{}string}\PYG{p}{(}\PYG{n}{n}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{abs}\PYG{p}{(}\PYG{n}{n}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{(}\PYG{l+m+mi}{\PYGZhy{}3}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// n = \PYGZdq{}36\PYGZdq{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C030274 h3
+
+\subsection{工作原理}
+
+
+%%C030275 p
+
+把两个一元函数组合成一个新函数相对简单。创建一个模板函数（在前面示例中我们把它叫作\texttt{compose()}），接收两个表示函数的参数\texttt{f}和\texttt{g}，返回一个接受单个参数\texttt{x}并返回\texttt{f(\allowbreak{}g(\allowbreak{}x))}的函数。不过要注意，\texttt{g}函数返回值的类型必须与\texttt{f}函数参数的类型相同。组合函数的返回值是一个闭包，也就是一个lambda的实例。
+
+
+%%C030276 p
+
+在实践中，能够组合的函数往往不止两个。这可以通过编写\texttt{compose()}函数的可变参数模板版本实现。可变参数模板在\textit{编写参数个数可变的函数模板}案例中有更详细的说明。可变参数模板通过展开参数包实现编译期递归。这个实现与\texttt{compose()}的第一个版本非常相似，区别只在于：
+
+
+%%C030277 li
+
+\begin{itemize}
+\item 它接受数量可变的函数作为参数。
+
+
+%%C030278 li
+
+\item 返回的闭包用展开后的参数包递归调用\texttt{compose()}；当只剩下两个函数时递归结束，此时调用前面实现的那个重载。
+
+\end{itemize}
+
+
+%%C030279 note
+
+\begin{myNote}[tip]
+即使代码看起来像是在递归，这也不是真正的递归。可以把它称为编译期递归，但每次展开都只是调用另一个同名、参数个数不同的函数，这不构成递归。
+\end{myNote}
+
+
+%%C030280 p
+
+现在有了这些可变参数模板重载，我们可以重写上一案例\textit{实现高阶函数map与fold}中的最后一个例子。给定一个初始的整数向量，对每个元素应用\texttt{std::\allowbreak{}abs()}，把它映射为只含正值的向量；结果再通过把每个元素的值加倍映射为另一个向量；最后把结果向量中的值折叠相加，初始值为0：
+
+
+%%C030281 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{compose}\PYG{p}{(}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{mapf}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{mapf}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{abs}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{(}\PYG{n}{vnums}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030282 h3
+
+\subsection{更多内容}
+
+
+%%C030283 p
+
+组合通常用点（\texttt{.}）或星号（\texttt{*}）表示，例如\texttt{f . g}或\texttt{f * g}。在C++中其实可以做类似的事，办法是重载\texttt{operator*}（重载点运算符意义不大）。与\texttt{compose()}函数类似，\texttt{operator*}应当能处理任意数量的参数，因此我们会有两个重载，和\texttt{compose()}的情形一样：
+
+
+%%C030284 li
+
+\begin{itemize}
+\item 第一个重载接受两个参数，并调用\texttt{compose()}返回一个新函数。
+
+
+%%C030285 li
+
+\item 第二个重载是可变参数模板函数，同样通过展开参数包调用\texttt{operator*}：
+
+
+%%C030286 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{G}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{*}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{G}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{g}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{compose}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{G}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{g}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{R}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{*}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{R}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{*}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{r}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C030287 p
+
+现在可以用\texttt{operator*}代替更啰嗦的compose调用来简化实际的函数组合：
+
+
+%%C030288 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{  }\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{to\PYGZus{}string}\PYG{p}{(}\PYG{n}{n}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{o}{*}
+\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{o}{*}
+\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{o}{*}
+\PYG{+w}{   }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{abs}\PYG{p}{(}\PYG{n}{n}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{(}\PYG{l+m+mi}{\PYGZhy{}3}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// n = \PYGZdq{}36\PYGZdq{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{foldl}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{o}{*}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{mapf}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{o}{*}
+\PYG{+w}{  }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{mapf}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{abs}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{(}\PYG{n}{vnums}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// s = 76}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030289 h3
+
+\subsection{延伸阅读}
+
+
+%%C030290 li
+
+\begin{itemize}
+\item \textit{编写参数个数可变的函数模板}
+
+\end{itemize}
+
+
+%%C030291 h2
+
+\section{统一调用任何可调用对象}
+
+
+%%C030292 p
+
+开发者，尤其是实现库的开发者，有时需要以统一的方式调用可调用对象。这个可调用对象可能是函数、函数指针、成员函数指针或函数对象。\texttt{std::\allowbreak{}bind}、\texttt{std::\allowbreak{}function}、\texttt{std::\allowbreak{}mem\_\allowbreak{}fn}和\myttbr{std::\allowbreak{}thread::\allowbreak{}thread}就是这类情形的例子。C++17定义了一个标准函数\texttt{std::\allowbreak{}invoke()}，它可以用给定的参数调用任何可调用对象。它的目的不是取代对函数或函数对象的直接调用，但它在模板元编程中实现各种库函数时很有用。
+
+
+%%C030293 h3
+
+\subsection{准备工作}
+
+
+%%C030294 p
+
+本案例要求你熟悉如何定义和使用函数指针。
+
+
+%%C030295 p
+
+为了演示\texttt{std::\allowbreak{}invoke()}在不同语境下的用法，我们使用下面的函数和类：
+
+
+%%C030296 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{add}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{foo}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{increment\PYGZus{}by}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030297 h3
+
+\subsection{具体做法}
+
+
+%%C030298 p
+
+\texttt{std::\allowbreak{}invoke()}是一个可变参数函数模板，它把可调用对象作为第一个参数，后面是传给该调用的一串可变参数。\texttt{std::\allowbreak{}invoke()}可以用来调用以下内容：
+
+
+%%C030299 li
+
+\begin{itemize}
+\item 自由函数：
+
+
+%%C030300 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}\PYG{n}{add}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// a1 = 3}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030301 li
+
+\item 通过函数指针调用自由函数：
+
+
+%%C030302 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{add}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// a2 = 3}
+\PYG{k+kt}{int}\PYG{p}{(}\PYG{o}{*}\PYG{n}{fadd}\PYG{p}{)}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{add}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}\PYG{n}{fadd}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// a3 = 3}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030303 li
+
+\item 通过成员函数指针调用成员函数：
+
+
+%%C030304 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{foo}\PYG{o}{:}\PYG{o}{:}\PYG{n}{increment\PYGZus{}by}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030305 li
+
+\item 数据成员：
+
+
+%%C030306 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{foo}\PYG{o}{:}\PYG{o}{:}\PYG{n}{x}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// x1 = 0}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030307 li
+
+\item 函数对象：
+
+
+%%C030308 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{plus}\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{  }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{foo}\PYG{o}{:}\PYG{o}{:}\PYG{n}{x}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// x3 = 3}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030309 li
+
+\item lambda表达式：
+
+
+%%C030310 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{l}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{k}{return}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}\PYG{n}{l}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// a = 3}
+\end{Verbatim}
+\end{codeblockbg}
+
+\end{itemize}
+
+
+%%C030311 p
+
+在实践中，\texttt{std:\allowbreak{}invoke()}应当用于模板元编程，以便用任意数量的参数调用函数。为演示这种情形，我们给出\texttt{std::\allowbreak{}apply()}函数的一种可能实现，它从C++17起也是标准库的一部分，作用是把元组的成员展开成函数的参数来调用函数：
+
+
+%%C030312 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{k}{namespace}\PYG{+w}{ }\PYG{n+nn}{details}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{k+kt}{size\PYGZus{}t}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{I}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{  }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{apply}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{index\PYGZus{}sequence}\PYG{o}{\PYGZlt{}}\PYG{n}{I}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{o}{\PYGZgt{}}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{invoke}\PYG{p}{(}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{get}\PYG{o}{\PYGZlt{}}\PYG{n}{I}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{t}\PYG{p}{)}\PYG{p}{)}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{F}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{apply}\PYG{p}{(}\PYG{n}{F}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{details}\PYG{o}{:}\PYG{o}{:}\PYG{n}{apply}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{F}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{t}\PYG{p}{)}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}index\PYGZus{}sequence}\PYG{o}{\PYGZlt{}}
+\PYG{+w}{      }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{tuple\PYGZus{}size}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{decay\PYGZus{}t}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030313 h3
+
+\subsection{工作原理}
+
+
+%%C030314 p
+
+在看\texttt{std::\allowbreak{}invoke()}如何工作之前，先简单看看不同的可调用对象是如何被调用的。给定一个函数，最普遍的调用方式当然是直接向它传必要的参数。不过我们也可以用函数指针调用它。函数指针的麻烦在于，定义指针的类型可能很繁琐。用\texttt{auto}可以简化（如下面代码所示），但在实践中通常需要先定义函数指针的类型，再定义一个对象并用正确的函数地址初始化它。下面给出几个示例：
+
+
+%%C030315 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{c+c1}{// 直接调用}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// a1 = 3}
+\PYG{c+c1}{// 通过函数指针调用}
+\PYG{k+kt}{int}\PYG{p}{(}\PYG{o}{*}\PYG{n}{fadd}\PYG{p}{)}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{add}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{fadd}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// a2 = 3}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{fadd2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{add}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{a3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{fadd2}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// a3 = 3}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030316 p
+
+当你需要通过类的实例对象调用类函数时，用函数指针调用就更加繁琐了。定义成员函数指针并调用它的语法并不简单：
+
+
+%%C030317 code
+
+\begin{codeblockbg}
+\begin{Verbatim}[commandchars=\\\{\},breaklines=true,breakanywhere=true,fontsize=\codefont,xleftmargin=17bp]
+\PYG{n}{foo}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}
+\PYG{n}{f}\PYG{p}{.}\PYG{n}{increment\PYGZus{}by}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{.}\PYG{n}{x}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// x1 = 3}
+\PYG{k+kt}{void}\PYG{p}{(}\PYG{n}{foo}\PYG{o}{:}\PYG{o}{:}\PYG{o}{*}\PYG{n}{finc}\PYG{p}{)}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{k}{const}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{foo}\PYG{o}{:}\PYG{o}{:}\PYG{n}{increment\PYGZus{}by}\PYG{p}{;}
+\PYG{p}{(}\PYG{n}{f}\PYG{p}{.}\PYG{o}{*}\PYG{n}{finc}\PYG{p}{)}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{.}\PYG{n}{x}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// x2 = 6}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{finc2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{foo}\PYG{o}{:}\PYG{o}{:}\PYG{n}{increment\PYGZus{}by}\PYG{p}{;}
+\PYG{p}{(}\PYG{n}{f}\PYG{p}{.}\PYG{o}{*}\PYG{n}{finc2}\PYG{p}{)}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{.}\PYG{n}{x}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// x3 = 9}
+\end{Verbatim}
+\end{codeblockbg}
+
+
+%%C030318 p
+
+不管这类调用看起来多么繁琐，真正的问题在于编写能够以统一方式调用上述各类可调用对象的库组件（函数或类）。这正是\texttt{std::\allowbreak{}invoke()}这类标准函数在实践中带来的好处。
+
+
+%%C030319 p
+
+\texttt{std::\allowbreak{}invoke()}的实现细节比较复杂，但它的工作方式可以用简单的语言说明。假设调用形式为\myttbr{invoke(\allowbreak{}f, arg1, arg2,} \texttt{...\allowbreak{}, argN)}，那么考虑以下情况：
+
+
+%%C030320 li
+
+\begin{itemize}
+\item 如果\texttt{f}是类\texttt{T}的成员函数指针，则该调用等价于下列之一：
+
+
+%%C030321 li
+
+\begin{itemize}
+\item \myttbr{(\allowbreak{}arg1.\allowbreak{}*f)(\allowbreak{}arg2, ...\allowbreak{}, argN)}，如果\texttt{arg1}是\texttt{T}的实例
+
+
+%%C030322 li
+
+\item \myttbr{(\allowbreak{}arg1.\allowbreak{}get().\allowbreak{}*f)(\allowbreak{}arg2, ...\allowbreak{}, argN)}，如果\texttt{arg1}是\texttt{reference\_\allowbreak{}wrapper}的特化
+
+
+%%C030323 li
+
+\item \myttbr{((\allowbreak{}*arg1).\allowbreak{}*f)(\allowbreak{}arg2, ...\allowbreak{}, argN)}，其他情况
+
+
+%%C030324 li
+
+\item 如果\texttt{f}是类\texttt{T}的数据成员指针，且只有一个参数，也就是说调用形式为\texttt{invoke(\allowbreak{}f, arg1)}，则该调用等价于下列之一：
+
+
+%%C030325 li
+
+\item \texttt{arg1.\allowbreak{}*f}，如果\texttt{arg1}是类\texttt{T}的实例
+
+
+%%C030326 li
+
+\item \texttt{arg1.\allowbreak{}get().\allowbreak{}*f}，如果\texttt{arg1}是\texttt{reference\_\allowbreak{}wrapper}的特化
+
+
+%%C030327 li
+
+\item \texttt{(\allowbreak{}*arg1).\allowbreak{}*f}，其他情况
+
+
+%%C030328 li
+
+\item 如果\texttt{f}是函数对象，则该调用等价于\texttt{f(\allowbreak{}arg1, arg2, ...\allowbreak{},} \texttt{argN)}
+
+\end{itemize}
+
+\end{itemize}
+
+
+%%C030329 h3
+
+\subsection{延伸阅读}
+
+
+%%C030330 li
+
+\begin{itemize}
+\item \textit{编写参数个数可变的函数模板}
+
+\end{itemize}
