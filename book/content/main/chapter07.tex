@@ -1021,15 +1021,22 @@ C++标准库中最重要的组成部分之一是基于流的输入输出库，�
 %%C070131 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.336\hsize\raggedright\arraybackslash}X>{\hsize=0.664\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.336\hsize\raggedright\arraybackslash}X|>{\hsize=0.664\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{UNIX}} & \textcolor{white}{\textbf{Windows}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{UNIX}} & \textcolor{white}{\textbf{Windows}} \\
+\hline
 \endhead
 en\_US.utf8 & English\_US.1252 \\
+\hline
 en\_GB.utf8 & English\_UK.1252 \\
+\hline
 de\_DE.utf8 & German\_Germany.1252 \\
+\hline
 sv\_SE.utf8 & Swedish\_Sweden.1252 \\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -1252,22 +1259,36 @@ sv\_SE.utf8 & Swedish\_Sweden.1252 \\
 %%C070157 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.500\hsize\raggedright\arraybackslash}X>{\hsize=0.500\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.500\hsize\raggedright\arraybackslash}X|>{\hsize=0.500\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\myttbr{std::\allowbreak{}collate<\allowbreak{}char>}} & \textcolor{white}{\myttbr{std::\allowbreak{}collate<\allowbreak{}wchar\_\allowbreak{}t>}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\myttbr{std::\allowbreak{}collate<\allowbreak{}char>}} & \textcolor{white}{\myttbr{std::\allowbreak{}collate<\allowbreak{}wchar\_\allowbreak{}t>}} \\
+\hline
 \endhead
 \myttbr{std::\allowbreak{}ctype<\allowbreak{}char>} & \myttbr{std::\allowbreak{}ctype<\allowbreak{}wchar\_\allowbreak{}t>} \\
+\hline
 \myttbr{std::\allowbreak{}codecvt<\allowbreak{}char,char,mbstate\_\allowbreak{}t>} \myttbr{std::\allowbreak{}codecvt<\allowbreak{}char16\_\allowbreak{}t,char,mbstate\_\allowbreak{}t>} & \myttbr{std::\allowbreak{}codecvt<\allowbreak{}char32\_\allowbreak{}t,char,mbstate\_\allowbreak{}t>} \myttbr{std::\allowbreak{}codecvt<\allowbreak{}wchar\_\allowbreak{}t,char,mbstate\_\allowbreak{}t>} \\
+\hline
 \myttbr{std::\allowbreak{}moneypunct<\allowbreak{}char>} \myttbr{std::\allowbreak{}moneypunct<\allowbreak{}char,true>} & \myttbr{std::\allowbreak{}moneypunct<\allowbreak{}wchar\_\allowbreak{}t>} \myttbr{std::\allowbreak{}moneypunct<\allowbreak{}wchar\_\allowbreak{}t,true>} \\
+\hline
 \myttbr{std::\allowbreak{}money\_\allowbreak{}get<\allowbreak{}char>} & \myttbr{std::\allowbreak{}money\_\allowbreak{}get<\allowbreak{}wchar\_\allowbreak{}t>} \\
+\hline
 \myttbr{std::\allowbreak{}money\_\allowbreak{}put<\allowbreak{}char>} & \myttbr{std::\allowbreak{}money\_\allowbreak{}put<\allowbreak{}wchar\_\allowbreak{}t>} \\
+\hline
 \myttbr{std::\allowbreak{}numpunct<\allowbreak{}char>} & \myttbr{std::\allowbreak{}numpunct<\allowbreak{}wchar\_\allowbreak{}t>} \\
+\hline
 \myttbr{std::\allowbreak{}num\_\allowbreak{}get<\allowbreak{}char>} & \myttbr{std::\allowbreak{}num\_\allowbreak{}get<\allowbreak{}wchar\_\allowbreak{}t>} \\
+\hline
 \myttbr{std::\allowbreak{}num\_\allowbreak{}put<\allowbreak{}char>} & \myttbr{std::\allowbreak{}num\_\allowbreak{}put<\allowbreak{}wchar\_\allowbreak{}t>} \\
+\hline
 \myttbr{std::\allowbreak{}time\_\allowbreak{}get<\allowbreak{}char>} & \myttbr{std::\allowbreak{}time\_\allowbreak{}get<\allowbreak{}wchar\_\allowbreak{}t>} \\
+\hline
 \myttbr{std::\allowbreak{}time\_\allowbreak{}put<\allowbreak{}char>} & \myttbr{std::\allowbreak{}time\_\allowbreak{}put<\allowbreak{}wchar\_\allowbreak{}t>} \\
+\hline
 \myttbr{std::\allowbreak{}messages<\allowbreak{}char>} & \myttbr{std::\allowbreak{}messages<\allowbreak{}wchar\_\allowbreak{}t>} \\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -3111,40 +3132,54 @@ C++17标准的一个重要新增内容是\texttt{filesystem}库，它使开发�
 %%C070397 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.512\hsize\raggedright\arraybackslash}X>{\hsize=0.488\hsize\raggedright\arraybackslash}X@{}}
-\rowcolor{tabhead} \textcolor{white}{\textbf{控制copy\_file函数}} \textbf{对已存在目标文件的影响的选项组} & \textcolor{white}{} \\
+\begin{xltabular}{\textwidth}{|>{\hsize=0.512\hsize\raggedright\arraybackslash}X|>{\hsize=0.488\hsize\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tabhead} \textcolor{white}{\textbf{控制copy\_file函数} \textbf{对已存在目标文件的影响的选项组}} & \textcolor{white}{} \\
+\hline
 \endfirsthead
-\rowcolor{tabhead} \textcolor{white}{\textbf{控制copy\_file函数}} \textbf{对已存在目标文件的影响的选项组} & \textcolor{white}{} \\
+\rowcolor{tabhead} \textcolor{white}{\textbf{控制copy\_file函数} \textbf{对已存在目标文件的影响的选项组}} & \textcolor{white}{} \\
+\hline
 \endhead
 \myttbr{none} & （默认）报错；文件已存在\\
+\hline
 \myttbr{skip\_\allowbreak{}existing} & 不覆盖已存在的文件；不报告错误\\
+\hline
 \myttbr{overwrite\_\allowbreak{}existing} & 覆盖已存在的文件\\
+\hline
 \myttbr{update\_\allowbreak{}existing} & 若已存在的文件比用于替换的文件更旧，则覆盖它\\
+\hline
 \textbf{控制copy函数} \textbf{对子目录的影响的选项组} &  \\
+\hline
 \myttbr{none} & （默认）不复制子目录\\
+\hline
+\myttbr{recursive} & 递归复制子目录及其内容\\
+\hline
+\textbf{控制copy函数} \textbf{对符号链接的影响的选项组} &  \\
+\hline
+\myttbr{none} & （默认）跟随符号链接\\
+\hline
+\myttbr{copy\_\allowbreak{}symlinks} & 把符号链接复制为符号链接，而不是复制它们所指向的文件\\
+\hline
+\myttbr{skip\_\allowbreak{}symlinks} & 忽略符号链接\\
+\hline
+\textbf{控制copy函数} \textbf{选择复制形式的选项组} &  \\
+\hline
+\myttbr{none} & （默认）复制内容\\
+\hline
+\myttbr{directories\_\allowbreak{}only} & 只复制目录结构，不复制非目录文件\\
+\hline
+\myttbr{create\_\allowbreak{}symlinks} & 创建符号链接而不是复制文件；除非目标路径位于当前目录，否则源路径应为绝对路径\\
+\hline
+\myttbr{create\_\allowbreak{}hard\_\allowbreak{}links} & 创建硬链接而不是复制文件\\
+\hline
 \end{xltabular}
 \myTableEnd
 
 
 %%C070398 table
 
-\myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.512\hsize\raggedright\arraybackslash}X>{\hsize=0.488\hsize\raggedright\arraybackslash}X@{}}
-\rowcolor{tabhead} \textcolor{white}{\myttbr{recursive}} & \textcolor{white}{递归复制子目录及其内容} \\
-\endfirsthead
-\rowcolor{tabhead} \textcolor{white}{\myttbr{recursive}} & \textcolor{white}{递归复制子目录及其内容} \\
-\endhead
-\textbf{控制copy函数} \textbf{对符号链接的影响的选项组} &  \\
-\myttbr{none} & （默认）跟随符号链接\\
-\myttbr{copy\_\allowbreak{}symlinks} & 把符号链接复制为符号链接，而不是复制它们所指向的文件\\
-\myttbr{skip\_\allowbreak{}symlinks} & 忽略符号链接\\
-\textbf{控制copy函数} \textbf{选择复制形式的选项组} &  \\
-\myttbr{none} & （默认）复制内容\\
-\myttbr{directories\_\allowbreak{}only} & 只复制目录结构，不复制非目录文件\\
-\myttbr{create\_\allowbreak{}symlinks} & 创建符号链接而不是复制文件；除非目标路径位于当前目录，否则源路径应为绝对路径\\
-\myttbr{create\_\allowbreak{}hard\_\allowbreak{}links} & 创建硬链接而不是复制文件\\
-\end{xltabular}
-\myTableEnd
+% 原书此处是上一张表的续表（PDF分页把表切断，抽取时首行被误当表头），
+% 已并入上表，本单元留空。
 
 
 %%C070399 p

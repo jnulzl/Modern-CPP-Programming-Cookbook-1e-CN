@@ -690,12 +690,16 @@
 %%C020091 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.337\hsize\raggedright\arraybackslash}X>{\hsize=0.321\hsize\raggedright\arraybackslash}X>{\hsize=0.342\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.337\hsize\raggedright\arraybackslash}X|>{\hsize=0.321\hsize\raggedright\arraybackslash}X|>{\hsize=0.342\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\myttbr{unsigned short}} & \textcolor{white}{\myttbr{int}} & \textcolor{white}{\myttbr{double}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\myttbr{unsigned short}} & \textcolor{white}{\myttbr{int}} & \textcolor{white}{\myttbr{double}} \\
+\hline
 \endhead
 min=0 max=65535 bits=16 decdigits=4 integral=1 signed=0 exact=1 infinity=0 & min=-2147483648 max=2147483647 bits=31 decdigits=9 integral=1 signed=1 exact=1 infinity=0 & min=2.22507e-308 max=1.79769e+308 bits=53 decdigits=15 integral=0 signed=1 exact=0 infinity=1 \\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -972,31 +976,54 @@ cy(i) = x(i - S) - x(i - R) - cy(i - 1)<0?1:0
 %%C020138 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.114\hsize\raggedright\arraybackslash}X>{\hsize=0.451\hsize\raggedright\arraybackslash}X>{\hsize=0.115\hsize\raggedright\arraybackslash}X>{\hsize=0.320\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.114\hsize\raggedright\arraybackslash}X|>{\hsize=0.451\hsize\raggedright\arraybackslash}X|>{\hsize=0.115\hsize\raggedright\arraybackslash}X|>{\hsize=0.320\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{类型}} & \textcolor{white}{\textbf{类名}} & \textcolor{white}{\textbf{数字}} & \textcolor{white}{\textbf{统计分布}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{类型}} & \textcolor{white}{\textbf{类名}} & \textcolor{white}{\textbf{数字}} & \textcolor{white}{\textbf{统计分布}} \\
+\hline
 \endhead
 均匀 & \myttbr{uniform\_\allowbreak{}int\_\allowbreak{}distribution} & 整数 & 均匀\\
+\hline
  & \myttbr{uniform\_\allowbreak{}real\_\allowbreak{}distribution} & 实数 & 均匀\\
+\hline
 伯努利 & \myttbr{bernoulli\_\allowbreak{}distribution} & 布尔 & 伯努利\\
+\hline
  & \myttbr{binomial\_\allowbreak{}distribution} & 整数 & 二项\\
+\hline
  & \myttbr{negative\_\allowbreak{}binomial\_\allowbreak{}distribution} & 整数 & 负二项\\
+\hline
  & \myttbr{geometric\_\allowbreak{}distribution} & 整数 & 几何\\
+\hline
 泊松 & \myttbr{poisson\_\allowbreak{}distribution} & 整数 & 泊松\\
+\hline
  & \myttbr{exponential\_\allowbreak{}distribution} & 实数 & 指数\\
+\hline
  & \myttbr{gamma\_\allowbreak{}distribution} & 实数 & 伽马\\
+\hline
  & \myttbr{weibull\_\allowbreak{}distribution} & 实数 & 威布尔\\
+\hline
  & \myttbr{extreme\_\allowbreak{}value\_\allowbreak{}distribution} & 实数 & 极值\\
+\hline
 正态 & \myttbr{normal\_\allowbreak{}distribution} & 实数 & 标准正态（高斯）\\
+\hline
  & \myttbr{lognormal\_\allowbreak{}distribution} & 实数 & 对数正态\\
+\hline
  & \myttbr{chi\_\allowbreak{}squared\_\allowbreak{}distribution} & 实数 & 卡方\\
+\hline
  & \myttbr{cauchy\_\allowbreak{}distribution} & 实数 & 柯西\\
+\hline
  & \myttbr{fisher\_\allowbreak{}f\_\allowbreak{}distribution} & 实数 & Fisher F分布\\
+\hline
  & \myttbr{student\_\allowbreak{}t\_\allowbreak{}distribution} & 实数 & Student t分布\\
+\hline
 抽样 & \myttbr{discrete\_\allowbreak{}distribution} & 整数 & 离散\\
+\hline
  & \myttbr{piecewise\_\allowbreak{}constant\_\allowbreak{}distribution} & 实数 & 在常量子区间上分布的值\\
+\hline
  & \myttbr{piecewise\_\allowbreak{}linear\_\allowbreak{}distribution} & 实数 & 在给定子区间上分布的值\\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -2726,18 +2753,28 @@ cy(i) = x(i - S) - x(i - R) - cy(i - 1)<0?1:0
 %%C020365 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.212\hsize\raggedright\arraybackslash}X>{\hsize=0.788\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.212\hsize\raggedright\arraybackslash}X|>{\hsize=0.788\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{组成部分}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{组成部分}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endhead
 \myttbr{\textasciicircum{}} & 字符串开头\\
+\hline
 \myttbr{[A-\allowbreak{}Z0-\allowbreak{}9.\_\%+-\allowbreak{}]+} & 至少一个A-Z、0-9范围内的字符，或 -、\%，+、- 之一，表示电子邮件地址的本地部分\\
+\hline
 \myttbr{@} & 字符@ \\
+\hline
 \myttbr{[A-\allowbreak{}Z0-\allowbreak{}9.-\allowbreak{}]+} & 至少一个A-Z、0-9范围内的字符，或 -、\%，+、- 之一，表示域名部分的主机名\\
+\hline
 \myttbr{\textbackslash{}.} & 分隔域主机名与标签的点\\
+\hline
 \myttbr{[A-Z]\{2,\}} & 域的DNS标签，长度为2到63个字符\\
+\hline
 \myttbr{\$} & 字符串结尾\\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -3332,32 +3369,38 @@ cy(i) = x(i - S) - x(i - R) - cy(i - 1)<0?1:0
 %%C020439 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.324\hsize\raggedright\arraybackslash}X>{\hsize=0.676\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.324\hsize\raggedright\arraybackslash}X|>{\hsize=0.676\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{部分}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{部分}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endhead
 \myttbr{\textasciicircum{}} & 行首\\
+\hline
 \myttbr{(\allowbreak{}?!\#)} & 负向先行断言（negative lookahead），确保无法匹配\#字符\\
+\hline
 \myttbr{(\textbackslash{}w)+} & 捕获组，表示至少包含一个单词字符的标识符\\
+\hline
 \myttbr{\textbackslash{}s*} & 任意空白字符\\
+\hline
+\myttbr{=} & 等号\\
+\hline
+\myttbr{\textbackslash{}s*} & 任意空白字符\\
+\hline
+\myttbr{([\textbackslash{}w\textbackslash{}d]+[\textbackslash{}w\textbackslash{}d.\_,\textbackslash{}-:]*)} & 捕获组，表示一个以字母数字字符开头的值，但也可以包含点、逗号、反斜杠、连字符、冒号或下划线。\\
+\hline
+\myttbr{\$} & 行尾\\
+\hline
 \end{xltabular}
 \myTableEnd
 
 
 %%C020440 table
 
-\myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.324\hsize\raggedright\arraybackslash}X>{\hsize=0.676\hsize\raggedright\arraybackslash}X@{}}
-\rowcolor{tabhead} \textcolor{white}{\myttbr{=}} & \textcolor{white}{等号} \\
-\endfirsthead
-\rowcolor{tabhead} \textcolor{white}{\myttbr{=}} & \textcolor{white}{等号} \\
-\endhead
-\myttbr{\textbackslash{}s*} & 任意空白字符\\
-\myttbr{([\textbackslash{}w\textbackslash{}d]+[\textbackslash{}w\textbackslash{}d.\_,\textbackslash{}-:]*)} & 捕获组，表示一个以字母数字字符开头的值，但也可以包含点、逗号、反斜杠、连字符、冒号或下划线。\\
-\myttbr{\$} & 行尾\\
-\end{xltabular}
-\myTableEnd
+% 原书此处是上一张表的续表（PDF分页把表切断，抽取时首行被误当表头），
+% 已并入上表，本单元留空。
 
 
 %%C020441 p

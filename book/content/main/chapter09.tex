@@ -797,34 +797,42 @@
 %%C090106 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.282\hsize\raggedright\arraybackslash}X>{\hsize=0.718\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.282\hsize\raggedright\arraybackslash}X|>{\hsize=0.718\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endhead
 \myttbr{T* p} & P是指向非常量T的非常量指针\\
+\hline
 \myttbr{const T* p} & P是指向常量T的非常量指针\\
+\hline
 \myttbr{T const * p} & P是指向常量T的非常量指针（与上一行相同）\\
+\hline
 \myttbr{const T * const p} & P是指向常量T的常量指针\\
+\hline
 \myttbr{T const * const p} & P是指向常量T的常量指针（与上一行相同）\\
+\hline
 \myttbr{T** p} & P是指向“指向非常量T的非常量指针”的非常量指针\\
+\hline
+\myttbr{const T** p} & P是指向“指向常量T的非常量指针”的非常量指针\\
+\hline
+\myttbr{T const ** p} & 与\myttbr{T const ** p}相同\\
+\hline
+\myttbr{const T* const * p} & P是指向常量指针的非常量指针，而该常量指针指向常量T \\
+\hline
+\myttbr{T const * const * p} & 与\myttbr{T const * const * p}相同\\
+\hline
 \end{xltabular}
 \myTableEnd
 
 
 %%C090107 table
 
-\myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.282\hsize\raggedright\arraybackslash}X>{\hsize=0.718\hsize\raggedright\arraybackslash}X@{}}
-\rowcolor{tabhead} \textcolor{white}{\myttbr{const T** p}} & \textcolor{white}{P是指向“指向常量T的非常量指针”的非常量指针} \\
-\endfirsthead
-\rowcolor{tabhead} \textcolor{white}{\myttbr{const T** p}} & \textcolor{white}{P是指向“指向常量T的非常量指针”的非常量指针} \\
-\endhead
-\myttbr{T const ** p} & 与\myttbr{T const ** p}相同\\
-\myttbr{const T* const * p} & P是指向常量指针的非常量指针，而该常量指针指向常量T \\
-\myttbr{T const * const * p} & 与\myttbr{T const * const * p}相同\\
-\end{xltabular}
-\myTableEnd
+% 原书此处是上一张表的续表（PDF分页把表切断，抽取时首行被误当表头），
+% 已并入上表，本单元留空。
 
 
 %%C090108 note

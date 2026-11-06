@@ -510,26 +510,44 @@ lambda只能捕获外层函数作用域中的变量。它不能捕获具有静�
 %%C030071 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.198\hsize\raggedright\arraybackslash}X>{\hsize=0.802\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.198\hsize\raggedright\arraybackslash}X|>{\hsize=0.802\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{Lambda表达式}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{Lambda表达式}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endhead
 \myttbr{[]()\{\}} & 不捕获任何东西\\
+\hline
 \myttbr{[\&]()\{\}} & 按引用捕获一切\\
+\hline
 \myttbr{[=]()\{\}} & 按复制捕获一切\\
+\hline
 \myttbr{[\&x]()\{\}} & 仅按引用捕获\myttbr{x} \\
+\hline
 \myttbr{[x]()\{\}} & 仅按复制捕获\myttbr{x} \\
+\hline
 \myttbr{[\&x...]()\{\}} & 按引用捕获参数包展开\myttbr{x} \\
+\hline
 \myttbr{[x...]()\{\}} & 按复制捕获参数包展开\myttbr{x} \\
+\hline
 \myttbr{[\&, x]()\{\}} & 除\myttbr{x}按复制捕获外，其余全部按引用捕获\\
+\hline
 \myttbr{[=, \&x]()\{\}} & 除\myttbr{x}按引用捕获外，其余全部按复制捕获\\
+\hline
 \myttbr{[\&, this]()\{\}} & 除指针\myttbr{this}按复制捕获外（\myttbr{this}总是按复制捕获），其余全部按引用捕获\\
+\hline
 \myttbr{[x, x]()\{\}} & 错误，\myttbr{x}被捕获了两次\\
+\hline
 \myttbr{[\&, \&x]()\{\}} & 错误，已按引用捕获一切，不能再指定按引用捕获\myttbr{x} \\
+\hline
 \myttbr{[=, =x]()\{\}} & 错误，已按复制捕获一切，不能再指定按复制捕获\myttbr{x} \\
+\hline
 \myttbr{[\&this]()\{\}} & 错误，指针\myttbr{this}总是按复制捕获\\
+\hline
 \myttbr{[\&, =]()\{\}} & 错误，不能同时按复制和按引用捕获一切\\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -1381,15 +1399,22 @@ lambda基本上就是匿名函数对象，这意味着它应当可以被递归�
 %%C030189 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.378\hsize\raggedright\arraybackslash}X>{\hsize=0.622\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.378\hsize\raggedright\arraybackslash}X|>{\hsize=0.622\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{展开形式}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{展开形式}} \\
+\hline
 \endhead
 \myttbr{(... op pack)} & ((pack\$1 op pack\$2) op ...) op pack\$n \\
+\hline
 \myttbr{(\allowbreak{}init op ... op pack)} & (((init op pack\$1) op pack\$2) op ...) op pack\$n \\
+\hline
 \myttbr{(\allowbreak{}pack op ...)} & pack\$1 op (... op (pack\$n-1 op pack\$n)) \\
+\hline
 \myttbr{(\allowbreak{}pack op ... op init)} & pack\$1 op (... op (pack\$n-1 op (pack\$n op init))) \\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -1407,13 +1432,18 @@ lambda基本上就是匿名函数对象，这意味着它应当可以被递归�
 %%C030192 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.081\hsize\raggedright\arraybackslash}X>{\hsize=0.068\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X>{\hsize=0.100\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X>{\hsize=0.090\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X>{\hsize=0.096\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X>{\hsize=0.097\hsize\raggedright\arraybackslash}X>{\hsize=0.097\hsize\raggedright\arraybackslash}X>{\hsize=0.074\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.081\hsize\raggedright\arraybackslash}X|>{\hsize=0.068\hsize\raggedright\arraybackslash}X|>{\hsize=0.074\hsize\raggedright\arraybackslash}X|>{\hsize=0.100\hsize\raggedright\arraybackslash}X|>{\hsize=0.074\hsize\raggedright\arraybackslash}X|>{\hsize=0.090\hsize\raggedright\arraybackslash}X|>{\hsize=0.074\hsize\raggedright\arraybackslash}X|>{\hsize=0.096\hsize\raggedright\arraybackslash}X|>{\hsize=0.074\hsize\raggedright\arraybackslash}X|>{\hsize=0.097\hsize\raggedright\arraybackslash}X|>{\hsize=0.097\hsize\raggedright\arraybackslash}X|>{\hsize=0.074\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{+}} & \textcolor{white}{\textbf{-}} & \textcolor{white}{\textbf{*}} & \textcolor{white}{\textbf{/}} & \textcolor{white}{\textbf{\%}} & \textcolor{white}{\textbf{\textasciicircum{}}} & \textcolor{white}{\textbf{\&}} & \textcolor{white}{\textbf{|}} & \textcolor{white}{\textbf{=}} & \textcolor{white}{\textbf{<}} & \textcolor{white}{\textbf{>}} & \textcolor{white}{\textbf{<<}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{+}} & \textcolor{white}{\textbf{-}} & \textcolor{white}{\textbf{*}} & \textcolor{white}{\textbf{/}} & \textcolor{white}{\textbf{\%}} & \textcolor{white}{\textbf{\textasciicircum{}}} & \textcolor{white}{\textbf{\&}} & \textcolor{white}{\textbf{|}} & \textcolor{white}{\textbf{=}} & \textcolor{white}{\textbf{<}} & \textcolor{white}{\textbf{>}} & \textcolor{white}{\textbf{<<}} \\
+\hline
 \endhead
 >> & += & -= & *= & /= & \%= & \textasciicircum{}= & \&= & |= & <<= & >>= & == \\
+\hline
 != & <= & >= & \&\& & || & , & .* & ->*. &  &  &  &  \\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -1426,17 +1456,26 @@ lambda基本上就是匿名函数对象，这意味着它应当可以被递归�
 %%C030194 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.294\hsize\raggedright\arraybackslash}X>{\hsize=0.706\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.294\hsize\raggedright\arraybackslash}X|>{\hsize=0.706\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\myttbr{+}} & \textcolor{white}{\myttbr{0}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\myttbr{+}} & \textcolor{white}{\myttbr{0}} \\
+\hline
 \endhead
 \myttbr{*} & \myttbr{1} \\
+\hline
 \myttbr{\&} & \myttbr{-\allowbreak{}1} \\
+\hline
 \myttbr{|} & \myttbr{0} \\
+\hline
 \myttbr{\&\&} & \myttbr{true} \\
+\hline
 \myttbr{||} & \myttbr{false} \\
+\hline
 \myttbr{,} & \myttbr{void()} \\
+\hline
 \end{xltabular}
 \myTableEnd
 

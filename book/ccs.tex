@@ -11,7 +11,7 @@
 %     正文：book/content/<类别>/<slug>.tex，由 book/index.tex 的 \myChapter 加载
 % =============================================================================
 
-\documentclass[10.5bp,openright,twoside,UTF8]{book}
+\documentclass[10.5bp,openany,twoside,UTF8]{book}
 \interfootnotelinepenalty=10000
 
 % -----------------------------------------------------------------------------
@@ -70,7 +70,8 @@
 \linespread{1.1667}                 % 10.5bp × 1.2 × 1.1667 ≈ 14.7bp 行距（实测）
 % 基线 = 10.5 × 1.2 = 12.6bp，各档位实测行距：
 %   1.0476→13.2（原书实测值，40 行/页）  1.0833→13.7  1.1250→14.2
-%   1.1667→14.7（当前，约 36 行/页，成书 553 页）  1.2083→15.2  1.2500→15.8
+%   1.1667→14.7（当前，约 36 行/页，成书 545 页）  1.2083→15.2  1.2500→15.8
+%   注：545 页是 openany（章间不留空白页）的页数；若改回 openright 会多出 8 页空白。
 
 \setCJKmainfont[AutoFakeSlant=true]{Source Han Serif SC}                 % 中文正文
 \setCJKsansfont[AutoFakeBold=true,AutoFakeSlant=true]{Microsoft YaHei}   % 中文标题/表头
@@ -299,6 +300,7 @@
   \fontsize{9bp}{11.5bp}\selectfont\sffamily
   \renewcommand{\arraystretch}{1.25}%
   \setlength{\arrayrulewidth}{0.3bp}%
+  \setlength{\tabcolsep}{4bp}%      % 单元格到竖线的内边距（列规格已去掉 @{}）
   % longtable 默认在表格前后各加 \bigskipamount，且靠 \fill 居中；
   % 这里归零，让表与正文左缘严格对齐、段距只由 \myTableBegin/\myTableEnd 控制。
   \setlength{\LTpre}{0bp}\setlength{\LTpost}{0bp}%
@@ -497,12 +499,11 @@
   \endgroup}
 \makeatother
 
-% 空白页（openright 自动插入的偶数页）不印页脚：
-%   book.cls 的 \cleardoublepage 不会给空白页设 \pagestyle{empty}，fancy 页脚
-%   会留下「12 |」这种只有页码和竖线的残缺行。这里补一个只对空白页生效的 empty。
-\let\myorigcleardoublepage\cleardoublepage
-\renewcommand{\cleardoublepage}{%
-  \clearpage{\pagestyle{empty}\myorigcleardoublepage}}
+% 章起始：openany（与原书电子版一致）
+%   模板原为 openright，章必须起于奇数页：章末若恰好收在奇数页，就会在下一张
+%   偶数页上插一页空白，全书共 8 页（26 / 84 / 144 / 206 / 256 / 360 / 418 / 494）。
+%   原书 PDF 通篇没有这类空白页，故改用 openany，让每章紧接上一章展开。
+%   （openany 下 book.cls 已把 \cleardoublepage 定义为 \clearpage，无需再补空页处理。）
 
 % -----------------------------------------------------------------------------
 %  Unicode 符号兜底（当前字体缺字形时映射到等价写法）

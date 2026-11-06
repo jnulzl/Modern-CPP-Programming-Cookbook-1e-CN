@@ -1,7 +1,7 @@
 # 《Modern C++ Programming Cookbook（第 1 版）》中文版 · LaTeX 工程
 
 由 Packt 英文原版 PDF（*Modern C++ Programming Cookbook*, Marius Bancila, 2017，583 页、
-100 余个案例）逐句翻译并重排，正文由 XeLaTeX 排版，共 **11 章、553 页**。
+100 余个案例）逐句翻译并重排，正文由 XeLaTeX 排版，共 **11 章、545 页**。
 
 ---
 
@@ -12,7 +12,7 @@ Modern-C++-Programming-Cookbook/
 ├── main.tex                  编译入口（10 行，只做 \input + subfile）
 ├── build.bat                 一键编译（三遍 xelatex + 失败即停）
 ├── README.md                 本文件
-├── main.pdf                  产物（553 页 / 3.0 MB）
+├── main.pdf                  产物（545 页 / 3.0 MB）
 ├── book/
 │   ├── ccs.tex               导言区：页面/字体/标题/代码/表格/提示框/页脚/章节命令
 │   ├── cpp-pygments.tex      代码高亮宏（Pygments atom-one-light 导出的 \PYG）
@@ -68,6 +68,19 @@ xelatex -interaction=nonstopmode main.tex     :: 需要跑三遍
 ---
 
 > 如果环境配置遇到问题或者编译失败可以直接到[releases](https://github.com/jnulzl/Modern-CPP-Programming-Cookbook-1e-CN/releases)下载最新的pdf文件
+
+## 3. 表格样式
+
+表格全部是**全网格**（外框 + 纵线 + 每行横线），表头黑底白字，与原书一致：
+
+- 列规格由 `work/tools/assemble.py` 的 `grid_tables()` 统一加 `|` 与 `\hline`，
+  翻译稿里只写普通的 `xltabular`，不必手工画线。
+- 原列规格用 `@{}` 把左右内边距归零（为与正文左缘齐平），加纵线后文字会贴住线条，
+  因此 `grid_tables()` 顺手去掉 `@{}`，改由 `ccs.tex` 的 `myTableBegin` 里
+  `\tabcolsep=4bp` 提供内边距。
+- 跨页长表由 `xltabular` 自动重复表头；原 PDF 被分页切开的表在抽取时会出现
+  「首行被误当表头」的续片，这类续片已并回主表（`%%C020440`、`%%C070398`、
+  `%%C080344`、`%%C090107`、`%%C110207` 五处，原单元留空并注明）。
 
 ## 官方代码
 

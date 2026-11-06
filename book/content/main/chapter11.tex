@@ -1463,20 +1463,32 @@ Boost.Test框架的API基于宏。虽然编写测试时你只需要使用它提�
 %%C110204 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.198\hsize\raggedright\arraybackslash}X>{\hsize=0.802\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.198\hsize\raggedright\arraybackslash}X|>{\hsize=0.802\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{级别}} & \textcolor{white}{\textbf{报告的消息}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{级别}} & \textcolor{white}{\textbf{报告的消息}} \\
+\hline
 \endhead
 \myttbr{nothing} & 不记录任何内容\\
+\hline
 \myttbr{fatal\_\allowbreak{}error} & 系统或用户的致命错误，以及所有描述\myttbr{REQUIRE}级别断言失败的消息（例如\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}REQUIRE}与\myttbr{BOOST\_\allowbreak{}REQUIRE\_}）\\
+\hline
 \myttbr{system\_\allowbreak{}error} & 系统非致命错误\\
+\hline
 \myttbr{cpp\_\allowbreak{}exception} & 未捕获的C++异常\\
+\hline
 \myttbr{error} & \myttbr{CHECK}级别的断言失败（\myttbr{BOOST\_\allowbreak{}TEST}与\myttbr{BOOST\_\allowbreak{}CHECK\_}）\\
+\hline
 \myttbr{warning} & \myttbr{WARN}级别的断言失败（\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}WARN}与\myttbr{BOOST\_\allowbreak{}WARN\_}）\\
+\hline
 \myttbr{message} & 由\myttbr{BOOST\_\allowbreak{}TEST\_\allowbreak{}MESSAGE}生成的消息\\
+\hline
 \myttbr{test\_\allowbreak{}suite} & 每个测试单元开始与结束状态的通知\\
+\hline
 \myttbr{all} / \myttbr{success} & 所有消息，包括通过的断言\\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -1489,28 +1501,30 @@ Boost.Test框架的API基于宏。虽然编写测试时你只需要使用它提�
 %%C110206 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.128\hsize\raggedright\arraybackslash}X>{\hsize=0.872\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.128\hsize\raggedright\arraybackslash}X|>{\hsize=0.872\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{级别}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{级别}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endhead
 \myttbr{no} & 不生成任何报告\\
+\hline
 \myttbr{confirm} & \textbf{通过的测试：}*** 未检测到错误\textbf{跳过的测试：}*** <name>测试套件被跳过，详情见标准输出\textbf{中止的测试：}*** <name>测试套件被中止，详情见标准输出\textbf{没有断言失败的失败测试：}*** 在<name>测试套件中检测到错误，详情见标准输出\textbf{失败的测试：}*** 在<name>测试套件中检测到N个失败\textbf{存在预期失败的失败测试：}*** 在<name>测试套件中检测到N个失败（预期M个失败）\\
+\hline
+\myttbr{detailed} & 结果按层次结构报告（每个测试单元作为父测试单元的一部分被报告），但只显示相关信息。没有断言失败的测试用例不会在报告中产生条目。测试用例/套件<name>已通过/被跳过/被中止/失败，同时：M个断言中有N个通过M个断言中有N个失败M个告警中有N个失败 预期X个失败\\
+\hline
+\myttbr{short} & 与detailed类似，但只把信息报告到主测试套件\\
+\hline
 \end{xltabular}
 \myTableEnd
 
 
 %%C110207 table
 
-\myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.128\hsize\raggedright\arraybackslash}X>{\hsize=0.872\hsize\raggedright\arraybackslash}X@{}}
-\rowcolor{tabhead} \textcolor{white}{\myttbr{detailed}} & \textcolor{white}{结果按层次结构报告（每个测试单元作为父测试单元的一部分被报告），但只显示相关信息。没有断言失败的测试用例不会在报告中产生条目。测试用例/套件<name>已通过/被跳过/被中止/失败，同时：M个断言中有N个通过M个断言中有N个失败M个告警中有N个失败 预期X个失败} \\
-\endfirsthead
-\rowcolor{tabhead} \textcolor{white}{\myttbr{detailed}} & \textcolor{white}{结果按层次结构报告（每个测试单元作为父测试单元的一部分被报告），但只显示相关信息。没有断言失败的测试用例不会在报告中产生条目。测试用例/套件<name>已通过/被跳过/被中止/失败，同时：M个断言中有N个通过M个断言中有N个失败M个告警中有N个失败 预期X个失败} \\
-\endhead
-\myttbr{short} & 与detailed类似，但只把信息报告到主测试套件\\
-\end{xltabular}
-\myTableEnd
+% 原书此处是上一张表的续表（PDF分页把表切断，抽取时首行被误当表头），
+% 已并入上表，本单元留空。
 
 
 %%C110208 p
@@ -1879,15 +1893,22 @@ Google Test框架也可以与其他测试框架一起使用。你可以用其他
 %%C110268 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.788\hsize\raggedright\arraybackslash}X>{\hsize=0.212\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.788\hsize\raggedright\arraybackslash}X|>{\hsize=0.212\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{筛选器}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{筛选器}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endhead
 \myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=*} & 运行所有测试\\
+\hline
 \myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=TestConstruction.\allowbreak{}*} & 运行名为\textit{TestConstruction}的测试用例中的所有测试\\
+\hline
 \myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=TestOperations.\allowbreak{}*-\allowbreak{}TestOperations.\allowbreak{}TestLess} & 运行名为\textit{TestOperations}的测试用例中的所有测试，但名为\textit{TestLess}的测试除外\\
+\hline
 \myttbr{--\allowbreak{}gtest\_\allowbreak{}filter=*Operations*:\allowbreak{}*Construction*} & 运行全名中包含\textit{Operations}或\textit{Construction}的所有测试\\
+\hline
 \end{xltabular}
 \myTableEnd
 
@@ -3161,17 +3182,26 @@ BDD风格的测试用例编写同样由这两个宏驱动，即\texttt{TEST\_\al
 %%C110437 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.324\hsize\raggedright\arraybackslash}X>{\hsize=0.676\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.324\hsize\raggedright\arraybackslash}X|>{\hsize=0.676\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{参数}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{参数}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endhead
 \myttbr{“test construction”} & 名为\textit{test construction}的测试用例\\
+\hline
 \myttbr{test*} & 所有以\textit{test}开头的测试用例\\
+\hline
 \myttbr{\textasciitilde{}“test construction”} & 除名为\textit{test construction}的那个之外的所有测试用例\\
+\hline
 \myttbr{\textasciitilde{}*equal*} & 除名称中含\textit{equal}一词的之外的所有测试用例\\
+\hline
 \myttbr{[modify]} & 所有带\myttbr{[modify]}标签的测试用例\\
+\hline
 \myttbr{[modify],[compare][op]} & 所有带\myttbr{[modify]}标签，或同时带\myttbr{[compare]}和\myttbr{[op]}标签的测试用例\\
+\hline
 \end{xltabular}
 \myTableEnd
 

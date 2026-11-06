@@ -1718,16 +1718,24 @@ C++编译器按数据类型的大小来对齐变量：\texttt{bool}与\texttt{ch
 %%C010231 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.226\hsize\raggedright\arraybackslash}X>{\hsize=0.774\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.226\hsize\raggedright\arraybackslash}X|>{\hsize=0.774\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{求值结果}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{表达式}} & \textcolor{white}{\textbf{求值结果}} \\
+\hline
 \endhead
 \myttbr{alignof(\allowbreak{}char)} & 1，因为\myttbr{char}的自然对齐是1 \\
+\hline
 \myttbr{alignof(\allowbreak{}int)} & 4，因为\myttbr{int}的自然对齐是4 \\
+\hline
 \myttbr{alignof(\allowbreak{}int*)} & 32位下是4，64位下是8，即指针的对齐\\
+\hline
 \myttbr{alignof(\allowbreak{}int[4])} & 4，因为元素类型的自然对齐是4 \\
+\hline
 \myttbr{alignof(\allowbreak{}foo\&)} & 8，因为被引用类型即类\myttbr{foo}所指定的对齐为8（如上一个例子所示）\\
+\hline
 \end{xltabular}
 \myTableEnd
 

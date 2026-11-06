@@ -2548,30 +2548,34 @@ future类还有两个等待方法：\texttt{wait\_\allowbreak{}for()}指定一�
 %%C080343 table
 
 \myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.296\hsize\raggedright\arraybackslash}X>{\hsize=0.704\hsize\raggedright\arraybackslash}X@{}}
+\begin{xltabular}{\textwidth}{|>{\hsize=0.296\hsize\raggedright\arraybackslash}X|>{\hsize=0.704\hsize\raggedright\arraybackslash}X|}
+\hline
 \rowcolor{tabhead} \textcolor{white}{\textbf{模型}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endfirsthead
 \rowcolor{tabhead} \textcolor{white}{\textbf{模型}} & \textcolor{white}{\textbf{说明}} \\
+\hline
 \endhead
 \myttbr{memory\_\allowbreak{}order\_\allowbreak{}relaxed} & 这是一种松散操作。没有任何同步或顺序约束；该操作只要求原子性。\\
+\hline
 \myttbr{memory\_\allowbreak{}order\_\allowbreak{}consume} & 使用该内存序的加载操作会在受影响的内存位置上执行consume操作；当前线程中依赖于刚加载值的读或写，都不能被重排到该加载操作之前。其他线程中释放同一原子变量时对数据依赖变量所做的写入，在当前线程中可见。在大多数平台上，这只影响编译器优化。\\
+\hline
 \myttbr{memory\_\allowbreak{}order\_\allowbreak{}acquire} & 使用该内存序的加载操作会在受影响的内存位置上执行acquire操作；当前线程中的任何读或写都不能被重排到该加载之前。其他线程中释放同一原子变量的所有写入，在当前线程中可见。\\
+\hline
 \myttbr{memory\_\allowbreak{}order\_\allowbreak{}release} & 使用该内存序的存储操作会执行release操作；当前线程中的任何读或写都不能被重排到该存储之后。当前线程中的所有写入，对其他获取同一原子变量的线程可见；而携带对该原子变量依赖的写入，会对消费同一原子变量的其他线程可见。\\
+\hline
+\myttbr{memory\_\allowbreak{}order\_\allowbreak{}acq\_\allowbreak{}rel} & 使用该内存序的读-改-写操作既是acquire操作也是release操作。当前线程中的任何内存读或写都不能被重排到该存储之前或之后。其他线程中释放同一原子变量的所有写入在该修改之前可见，而该修改对其他获取同一原子变量的线程可见。\\
+\hline
+\myttbr{memory\_\allowbreak{}order\_\allowbreak{}seq\_\allowbreak{}cst} & 使用该内存序的任何操作既是acquire操作也是release操作；存在唯一一个全序，所有线程在其中以相同顺序观察到所有修改。\\
+\hline
 \end{xltabular}
 \myTableEnd
 
 
 %%C080344 table
 
-\myTableBegin
-\begin{xltabular}{\textwidth}{@{}>{\hsize=0.296\hsize\raggedright\arraybackslash}X>{\hsize=0.704\hsize\raggedright\arraybackslash}X@{}}
-\rowcolor{tabhead} \textcolor{white}{\myttbr{memory\_\allowbreak{}order\_\allowbreak{}acq\_\allowbreak{}rel}} & \textcolor{white}{使用该内存序的读-改-写操作既是acquire操作也是release操作。当前线程中的任何内存读或写都不能被重排到该存储之前或之后。其他线程中释放同一原子变量的所有写入在该修改之前可见，而该修改对其他获取同一原子变量的线程可见。} \\
-\endfirsthead
-\rowcolor{tabhead} \textcolor{white}{\myttbr{memory\_\allowbreak{}order\_\allowbreak{}acq\_\allowbreak{}rel}} & \textcolor{white}{使用该内存序的读-改-写操作既是acquire操作也是release操作。当前线程中的任何内存读或写都不能被重排到该存储之前或之后。其他线程中释放同一原子变量的所有写入在该修改之前可见，而该修改对其他获取同一原子变量的线程可见。} \\
-\endhead
-\myttbr{memory\_\allowbreak{}order\_\allowbreak{}seq\_\allowbreak{}cst} & 使用该内存序的任何操作既是acquire操作也是release操作；存在唯一一个全序，所有线程在其中以相同顺序观察到所有修改。\\
-\end{xltabular}
-\myTableEnd
+% 原书此处是上一张表的续表（PDF分页把表切断，抽取时首行被误当表头），
+% 已并入上表，本单元留空。
 
 
 %%C080345 p
